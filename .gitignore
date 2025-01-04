@@ -21,38 +21,70 @@ wheels/
 *.egg
 MANIFEST
 
-# Virtual Environment
+# Virtual Environments
+aigentqube_env/
 venv/
-env/
-.env/
-.venv/
+ENV/
+env.bak/
+.env
+.venv
 
-# IDE
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# IDEs and Editors
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
 
-# OS
+# OS Generated Files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+
+# Blockchain and Crypto
+*.keystore
+*.key
+*.pem
 
 # Logs
 *.log
-
-# Jupyter Notebook
-.ipynb_checkpoints
+logs/
 
 # Testing
+.pytest_cache/
 .coverage
 htmlcov/
-.pytest_cache/
 
-# Secrets
-*.key
-*.pem
+# Build and Deployment
+*.build/
+*.manifest
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# Sensitive Configuration
+config.ini
 secrets.yml
 
-# Temporary Files
-*.tmp
-*.bak
+# Compiled Source
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Project Specific
+.temp/
+.cache/
+artifacts/
+blockchain/contracts/build/
