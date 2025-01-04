@@ -1,0 +1,29 @@
+# Backend Dependencies
+fastapi==0.109.0
+uvicorn==0.24.0
+websockets==12.0
+pydantic==2.6.0
+structlog==24.1.0
+python-json-logger==2.0.7
+
+# Blockchain Integration
+web3==6.11.0
+eth-account==0.10.0
+
+# AI and ML
+transformers==4.37.0
+torch==2.2.0
+scikit-learn==0.24.2
+
+# Utility
+python-dotenv==1.0.0
+asyncio==3.4.3
+
+# Development and Testing
+pytest==7.4.4
+black==24.1.1
+mypy==1.8.0
+ruff==0.1.11
+
+# Logging and Monitoring
+sentry-sdk==1.40.0

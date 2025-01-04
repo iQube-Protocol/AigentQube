@@ -185,6 +185,66 @@ pip install -r requirements.txt
 python3 web_dashboard.py
 ```
 
+## Prototype Version 0.1.0
+
+### Project Overview
+AigentQube is a revolutionary decentralized AI agent framework that integrates advanced contextual intelligence, blockchain-backed state management, and tokenized information access.
+
+### Key Features
+- FastAPI-based backend
+- WebSocket real-time agent monitoring
+- Blockchain integration (Sepolia Testnet)
+- Structured logging
+- iQube token creation and management
+
+### Prerequisites
+- Python 3.13+
+- Node.js 16+
+- MetaMask Browser Extension
+- Sepolia Testnet Wallet
+
+### Setup Instructions
+
+1. Clone the Repository
+```bash
+git clone https://github.com/your-org/AigentQube.git
+cd AigentQube
+```
+
+2. Create Virtual Environment
+```bash
+python3 -m venv aigentqube_env
+source aigentqube_env/bin/activate
+```
+
+3. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+4. Configure Environment
+```bash
+cp .env.example .env
+# Edit .env with your blockchain credentials
+```
+
+5. Run Backend
+```bash
+uvicorn src.backend.main:app --reload
+```
+
+### Development Roadmap
+- [ ] Complete blockchain integration
+- [ ] Develop frontend dashboard
+- [ ] Implement AI agent context management
+- [ ] Add comprehensive testing
+
+### Contributing
+Please read CONTRIBUTING.md for details on our code of conduct and the process for submitting pull requests.
+
+### License
+This project is licensed under the MIT License - see the LICENSE.md file for details.
+
 ## Troubleshooting
 
 ### PyTorch Installation

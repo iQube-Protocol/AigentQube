@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "aigentqube"
+version = "0.1.0"
+description = "Decentralized AI Agent Framework"
+authors = ["AigentQube Team <dev@aigentqube.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+fastapi = "^0.109.0"
+web3 = "^6.11.0"
+transformers = "^4.37.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.4"
+black = "^24.1.1"
+mypy = "^1.8.0"
+
+[tool.black]
+line-length = 88
+target-version = ['py313']
+
+[tool.mypy]
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
