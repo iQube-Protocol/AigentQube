@@ -417,6 +417,102 @@ useEffect(() => {
 - Write comprehensive comments
 - Maintain consistent code formatting
 
+## Component Prop and Module Import Troubleshooting
+
+### Common TypeScript and Module Resolution Errors
+
+#### Error: Cannot find module 'package-name'
+
+##### Symptoms
+- Compilation fails with error: `Cannot find module 'package-name'`
+- TypeScript unable to resolve import statements
+
+##### Diagnostic Steps
+1. **Install Missing Package**
+   ```bash
+   npm install package-name
+   # For dev dependencies
+   npm install -D package-name
+   ```
+
+2. **Verify Package Installation**
+   - Check `package.json` to confirm package is listed
+   - Verify `node_modules` directory contains the package
+
+3. **TypeScript Configuration**
+   Update `tsconfig.json` to include:
+   ```json
+   {
+     "compilerOptions": {
+       "moduleResolution": "node",
+       "esModuleInterop": true
+     }
+   }
+   ```
+
+#### Error: Type Mismatch in Component Props
+
+##### Symptoms
+- TypeScript errors about prop type incompatibility
+- Components not accepting expected props
+
+##### Resolution Strategies
+1. **Define Comprehensive Interface**
+   ```typescript
+   export interface ComponentProps {
+     // Make props optional with '?'
+     optionalProp?: string;
+     // Provide default types
+     requiredProp: string | null;
+   }
+   ```
+
+2. **Use Optional Chaining and Nullish Coalescing**
+   ```typescript
+   const Component: React.FC<ComponentProps> = ({ 
+     optionalProp, 
+     requiredProp 
+   }) => {
+     // Safe prop handling
+     const displayValue = optionalProp ?? 'Default Value';
+     const handleClick = () => requiredProp?.doSomething();
+   }
+   ```
+
+3. **Prop Type Flexibility**
+   ```typescript
+   interface Props {
+     // Allow multiple types
+     value: string | number | null;
+     // Optional callback with flexible signature
+     onChange?: (value: any) => void;
+   }
+   ```
+
+#### Best Practices
+- Always define explicit interfaces for component props
+- Use optional chaining (`?.`) and nullish coalescing (`??`)
+- Provide sensible default values
+- Use type guards for runtime type checking
+
+#### Debugging Checklist
+- [ ] Verify package installation
+- [ ] Check TypeScript configuration
+- [ ] Review component prop interfaces
+- [ ] Use optional and nullable types
+- [ ] Implement proper type handling
+
+### Performance and Maintenance Tips
+- Keep prop interfaces minimal and focused
+- Avoid `any` type when possible
+- Use TypeScript's strict mode
+- Regularly update type definitions
+
+### Recommended Tools
+- `typescript-eslint`
+- Visual Studio Code IntelliSense
+- React DevTools
+
 ## Tailwind CSS and PostCSS Configuration Troubleshooting
 
 ### Common Build Errors and Solutions
