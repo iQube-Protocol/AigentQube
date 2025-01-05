@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 
 export interface AgentEvolutionPanelProps {
-  context: any;
-  onContextChange: (context: any) => void;
+  context?: any;
+  onContextChange?: (context: any) => void;
   selectedAgent?: string | null;
   onAgentSelect?: (agentId: string | null) => void;
 }
 
 const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({ 
-  context, 
-  onContextChange, 
+  context = null, 
+  onContextChange = () => {}, 
   selectedAgent, 
   onAgentSelect 
 }) => {
@@ -28,6 +28,14 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
     onContextChange({
       baseState,
       specializedState: domain
+    });
+  };
+
+  const handleBaseStateChange = (newState: string) => {
+    setBaseState(newState);
+    onContextChange({
+      ...context,
+      baseState: newState
     });
   };
 
@@ -52,7 +60,16 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
       <div className="base-state">
         <h3 className="font-medium mb-2">Base State</h3>
         <div className="bg-gray-700 rounded p-3">
-          <span className="text-gray-300">{baseState}</span>
+          <select 
+            value={baseState}
+            onChange={(e) => handleBaseStateChange(e.target.value)}
+            className="w-full bg-gray-600 text-white rounded p-2"
+          >
+            <option value="Generic AI">Generic AI</option>
+            <option value="Analytical">Analytical</option>
+            <option value="Creative">Creative</option>
+            <option value="Logical">Logical</option>
+          </select>
         </div>
       </div>
 
