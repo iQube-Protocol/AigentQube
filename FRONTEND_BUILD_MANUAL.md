@@ -145,6 +145,97 @@ npm test
 - Dependent on Web3 wallet injection
 - Potential cross-browser compatibility issues
 
+## Agent Specialization and Context Transformation
+
+### Specialized Agent Domains
+
+AigentQube now supports four specialized agent domains, each with unique capabilities and tailored interaction strategies:
+
+1. **Financial Advisor** 💰
+   - Focus: Investment strategy, financial planning, and risk management
+   - Key Capabilities:
+     - Portfolio optimization
+     - Risk assessment
+     - Retirement planning
+     - Tax strategy development
+     - Investment diversification
+
+2. **Tech Consultant** 💻
+   - Focus: Technology innovation and digital transformation
+   - Key Capabilities:
+     - Emerging technology trend analysis
+     - Digital transformation assessment
+     - Cloud migration strategies
+     - Cybersecurity evaluation
+     - AI integration roadmapping
+
+3. **Crypto Analyst** ₿
+   - Focus: Cryptocurrency and blockchain technology
+   - Key Capabilities:
+     - Crypto market trend analysis
+     - Blockchain innovation assessment
+     - Cryptocurrency investment strategies
+     - DeFi opportunity evaluation
+     - Regulatory landscape understanding
+
+4. **Agentic AI Advisor** 🤖
+   - Focus: AI system design and ethical AI development
+   - Key Capabilities:
+     - AI agent workflow design
+     - AI interaction protocol development
+     - Ethical AI framework assessment
+     - AI learning strategy optimization
+     - Multi-agent collaboration planning
+
+### Context Transformation Mechanism
+
+#### Dynamic Prompt Generation
+The Context Transformation Panel now generates user-friendly, conversational prompts tailored to each specialized domain. These prompts are designed to:
+- Provide clear, actionable guidance
+- Adapt to user-specific contexts
+- Facilitate more natural AI interactions
+
+#### Recommended Actions
+Each specialized domain offers five key recommended actions, presented as intuitive, user-centric prompts. Users can:
+- View detailed recommendations
+- Insert prompts directly into the chat interface
+- Customize and refine AI interactions
+
+### Technical Implementation
+
+#### State Management
+```typescript
+interface AgentContext {
+  baseState: 'Generic AI' | 'Personalized AI';
+  specializedState: string;
+  iQubeDetails?: IQubeDetails;
+}
+
+interface DomainRecommendation {
+  action: string;
+  prompt: string;
+}
+```
+
+#### Interaction Flow
+1. User selects a specialized agent domain
+2. Context is dynamically transformed
+3. Recommended actions are updated
+4. AI adapts interaction style and capabilities
+
+### Best Practices
+- Leverage domain-specific expertise
+- Maintain flexible, adaptive AI interactions
+- Ensure ethical and responsible AI development
+
+### Recommended Development Workflow
+1. Clean install dependencies
+2. Verify import paths
+3. Check TypeScript configuration
+4. Run with verbose logging
+5. Test wallet connection
+6. Implement comprehensive error handling
+
 ## Troubleshooting Specific Frontend Issues
 
 ### Module and Type Resolution Challenges
@@ -288,6 +379,231 @@ npm start
 - Latest stable React and TypeScript versions
 - Visual Studio Code with ESLint and Prettier extensions
 
+## Agent Evolution and iQube Integration
+
+### iQube Sharing Mechanism
+
+#### Feature Overview
+The Agent Evolution Panel now supports dynamic iQube integration with the following key capabilities:
+
+1. **iQube Token Input**
+   - Users can enter an iQube Token ID directly in the interface
+   - Input field validates and fetches iQube details in real-time
+
+2. **Automatic Domain Specialization**
+   - When an iQube is shared, the system automatically suggests a specialized agent domain
+   - Preserves manual domain selection capabilities
+
+3. **State Transformation**
+   - Transitions from "Generic AI" to "Personalized AI" state
+   - Updates agent context with iQube-specific details
+
+#### Technical Implementation
+
+##### Frontend Components
+- `AgentEvolutionPanel.tsx`: 
+  - Added `iQubeTokenId` state management
+  - Implemented `fetchIQubeDetails` method
+  - Created error handling for iQube sharing
+  - Extended context change mechanism
+
+- `App.tsx`:
+  - Added `context` state management
+  - Implemented `handleContextChange` method
+  - Passed `agentId` to AgentEvolutionPanel
+
+##### Backend Integration Points
+- Endpoint: `http://localhost:8000/iqube/{tokenId}`
+  - Retrieves iQube details
+  - Returns `{ tokenId, name, domain }`
+
+- Endpoint: `http://localhost:8000/agent/share-iqube`
+  - Shares iQube with specific agent
+  - Requires `agent_id` and `iqube_token_id`
+
+#### State Management Flow
+```typescript
+interface IQubeDetails {
+  tokenId: string;
+  name: string;
+  domain: string;
+}
+
+interface AgentContext {
+  baseState: 'Generic AI' | 'Personalized AI';
+  specializedState: string;
+  iQubeDetails?: IQubeDetails;
+}
+```
+
+#### Key Interactions
+1. User enters iQube Token ID
+2. System validates and fetches iQube details
+3. Suggested domain is automatically selected
+4. Agent base state transitions to "Personalized AI"
+5. iQube details are integrated into agent context
+
+#### Error Handling
+- Validates iQube Token ID
+- Provides user-friendly error messages
+- Logs detailed errors for debugging
+
+#### Performance Considerations
+- Async operations with loading states
+- Minimal payload transfer
+- Graceful error management
+
+### Best Practices
+- Always validate external token inputs
+- Provide clear user feedback
+- Maintain flexible domain selection
+- Ensure secure token handling
+
+### Recommended Development Workflow
+1. Clean install dependencies
+2. Verify import paths
+3. Check TypeScript configuration
+4. Run with verbose logging
+5. Test wallet connection
+6. Implement comprehensive error handling
+
+## Version Compatibility
+- **React**: ^18.2.0
+- **TypeScript**: ^4.9.5
+- **Web3.js**: ^4.3.0
+- **Tailwind CSS**: ^3.4.0
+
+**Last Updated**: 2025-01-04
+**Build Stability**: Stable
+
+## Recommended Next Steps
+1. Implement comprehensive error handling
+2. Add unit and integration tests
+3. Create mock API for development
+4. Enhance Web3 wallet connection logic
+
+## Contribution Guidelines
+- Follow TypeScript strict mode
+- Use meaningful variable names
+- Write comprehensive comments
+- Maintain consistent code formatting
+
+## Tailwind CSS and PostCSS Configuration Troubleshooting
+
+### Common Build Errors and Solutions
+
+#### Error: Module Build Failure with Tailwind Configuration
+
+##### Symptoms
+- Compilation fails with an error like:
+  ```
+  Error: ENOENT: no such file or directory, open '/var/folders/qq/bsrtwvtx4ngg2wktq57s5xyw0000gn/T/node-jiti/aigentqube-dashboard-tailwind.config.js.e837b8f6.js'
+  ```
+- TypeScript import errors
+- Inability to resolve module paths
+
+##### Root Causes
+1. Incorrect Tailwind configuration path resolution
+2. Stale or corrupted node_modules
+3. Incompatible dependency versions
+4. Incorrect import statements
+
+##### Diagnostic Steps
+1. **Verify Tailwind Configuration**
+   ```javascript
+   // tailwind.config.js
+   const path = require('path');
+
+   module.exports = {
+     content: [
+       // Use absolute path for content files
+       path.join(__dirname, './src/**/*.{js,jsx,ts,tsx}')
+     ],
+     // ... other configurations
+   }
+   ```
+
+2. **Dependency Cleanup**
+   ```bash
+   # Clear npm cache
+   npm cache clean --force
+
+   # Remove node_modules and package-lock.json
+   rm -rf node_modules package-lock.json
+
+   # Reinstall dependencies
+   npm install
+   ```
+
+3. **PostCSS Configuration Check**
+   Ensure `postcss.config.js` includes necessary plugins:
+   ```javascript
+   module.exports = {
+     plugins: {
+       tailwindcss: {},
+       autoprefixer: {
+         overrideBrowserslist: [
+           '>0.2%', 
+           'not dead', 
+           'not op_mini all', 
+           'iOS >= 12', 
+           'Android >= 6'
+         ]
+       }
+     }
+   }
+   ```
+
+4. **TypeScript Import Fixes**
+   - Use explicit imports for React hooks
+   - Add type annotations
+   - Ensure all necessary dependencies are imported
+
+##### Specific Fixes in AigentQube Frontend
+
+###### 1. Tailwind Configuration Update
+- Added `path.join()` for absolute content path resolution
+- Explicitly imported `path` module
+- Verified content array configuration
+
+###### 2. Dependency Management
+- Cleared npm cache
+- Removed and reinstalled `node_modules`
+- Verified plugin installations:
+  ```bash
+  npm install -D @tailwindcss/forms @tailwindcss/typography
+  ```
+
+###### 3. TypeScript Configuration
+- Updated `app.tsx` with correct imports
+- Added type annotations for state and functions
+- Resolved import and type resolution errors
+
+##### Prevention Strategies
+1. Regularly update dependencies
+2. Use consistent import patterns
+3. Maintain clean dependency management
+4. Use TypeScript strict mode
+5. Implement comprehensive error logging
+
+##### Debugging Checklist
+- [ ] Verify Tailwind configuration paths
+- [ ] Check PostCSS plugins
+- [ ] Ensure all dependencies are installed
+- [ ] Validate TypeScript imports and types
+- [ ] Clear build cache if persistent issues occur
+
+### Recommended Tools
+- `npm-check-updates`: For managing dependency updates
+- `typescript-eslint`: For robust TypeScript error checking
+- Browser DevTools: For detailed error tracing
+
+### Performance Optimization
+- Use code splitting
+- Implement lazy loading
+- Minimize bundle size
+- Use production build for deployment
+
 ## Troubleshooting Common Setup Issues
 
 ### Module Resolution Challenges
@@ -417,214 +733,126 @@ useEffect(() => {
 - Write comprehensive comments
 - Maintain consistent code formatting
 
-## Component Prop and Module Import Troubleshooting
+## Technical Challenges and Resolutions
 
-### Common TypeScript and Module Resolution Errors
+#### Duplicate Agent Evolution Module
+**Challenge**: Multiple instances of the AgentEvolutionPanel were appearing on the page, causing UI redundancy and potential state management issues.
 
-#### Error: Cannot find module 'package-name'
+**Resolution**:
+- Removed duplicate AgentEvolutionPanel from `app.tsx`
+- Updated `DashboardLayout` to manage a single instance of the panel
+- Ensured consistent placement in the sidebar
 
-##### Symptoms
-- Compilation fails with error: `Cannot find module 'package-name'`
-- TypeScript unable to resolve import statements
+**Code Changes**:
+```typescript
+// In DashboardLayout.tsx
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
+  children, 
+  context, 
+  onContextChange, 
+  agentId 
+}) => {
+  // Added default handler to prevent TypeScript errors
+  const handleContextChange = onContextChange || ((context: any) => {});
 
-##### Diagnostic Steps
-1. **Install Missing Package**
-   ```bash
-   npm install package-name
-   # For dev dependencies
-   npm install -D package-name
-   ```
+  return (
+    <div className="dashboard-layout">
+      <div className="sidebar">
+        <AgentEvolutionPanel 
+          context={context}
+          onContextChange={handleContextChange}
+          agentId={agentId || undefined}
+        />
+      </div>
+      {/* Rest of the layout */}
+    </div>
+  );
+};
+```
 
-2. **Verify Package Installation**
-   - Check `package.json` to confirm package is listed
-   - Verify `node_modules` directory contains the package
+#### TypeScript Prop Type Incompatibility
+**Challenge**: TypeScript type errors with optional props, specifically with `agentId` and `onContextChange`.
 
-3. **TypeScript Configuration**
-   Update `tsconfig.json` to include:
-   ```json
-   {
-     "compilerOptions": {
-       "moduleResolution": "node",
-       "esModuleInterop": true
-     }
-   }
-   ```
+**Specific Errors**:
+1. `Type 'string | null' is not assignable to type 'string | undefined'`
+2. `Type '((context: any) => void) | undefined' is not assignable to type '(context: any) => void'`
 
-#### Error: Type Mismatch in Component Props
+**Resolution**:
+- Used optional chaining and nullish coalescing
+- Implemented a default no-op function for `onContextChange`
+- Explicitly handled `null` and `undefined` cases
 
-##### Symptoms
-- TypeScript errors about prop type incompatibility
-- Components not accepting expected props
+**Code Example**:
+```typescript
+// Handling potentially null agentId
+agentId={agentId || undefined}
 
-##### Resolution Strategies
-1. **Define Comprehensive Interface**
-   ```typescript
-   export interface ComponentProps {
-     // Make props optional with '?'
-     optionalProp?: string;
-     // Provide default types
-     requiredProp: string | null;
-   }
-   ```
+// Providing a default function to prevent type errors
+const handleContextChange = onContextChange || ((context: any) => {});
+```
 
-2. **Use Optional Chaining and Nullish Coalescing**
-   ```typescript
-   const Component: React.FC<ComponentProps> = ({ 
-     optionalProp, 
-     requiredProp 
-   }) => {
-     // Safe prop handling
-     const displayValue = optionalProp ?? 'Default Value';
-     const handleClick = () => requiredProp?.doSomething();
-   }
-   ```
+#### Domain Specialization Refinement
+**Challenge**: Initial domain specialization felt too technical and impersonal.
 
-3. **Prop Type Flexibility**
-   ```typescript
-   interface Props {
-     // Allow multiple types
-     value: string | number | null;
-     // Optional callback with flexible signature
-     onChange?: (value: any) => void;
-   }
-   ```
+**Resolution**:
+- Renamed domains to be more intuitive
+  - "Healthcare Analyst" → "Crypto Analyst"
+  - "Legal Assistant" → "Agentic AI Advisor"
+- Rewrote recommendation prompts to be more conversational
+- Added user-friendly, context-specific action descriptions
 
-#### Best Practices
-- Always define explicit interfaces for component props
-- Use optional chaining (`?.`) and nullish coalescing (`??`)
-- Provide sensible default values
-- Use type guards for runtime type checking
+**Example of Prompt Transformation**:
+```typescript
+// Before
+action: 'Optimize Investment Portfolio'
+prompt: 'Analyze current investment portfolio...'
 
-#### Debugging Checklist
-- [ ] Verify package installation
-- [ ] Check TypeScript configuration
-- [ ] Review component prop interfaces
-- [ ] Use optional and nullable types
-- [ ] Implement proper type handling
+// After
+action: 'Help Me Optimize My Investment Portfolio'
+prompt: 'I want to improve my investment strategy. Can you help me analyze my current portfolio...'
+```
 
-### Performance and Maintenance Tips
-- Keep prop interfaces minimal and focused
-- Avoid `any` type when possible
-- Use TypeScript's strict mode
-- Regularly update type definitions
+#### Context Management Improvements
+**Challenge**: Inconsistent context handling across components.
 
-### Recommended Tools
-- `typescript-eslint`
-- Visual Studio Code IntelliSense
-- React DevTools
+**Resolution**:
+- Standardized `AgentContext` interface
+- Implemented consistent context transformation logic
+- Added more robust state management
 
-## Tailwind CSS and PostCSS Configuration Troubleshooting
+**Interface Definition**:
+```typescript
+interface AgentContext {
+  baseState: 'Generic AI' | 'Personalized AI';
+  specializedState: string;
+  iQubeDetails?: IQubeDetails;
+}
+```
 
-### Common Build Errors and Solutions
+### Lessons Learned
+- Always use TypeScript's strict mode to catch type-related issues early
+- Design UI components with flexibility and reusability in mind
+- Focus on user-centric language and interactions
+- Implement comprehensive error handling and default states
 
-#### Error: Module Build Failure with Tailwind Configuration
+### Performance Considerations
+- Minimal overhead from context transformation
+- Lazy loading of domain-specific capabilities
+- Efficient state management through React hooks
 
-##### Symptoms
-- Compilation fails with an error like:
-  ```
-  Error: ENOENT: no such file or directory, open '/var/folders/qq/bsrtwvtx4ngg2wktq57s5xyw0000gn/T/node-jiti/aigentqube-dashboard-tailwind.config.js.e837b8f6.js'
-  ```
-- TypeScript import errors
-- Inability to resolve module paths
+**Debugging Tips**:
+- Use console logging during development
+- Leverage TypeScript's type checking
+- Implement comprehensive error boundaries
+- Use React DevTools for state inspection
 
-##### Root Causes
-1. Incorrect Tailwind configuration path resolution
-2. Stale or corrupted node_modules
-3. Incompatible dependency versions
-4. Incorrect import statements
+**Known Limitations**:
+- Current implementation supports four specialized domains
+- Context transformation is primarily frontend-driven
+- Requires backend support for full feature implementation
 
-##### Diagnostic Steps
-1. **Verify Tailwind Configuration**
-   ```javascript
-   // tailwind.config.js
-   const path = require('path');
-
-   module.exports = {
-     content: [
-       // Use absolute path for content files
-       path.join(__dirname, './src/**/*.{js,jsx,ts,tsx}')
-     ],
-     // ... other configurations
-   }
-   ```
-
-2. **Dependency Cleanup**
-   ```bash
-   # Clear npm cache
-   npm cache clean --force
-
-   # Remove node_modules and package-lock.json
-   rm -rf node_modules package-lock.json
-
-   # Reinstall dependencies
-   npm install
-   ```
-
-3. **PostCSS Configuration Check**
-   Ensure `postcss.config.js` includes necessary plugins:
-   ```javascript
-   module.exports = {
-     plugins: {
-       tailwindcss: {},
-       autoprefixer: {
-         overrideBrowserslist: [
-           '>0.2%', 
-           'not dead', 
-           'not op_mini all', 
-           'iOS >= 12', 
-           'Android >= 6'
-         ]
-       }
-     }
-   }
-   ```
-
-4. **TypeScript Import Fixes**
-   - Use explicit imports for React hooks
-   - Add type annotations
-   - Ensure all necessary dependencies are imported
-
-##### Specific Fixes in AigentQube Frontend
-
-###### 1. Tailwind Configuration Update
-- Added `path.join()` for absolute content path resolution
-- Explicitly imported `path` module
-- Verified content array configuration
-
-###### 2. Dependency Management
-- Cleared npm cache
-- Removed and reinstalled `node_modules`
-- Verified plugin installations:
-  ```bash
-  npm install -D @tailwindcss/forms @tailwindcss/typography
-  ```
-
-###### 3. TypeScript Configuration
-- Updated `app.tsx` with correct imports
-- Added type annotations for state and functions
-- Resolved import and type resolution errors
-
-##### Prevention Strategies
-1. Regularly update dependencies
-2. Use consistent import patterns
-3. Maintain clean dependency management
-4. Use TypeScript strict mode
-5. Implement comprehensive error logging
-
-##### Debugging Checklist
-- [ ] Verify Tailwind configuration paths
-- [ ] Check PostCSS plugins
-- [ ] Ensure all dependencies are installed
-- [ ] Validate TypeScript imports and types
-- [ ] Clear build cache if persistent issues occur
-
-### Recommended Tools
-- `npm-check-updates`: For managing dependency updates
-- `typescript-eslint`: For robust TypeScript error checking
-- Browser DevTools: For detailed error tracing
-
-### Performance Optimization
-- Use code splitting
-- Implement lazy loading
-- Minimize bundle size
-- Use production build for deployment
+**Recommended Next Steps**:
+- Implement more granular domain specializations
+- Develop backend logic for context-aware interactions
+- Create more sophisticated prompt generation mechanisms
+- Enhance multi-agent collaboration features

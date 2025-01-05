@@ -1,78 +1,256 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import axios from 'axios';
 
-export interface AgentEvolutionPanelProps {
-  context?: any;
-  onContextChange?: (context: any) => void;
-  selectedAgent?: string | null;
-  onAgentSelect?: (agentId: string | null) => void;
+interface AgentEvolutionPanelProps {
+  context: any;
+  onContextChange: (context: any) => void;
+  agentId?: string;
+}
+
+interface IQubeDetails {
+  tokenId: string;
+  name: string;
+  domain: string;
 }
 
 const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({ 
-  context = null, 
-  onContextChange = () => {}, 
-  selectedAgent, 
-  onAgentSelect 
+  context, 
+  onContextChange, 
+  agentId 
 }) => {
   const [baseState, setBaseState] = useState('Generic AI');
   const [specializedState, setSpecializedState] = useState('');
+  const [iQubeTokenId, setIQubeTokenId] = useState('');
+  const [iQubeDetails, setIQubeDetails] = useState<IQubeDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [metaQubeData, setMetaQubeData] = useState<any>(null);
+  const [blakQubeDecrypted, setBlakQubeDecrypted] = useState<any>(null);
 
   const agentDomains = [
     { name: 'Financial Advisor', icon: '💰' },
     { name: 'Tech Consultant', icon: '💻' },
-    { name: 'Healthcare Analyst', icon: '🏥' },
-    { name: 'Legal Assistant', icon: '⚖️' }
+    { name: 'Crypto Analyst', icon: '₿' },
+    { name: 'Agentic AI Advisor', icon: '🤖' }
   ];
 
   const handleDomainSelection = (domain: string) => {
     setSpecializedState(domain);
     onContextChange({
       baseState,
-      specializedState: domain
+      specializedState: domain,
+      iQubeDetails
     });
   };
 
-  const handleBaseStateChange = (newState: string) => {
-    setBaseState(newState);
-    onContextChange({
-      ...context,
-      baseState: newState
-    });
-  };
+  const fetchIQubeDetails = useCallback(async () => {
+    if (!iQubeTokenId) {
+      setError('Please enter a valid iQube Token ID');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log(`Fetching iQube details for Token ID: ${iQubeTokenId}`);
+      
+      const response = await axios.get(`http://localhost:8000/iqube/${iQubeTokenId}`, {
+        // Add timeout and error handling
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('iQube Details Response:', response.data);
+
+      // Validate response
+      if (!response.data) {
+        throw new Error('No data received from server');
+      }
+
+      const details: IQubeDetails = {
+        tokenId: response.data.tokenId || iQubeTokenId,
+        name: response.data.name || 'Unnamed iQube',
+        domain: response.data.domain || ''
+      };
+      
+      setIQubeDetails(details);
+      
+      // Automatically suggest domain based on iQube
+      const suggestedDomain = details.domain || '';
+      if (suggestedDomain && agentDomains.some(d => d.name === suggestedDomain)) {
+        setSpecializedState(suggestedDomain);
+      }
+
+      // Share iQube with agent
+      if (agentId) {
+        try {
+          await axios.post('http://localhost:8000/agent/share-iqube', {
+            agent_id: agentId,
+            iqube_token_id: iQubeTokenId
+          });
+        } catch (shareErr) {
+          console.error('Failed to share iQube:', shareErr);
+          // Non-critical error, so we'll continue
+        }
+      }
+
+      onContextChange({
+        baseState: 'Personalized AI',
+        specializedState: suggestedDomain,
+        iQubeDetails: details
+      });
+    } catch (err) {
+      // More detailed error logging
+      console.error('Full error details:', err);
+      
+      // Check if it's an axios error with response
+      if (axios.isAxiosError(err)) {
+        if (err.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          console.error('Error response data:', err.response.data);
+          console.error('Error response status:', err.response.status);
+          console.error('Error response headers:', err.response.headers);
+          
+          setError(`Server Error: ${err.response.status} - ${err.response.data?.message || 'Unknown error'}`);
+        } else if (err.request) {
+          // The request was made but no response was received
+          console.error('No response received:', err.request);
+          setError('No response from server. Please check your network connection.');
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          console.error('Error setting up request:', err.message);
+          setError(`Request setup error: ${err.message}`);
+        }
+      } else {
+        // Handle non-axios errors
+        console.error('Unexpected error:', err);
+        setError('Failed to fetch iQube details. An unexpected error occurred.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [iQubeTokenId, agentId, onContextChange, agentDomains]);
+
+  const viewMetaQube = useCallback(async () => {
+    if (!iQubeTokenId) {
+      setError('Please enter a valid iQube Token ID first');
+      return;
+    }
+
+    try {
+      const response = await axios.get(`http://localhost:8000/metaqube/${iQubeTokenId}`);
+      setMetaQubeData(response.data);
+    } catch (err) {
+      setError('Failed to retrieve MetaQube data');
+      console.error(err);
+    }
+  }, [iQubeTokenId]);
+
+  const decryptBlakQube = useCallback(async () => {
+    if (!iQubeTokenId) {
+      setError('Please enter a valid iQube Token ID first');
+      return;
+    }
+
+    try {
+      const response = await axios.post(`http://localhost:8000/blakqube/decrypt`, {
+        token_id: iQubeTokenId
+      });
+      setBlakQubeDecrypted(response.data);
+    } catch (err) {
+      setError('Failed to decrypt BlakQube');
+      console.error(err);
+    }
+  }, [iQubeTokenId]);
 
   return (
     <div className="agent-evolution-panel bg-gray-800 rounded-lg p-6 space-y-4">
-      <h2 className="text-xl font-bold mb-4">Agent Evolution</h2>
+      <h2 className="text-xl font-semibold mb-4">Agent Evolution</h2>
       
-      {selectedAgent ? (
-        <div>
-          <p>Selected Agent: {selectedAgent}</p>
-          <button 
-            onClick={() => onAgentSelect?.(null)}
-            className="btn btn-secondary mt-2"
-          >
-            Deselect Agent
-          </button>
-        </div>
-      ) : (
-        <p>No agent selected. Choose an agent to evolve.</p>
-      )}
-
+      {/* Base State */}
       <div className="base-state">
         <h3 className="font-medium mb-2">Base State</h3>
         <div className="bg-gray-700 rounded p-3">
-          <select 
-            value={baseState}
-            onChange={(e) => handleBaseStateChange(e.target.value)}
-            className="w-full bg-gray-600 text-white rounded p-2"
-          >
-            <option value="Generic AI">Generic AI</option>
-            <option value="Analytical">Analytical</option>
-            <option value="Creative">Creative</option>
-            <option value="Logical">Logical</option>
-          </select>
+          <span className="text-gray-300">{baseState}</span>
         </div>
       </div>
 
+      {/* iQube Sharing */}
+      <div className="iqube-sharing">
+        <h3 className="font-medium mb-2">Share iQube</h3>
+        <div className="flex space-x-2">
+          <input 
+            type="text"
+            value={iQubeTokenId}
+            onChange={(e) => setIQubeTokenId(e.target.value)}
+            placeholder="Enter iQube Token ID"
+            className="flex-grow bg-gray-700 text-white p-2 rounded"
+          />
+          <button 
+            onClick={fetchIQubeDetails}
+            disabled={isLoading}
+            className="btn btn-primary px-4 py-2 rounded"
+          >
+            {isLoading ? 'Sharing...' : 'Share iQube'}
+          </button>
+        </div>
+
+        {/* Additional iQube Action Buttons */}
+        <div className="flex space-x-2 mt-2">
+          <button 
+            onClick={viewMetaQube}
+            className="btn btn-secondary flex-1 px-4 py-2 rounded"
+            disabled={!iQubeTokenId}
+          >
+            View MetaQube
+          </button>
+          <button 
+            onClick={decryptBlakQube}
+            className="btn btn-secondary flex-1 px-4 py-2 rounded"
+            disabled={!iQubeTokenId}
+          >
+            Decrypt BlakQube
+          </button>
+        </div>
+
+        {error && (
+          <div className="text-red-500 mt-2">
+            {error}
+          </div>
+        )}
+        {iQubeDetails && (
+          <div className="mt-2 bg-green-900 p-2 rounded">
+            <p>iQube: {iQubeDetails.name}</p>
+            <p>Token ID: {iQubeDetails.tokenId}</p>
+          </div>
+        )}
+      </div>
+
+      {/* MetaQube and BlakQube Data Display */}
+      {metaQubeData && (
+        <div className="metaqube-data mt-4 bg-blue-900 p-3 rounded">
+          <h3 className="font-bold mb-2">MetaQube Data</h3>
+          <pre className="text-xs overflow-auto">
+            {JSON.stringify(metaQubeData, null, 2)}
+          </pre>
+        </div>
+      )}
+
+      {blakQubeDecrypted && (
+        <div className="blakqube-data mt-4 bg-purple-900 p-3 rounded">
+          <h3 className="font-bold mb-2">BlakQube Decrypted</h3>
+          <pre className="text-xs overflow-auto">
+            {JSON.stringify(blakQubeDecrypted, null, 2)}
+          </pre>
+        </div>
+      )}
+
+      {/* Domain Specialization */}
       <div className="payload-addition">
         <h3 className="font-medium mb-2">Specialize Agent Domain</h3>
         <div className="grid grid-cols-2 gap-2">
@@ -95,12 +273,16 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
         </div>
       </div>
 
+      {/* Specialized State */}
       {specializedState && (
         <div className="specialized-state mt-4">
           <h3 className="font-medium mb-2">Current Specialization</h3>
           <div className="bg-green-800 rounded p-3 flex items-center space-x-2">
             <span>🧠</span>
-            <span>{specializedState} Mode Activated</span>
+            <span>
+              {specializedState} 
+              {iQubeDetails ? ` (iQube: ${iQubeDetails.name})` : ''} Mode Activated
+            </span>
           </div>
         </div>
       )}
