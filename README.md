@@ -448,5 +448,102 @@ source venv/bin/activate
   - Black
   - MyPy
 
-**Version**: 0.1.0
-**Last Updated**: 2025-01-03
+## AigentQube: Dynamic Context Intelligence
+
+## Project Overview
+AigentQube is an advanced AI-powered dashboard for intelligent context management and agent evolution.
+
+## Recent Major Updates
+- **Agent Evolution Enhancements**:
+  - Added interactive 'Generic AI' reset button
+  - Improved state management for specialized domains
+- **IQube Operations**:
+  - Integrated dynamic button states
+  - Enhanced error handling
+  - Improved user interaction flow
+- **Dashboard Layout**:
+  - Refined wallet connection and agent registration
+  - Consistent UI/UX across components
+
+## Prerequisites
+- Node.js (v16.0.0 or later)
+- npm (v8.0.0 or later)
+- Python 3.9+
+- Docker (optional, for containerized deployment)
+
+## Key Features
+- Dynamic Agent Context Management
+- Intelligent State Transformation
+- Flexible iQube Operations
+- Secure Wallet Integration
+
+## Frontend Setup
+
+### Installation
+1. Navigate to the frontend directory:
+   ```bash
+   cd src/frontend/aigentqube-dashboard
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Running the Application
+- Development mode:
+  ```bash
+  npm start
+  ```
+- Production build:
+  ```bash
+  npm run build
+  ```
+
+## Core Components
+- **Dashboard Layout**: Central interface for agent interactions
+- **Agent Evolution Panel**: 
+  - Dynamic agent configuration
+  - Specialized domain selection
+  - Generic AI reset functionality
+- **IQube Operations**: 
+  - Advanced iQube management
+  - Dynamic button states
+  - Error handling
+- **Context Transformation**: Intelligent context processing
+
+## Environment Configuration
+- Create a `.env` file in the frontend directory with:
+  ```
+  REACT_APP_API_BASE_URL=http://localhost:8000
+  REACT_APP_WALLET_PROVIDER=your_wallet_provider
+  ```
+
+## Workflow
+1. Connect Wallet
+2. Select Specialized Domain
+3. Perform iQube Operations
+4. Reset to Generic AI if needed
+
+## Troubleshooting
+- Ensure all dependencies are correctly installed
+- Check network connectivity for API calls
+- Verify wallet connection settings
+- Use 'Generic AI' reset button to restore neutral state
+
+## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+Proprietary - All Rights Reserved
+
+## Contact
+AigentQube Development Team
+support@aigentqube.com
+
+**Version**: 0.2.0
+**Last Updated**: 2025-01-05

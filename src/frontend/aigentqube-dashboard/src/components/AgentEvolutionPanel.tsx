@@ -168,67 +168,35 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
     }
   }, [iQubeTokenId]);
 
+  const handleResetBaseState = () => {
+    setSpecializedState('');
+    setBaseState('Generic AI');
+    onContextChange({
+      baseState: 'Generic AI',
+      specializedState: '',
+      iQubeDetails: null
+    });
+  };
+
   return (
     <div className="agent-evolution-panel bg-gray-800 rounded-lg p-6 space-y-4">
       <h2 className="text-xl font-semibold mb-4">Agent Evolution</h2>
       
-      {/* Base State */}
-      <div className="base-state">
-        <h3 className="font-medium mb-2">Base State</h3>
-        <div className="bg-gray-700 rounded p-3">
-          <span className="text-gray-300">{baseState}</span>
-        </div>
-      </div>
-
-      {/* iQube Sharing */}
-      <div className="iqube-sharing">
-        <h3 className="font-medium mb-2">Share iQube</h3>
-        <div className="flex space-x-2">
-          <input 
-            type="text"
-            value={iQubeTokenId}
-            onChange={(e) => setIQubeTokenId(e.target.value)}
-            placeholder="Enter iQube Token ID"
-            className="flex-grow bg-gray-700 text-white p-2 rounded"
-          />
-          <button 
-            onClick={fetchIQubeDetails}
-            disabled={isLoading}
-            className="btn btn-primary px-4 py-2 rounded"
-          >
-            {isLoading ? 'Sharing...' : 'Share iQube'}
-          </button>
-        </div>
-
-        {/* Additional iQube Action Buttons */}
-        <div className="flex space-x-2 mt-2">
-          <button 
-            onClick={viewMetaQube}
-            className="btn btn-secondary flex-1 px-4 py-2 rounded"
-            disabled={!iQubeTokenId}
-          >
-            View MetaQube
-          </button>
-          <button 
-            onClick={decryptBlakQube}
-            className="btn btn-secondary flex-1 px-4 py-2 rounded"
-            disabled={!iQubeTokenId}
-          >
-            Decrypt BlakQube
-          </button>
-        </div>
-
-        {error && (
-          <div className="text-red-500 mt-2">
-            {error}
-          </div>
-        )}
-        {iQubeDetails && (
-          <div className="mt-2 bg-green-900 p-2 rounded">
-            <p>iQube: {iQubeDetails.name}</p>
-            <p>Token ID: {iQubeDetails.tokenId}</p>
-          </div>
-        )}
+      {/* Base State Section */}
+      <div className="base-state-section mt-4 p-3 bg-gray-800 rounded">
+        <h3 className="text-lg font-semibold mb-2">Base State</h3>
+        <button 
+          onClick={handleResetBaseState}
+          className={`
+            w-full py-2 rounded transition-all duration-300 ease-in-out
+            ${!specializedState 
+              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+              : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}
+          `}
+          disabled={!specializedState}
+        >
+          Generic AI
+        </button>
       </div>
 
       {/* MetaQube and BlakQube Data Display */}
