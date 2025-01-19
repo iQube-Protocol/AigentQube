@@ -28,10 +28,10 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
   const [blakQubeDecrypted, setBlakQubeDecrypted] = useState<any>(null);
 
   const agentDomains = [
-    { name: 'Financial Advisor', icon: '💰' },
-    { name: 'Tech Consultant', icon: '💻' },
+    { name: 'Bitcoin Advisor', icon: '💰' },
     { name: 'Crypto Analyst', icon: '₿' },
-    { name: 'Agentic AI Advisor', icon: '🤖' }
+    { name: 'Guardian Aigent', icon: '🛡️' },
+    { name: 'Agent AI Coach', icon: '🧠' }
   ];
 
   const handleDomainSelection = (domain: string) => {

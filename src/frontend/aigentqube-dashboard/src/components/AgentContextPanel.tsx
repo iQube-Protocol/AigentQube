@@ -2,34 +2,44 @@ import React from 'react';
 
 // Predefined Specialized Agent Domains
 const AGENT_DOMAINS = {
-  FINANCIAL_ADVISOR: {
-    name: 'Financial Advisor',
-    description: 'Specialized in investment strategies, financial planning, and market analysis',
-    icon: '💼',
+  BITCOIN_ADVISOR: {
+    name: 'Bitcoin Advisor',
+    description: 'Specialized in cryptocurrency investment strategies and market analysis',
+    icon: '💰',
     insights: [
       { label: 'Investment Strategy', value: 'Personalized Portfolio Optimization' },
       { label: 'Risk Assessment', value: 'Advanced Multi-Factor Analysis' },
-      { label: 'Market Trend', value: 'Real-time Predictive Modeling' }
+      { label: 'Market Trend', value: 'Real-Time Cryptocurrency Insights' }
     ]
   },
-  TECH_INNOVATION_CONSULTANT: {
-    name: 'Tech Innovation Consultant',
-    description: 'Focused on emerging technologies, startup ecosystems, and innovation strategies',
-    icon: '🚀',
+  CRYPTO_ANALYST: {
+    name: 'Crypto Analyst',
+    description: 'Deep dive into blockchain technologies and cryptocurrency ecosystems',
+    icon: '₿',
+    insights: [
+      { label: 'Blockchain Analysis', value: 'Advanced Trend Identification' },
+      { label: 'Cryptocurrency Evaluation', value: 'Comprehensive Market Research' },
+      { label: 'Technology Potential', value: 'Emerging Blockchain Innovations' }
+    ]
+  },
+  GUARDIAN_AIGENT: {
+    name: 'Guardian Aigent',
+    description: 'Specializing in cybersecurity, data sovereignty, and blockchain protection',
+    icon: '🛡️',
+    insights: [
+      { label: 'Cybersecurity', value: 'Advanced Threat Detection' },
+      { label: 'Data Protection', value: 'Comprehensive Sovereignty Strategies' },
+      { label: 'Blockchain Security', value: 'Robust Encryption Techniques' }
+    ]
+  },
+  AGENT_AI_COACH: {
+    name: 'Agent AI Coach',
+    description: 'Focused on AI-driven innovation strategies and startup ecosystems',
+    icon: '🧠',
     insights: [
       { label: 'Tech Trend', value: 'Blockchain & AI Convergence' },
       { label: 'Innovation Potential', value: 'High Disruptive Capacity' },
-      { label: 'Startup Ecosystem', value: 'Global Emerging Markets' }
-    ]
-  },
-  CREATIVE_CONTENT_STRATEGIST: {
-    name: 'Creative Content Strategist',
-    description: 'Specializing in content creation, audience engagement, and narrative design',
-    icon: '🎨',
-    insights: [
-      { label: 'Content Type', value: 'Adaptive Multimedia' },
-      { label: 'Audience Engagement', value: 'Personalized Storytelling' },
-      { label: 'Creative Approach', value: 'Data-Driven Narrative Design' }
+      { label: 'Strategic Guidance', value: 'AI Ecosystem Navigation' }
     ]
   }
 };

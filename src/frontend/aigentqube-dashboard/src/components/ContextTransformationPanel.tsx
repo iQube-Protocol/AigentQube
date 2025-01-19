@@ -1,4 +1,5 @@
 import React from 'react';
+import ChatInterface from './ChatInterface';
 
 interface ContextTransformationPanelProps {
   context: any;
@@ -11,6 +12,46 @@ interface DomainRecommendation {
 }
 
 const domainRecommendedActions: Record<string, DomainRecommendation[]> = {
+  'Bitcoin Advisor': [
+    {
+      action: 'Analyze Cryptocurrency Market Trends',
+      prompt: 'I want to understand the current cryptocurrency landscape. Can you provide a comprehensive analysis of recent market trends, emerging cryptocurrencies, and potential investment opportunities? What insights can you share about the crypto market?'
+    },
+    {
+      action: 'Develop Personalized Investment Strategies',
+      prompt: 'I\'m looking to invest in cryptocurrencies but need guidance. Can you help me develop a balanced and informed investment strategy? Consider my risk tolerance, financial goals, and the volatile nature of the crypto market.'
+    }
+  ],
+  'Crypto Analyst': [
+    {
+      action: 'Analyze Blockchain Technology Potential',
+      prompt: 'I\'m interested in blockchain technology beyond cryptocurrencies. Help me understand the latest blockchain innovations, their potential applications across different industries, and how they might transform existing business models.'
+    },
+    {
+      action: 'Provide Cryptocurrency Ecosystem Insights',
+      prompt: 'Give me a deep dive into the current cryptocurrency ecosystem. What are the emerging trends, technological innovations, and potential disruptive technologies in the blockchain space?'
+    }
+  ],
+  'Guardian Aigent': [
+    {
+      action: 'Assess Cybersecurity Risks',
+      prompt: 'I\'m worried about potential security risks. Can you conduct a thorough cybersecurity vulnerability assessment? Help me identify potential threats, recommend mitigation strategies, and improve our overall security posture.'
+    },
+    {
+      action: 'Protect Data Sovereignty',
+      prompt: 'I want to ensure my data is secure. Can you help me develop a comprehensive data protection strategy, including data encryption, access controls, and incident response planning?'
+    }
+  ],
+  'Agent AI Coach': [
+    {
+      action: 'Guide AI Strategy Development',
+      prompt: 'I want to create an effective AI strategy. Help me design a comprehensive strategy for developing, deploying, and managing AI agents. What are the key considerations for creating intelligent, adaptive, and ethical AI systems?'
+    },
+    {
+      action: 'Analyze Emerging AI Technologies',
+      prompt: 'I want to stay ahead of technological innovations. Can you provide a comprehensive analysis of the latest emerging AI technologies, their potential impact, adoption strategies, and how they could give me a competitive advantage.'
+    }
+  ],
   'Financial Advisor': [
     {
       action: 'Help Me Optimize My Investment Portfolio',
@@ -53,28 +94,6 @@ const domainRecommendedActions: Record<string, DomainRecommendation[]> = {
     {
       action: 'Create AI Integration Roadmap',
       prompt: 'I want to leverage AI in my organization. Help me create a strategic roadmap for AI integration. What are the most promising use cases, potential implementation challenges, required resources, and expected return on investment?'
-    }
-  ],
-  'Crypto Analyst': [
-    {
-      action: 'Analyze Crypto Market Trends',
-      prompt: 'I want to understand the current cryptocurrency landscape. Can you provide a comprehensive analysis of recent market trends, emerging cryptocurrencies, and potential investment opportunities? What insights can you share about the crypto market?'
-    },
-    {
-      action: 'Assess Blockchain Innovations',
-      prompt: 'I\'m interested in blockchain technology beyond cryptocurrencies. Help me understand the latest blockchain innovations, their potential applications across different industries, and how they might transform existing business models.'
-    },
-    {
-      action: 'Develop Crypto Investment Strategy',
-      prompt: 'I\'m looking to invest in cryptocurrencies but need guidance. Can you help me develop a balanced and informed investment strategy? Consider my risk tolerance, financial goals, and the volatile nature of the crypto market.'
-    },
-    {
-      action: 'Evaluate DeFi Opportunities',
-      prompt: 'I want to explore Decentralized Finance (DeFi). Can you help me understand the current DeFi landscape, potential risks and rewards, and how I might strategically engage with decentralized financial platforms?'
-    },
-    {
-      action: 'Understand Crypto Regulations',
-      prompt: 'I need clarity on cryptocurrency regulations. Can you help me navigate the complex regulatory environment for cryptocurrencies? What are the current legal considerations, potential future changes, and how might they impact crypto investments?'
     }
   ],
   'Agentic AI Advisor': [
@@ -160,49 +179,25 @@ const ContextTransformationPanel: React.FC<ContextTransformationPanelProps> = ({
         </div>
       </div>
 
-      {context && context.specializedState && (
-        <div className="agent-adaptation mt-6">
-          <h3 className="font-medium mb-2">Agent Adaptation</h3>
-          <div className="bg-green-900 rounded p-4 space-y-2">
-            <div className="flex items-center space-x-2">
-              <span>🧠</span>
-              <span>Switching to {context.specializedState}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span>💼</span>
-              <span>Generating Personalized Strategy</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span>📊</span>
-              <span>Analyzing Relevant Market Trends</span>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Integrated ChatInterface */}
+      <div className="aigent-chat-section mt-4 w-full">
+        <ChatInterface context={context} className="w-full" />
+      </div>
 
-      <div className="recommended-actions mt-6">
-        <h3 className="font-medium mb-2">
-          Recommended Actions 
-          {context && context.specializedState && ` for ${context.specializedState}`}
-        </h3>
-        <ul className="list-disc list-inside space-y-2 bg-gray-700 rounded p-4">
-          {recommendedActions.map((recommendation, index) => (
-            <li 
+      <div className="recommended-actions mt-4">
+        <h3 className="font-medium mb-2">Recommended Actions</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {recommendedActions.map((action, index) => (
+            <div 
               key={index} 
-              className="flex justify-between items-center"
+              className="bg-gray-700 rounded p-4 cursor-pointer hover:bg-gray-600 transition-colors"
+              onClick={() => onPromptInsert && onPromptInsert(action.prompt)}
             >
-              {recommendation.action}
-              {onPromptInsert && (
-                <button 
-                  onClick={() => onPromptInsert(recommendation.prompt)}
-                  className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors"
-                >
-                  Insert Prompt
-                </button>
-              )}
-            </li>
+              <h4 className="font-semibold mb-2">{action.action}</h4>
+              <p className="text-sm text-gray-300 line-clamp-2">{action.prompt}</p>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
     </div>
   );
