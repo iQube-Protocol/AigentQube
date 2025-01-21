@@ -1,4 +1,5 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
+import Web3 from 'web3';
 import { 
   Box, 
   Button, 
@@ -20,13 +21,19 @@ interface ContextDomain {
   confidence_score: number;
 }
 
-interface ContextManagerProps {
-  onContextUpdate: (context: ContextDomain) => void;
+export interface ContextManagerProps {
+  web3: Web3 | null;
+  account: string;
+  onContextChange?: (context: ContextDomain) => void;
 }
 
-export const ContextManager: React.FC<ContextManagerProps> = ({ onContextUpdate }) => {
+export const ContextManager: React.FC<ContextManagerProps> = ({ 
+  web3, 
+  account,
+  onContextChange 
+}) => {
   const [domains, setDomains] = useState<{[key: string]: ContextDomain}>({});
-  const [newDomain, setNewDomain] = useState<ContextDomain>({
+  const [currentContext, setCurrentContext] = useState<ContextDomain>({
     name: '',
     description: '',
     keywords: [],
@@ -61,7 +68,7 @@ export const ContextManager: React.FC<ContextManagerProps> = ({ onContextUpdate 
             duration: 2000,
             isClosable: true,
           });
-          onContextUpdate(data.context);
+          handleContextUpdate(data.context);
         }
       } catch (error) {
         toast({
@@ -87,10 +94,10 @@ export const ContextManager: React.FC<ContextManagerProps> = ({ onContextUpdate 
     return () => {
       ws.close();
     };
-  }, [onContextUpdate, toast]);
+  }, [onContextChange, toast]);
 
   const handleAddDomain = () => {
-    if (!newDomain.name) {
+    if (!currentContext.name) {
       toast({
         title: "Error",
         description: "Domain name is required",
@@ -103,7 +110,7 @@ export const ContextManager: React.FC<ContextManagerProps> = ({ onContextUpdate 
 
     const updatedDomains = {
       ...domains,
-      [newDomain.name]: newDomain
+      [currentContext.name]: currentContext
     };
 
     // Send update via WebSocket if connection is open
@@ -117,7 +124,7 @@ export const ContextManager: React.FC<ContextManagerProps> = ({ onContextUpdate 
     setDomains(updatedDomains);
     
     // Reset form
-    setNewDomain({
+    setCurrentContext({
       name: '',
       description: '',
       keywords: [],
@@ -126,11 +133,17 @@ export const ContextManager: React.FC<ContextManagerProps> = ({ onContextUpdate 
 
     toast({
       title: "Domain Added",
-      description: `Domain ${newDomain.name} added to context`,
+      description: `Domain ${currentContext.name} added to context`,
       status: "success",
       duration: 3000,
       isClosable: true,
     });
+  };
+
+  // Update context
+  const handleContextUpdate = (newContext: ContextDomain) => {
+    setCurrentContext(newContext);
+    onContextChange?.(newContext);
   };
 
   return (
@@ -143,8 +156,8 @@ export const ContextManager: React.FC<ContextManagerProps> = ({ onContextUpdate 
           <ChakraFormLabel>Domain Name</ChakraFormLabel>
           <Input 
             placeholder="Enter domain name (e.g., academic_research)"
-            value={newDomain.name}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setNewDomain({...newDomain, name: e.target.value})}
+            value={currentContext.name}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentContext({...currentContext, name: e.target.value})}
           />
         </ChakraFormControl>
 
@@ -152,8 +165,8 @@ export const ContextManager: React.FC<ContextManagerProps> = ({ onContextUpdate 
           <ChakraFormLabel>Domain Description</ChakraFormLabel>
           <Textarea 
             placeholder="Describe the domain"
-            value={newDomain.description}
-            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setNewDomain({...newDomain, description: e.target.value})}
+            value={currentContext.description}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setCurrentContext({...currentContext, description: e.target.value})}
           />
         </ChakraFormControl>
 
@@ -161,9 +174,9 @@ export const ContextManager: React.FC<ContextManagerProps> = ({ onContextUpdate 
           <ChakraFormLabel>Keywords (comma-separated)</ChakraFormLabel>
           <Input 
             placeholder="Enter keywords"
-            value={newDomain.keywords.join(', ')}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setNewDomain({
-              ...newDomain, 
+            value={currentContext.keywords.join(', ')}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentContext({
+              ...currentContext, 
               keywords: e.target.value.split(',').map((k: string) => k.trim())
             })}
           />
@@ -172,9 +185,9 @@ export const ContextManager: React.FC<ContextManagerProps> = ({ onContextUpdate 
         <ChakraFormControl>
           <ChakraFormLabel>Confidence Score</ChakraFormLabel>
           <ChakraSelect 
-            value={newDomain.confidence_score}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) => setNewDomain({
-              ...newDomain, 
+            value={currentContext.confidence_score}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => setCurrentContext({
+              ...currentContext, 
               confidence_score: parseFloat(e.target.value)
             })}
           >

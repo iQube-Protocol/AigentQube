@@ -1,18 +1,26 @@
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useState, useEffect } from 'react';
 import Web3 from 'web3';
+import { ethers } from 'ethers';
 import AgentEvolutionPanel from './AgentEvolutionPanel';
 import ContextTransformationPanel from './ContextTransformationPanel';
 import NotificationCenter from './NotificationCenter';
 import WalletConnector from './WalletConnector';
 import IQubeOperations from './IQubeOperations';
-import iQubeCreatingPanel from './iQubeCreatingPanel';
+import IQubeCreatingPanel from './iQubeCreatingPanel';
 import axios from 'axios';
+
+// Configure axios base URL and default headers
+axios.defaults.baseURL = 'http://localhost:8000';
+axios.defaults.headers.common['Content-Type'] = 'application/json';
+axios.defaults.headers.common['Accept'] = 'application/json';
 
 interface DashboardLayoutProps {
   children: ReactNode;
   context?: any;
   onContextChange?: (context: any) => void;
   agentId?: string | null;
+  orchestrationAgent?: OrchestrationAgent;
+  isAgentReady?: boolean;
 }
 
 interface IQubeOperationsProps {
@@ -22,20 +30,36 @@ interface IQubeOperationsProps {
   onMintiQube?: (iQubeId: string) => void;
 }
 
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
+
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
   children, 
   context, 
   onContextChange, 
-  agentId 
+  agentId,
+  orchestrationAgent,
+  isAgentReady
 }) => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [account, setAccount] = useState<string | null>(null);
   const [web3, setWeb3] = useState<Web3 | null>(null);
+  const [signer, setSigner] = useState<ethers.Signer | null>(null);
 
   const handleWalletConnect = async (address: string) => {
     try {
       setWalletAddress(address);
       setAccount(address);
+      
+      // Get signer when wallet is connected
+      if (window.ethereum) {
+        const provider = new ethers.providers.Web3Provider(window.ethereum as ethers.providers.ExternalProvider);
+        const signer = provider.getSigner();
+        setSigner(signer);
+      }
     } catch (error) {
       console.error('Wallet connection failed', error);
     }
@@ -68,30 +92,70 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   const registerAgent = async () => {
     try {
+      console.log('Attempting to register agent...');
       const response = await axios.post('http://localhost:8000/agent/register', {
         name: `AigentQube Agent ${Date.now()}`,
-        wallet_address: walletAddress,
-        api_keys: {
-          // Add any necessary API keys
-        }
+        version: '0.1.0',
+        blockchain_networks: ['ethereum']
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 5000  // 5 seconds timeout
       });
 
       console.log('Agent registered:', response.data);
-      // Optionally handle the registered agent (e.g., update state)
     } catch (error) {
       console.error('Agent registration failed', error);
+      
+      // More detailed error logging
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          // The request was made and the server responded with a status code
+          console.error('Error response:', error.response.data);
+          console.error('Error status:', error.response.status);
+        } else if (error.request) {
+          // The request was made but no response was received
+          console.error('No response received:', error.request);
+        } else {
+          // Something happened in setting up the request
+          console.error('Error setting up request:', error.message);
+        }
+      }
     }
   };
 
   const registerIQube = async () => {
     try {
-      const response = await axios.post('/api/register-iqube', { 
-        walletAddress: walletAddress 
+      console.log('Attempting to register iQube...');
+      const response = await axios.post('http://localhost:8000/iqube/register', { 
+        walletAddress: walletAddress,
+        timestamp: Date.now()
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 5000  // 5 seconds timeout
       });
       
       console.log('iQube registered:', response.data);
     } catch (error) {
       console.error('iQube registration failed', error);
+      
+      // More detailed error logging
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          // The request was made and the server responded with a status code
+          console.error('Error response:', error.response.data);
+          console.error('Error status:', error.response.status);
+        } else if (error.request) {
+          // The request was made but no response was received
+          console.error('No response received:', error.request);
+        } else {
+          // Something happened in setting up the request
+          console.error('Error setting up request:', error.message);
+        }
+      }
     }
   };
 
@@ -128,6 +192,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             context={context} 
             onContextChange={handleContextChange} 
             agentId={agentId || undefined}
+            orchestrationAgent={orchestrationAgent}
+            isAgentReady={isAgentReady}
           />
           
           <IQubeOperations 
@@ -135,10 +201,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             onDecryptBlakQube={(iQubeId: string) => console.log(`Decrypt BlakQube: ${iQubeId}`)}
             onShareiQube={(iQubeId: string) => console.log(`Share iQube: ${iQubeId}`)}
             onMintiQube={(iQubeId: string) => console.log(`Mint iQube: ${iQubeId}`)}
+            signer={signer || undefined}
+            context={context}
+            onContextChange={handleContextChange}
+            agentId={agentId || undefined}
+            orchestrationAgent={orchestrationAgent}
+            isAgentReady={isAgentReady}
           />
 
-          {web3 && account && (
-            <iQubeCreatingPanel 
+          {web3 && account && signer && (
+            <IQubeCreatingPanel 
               web3={web3} 
               account={account} 
             />
@@ -146,7 +218,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         </div>
         
         <div className="col-span-8">
-          <ContextTransformationPanel context={context} />
+          <ContextTransformationPanel 
+            context={context} 
+            orchestrationAgent={orchestrationAgent}
+            isAgentReady={isAgentReady}
+          />
 
           {/* Wallet and Register Buttons Section */}
           <div className="flex justify-center items-center mt-4 p-4 bg-gray-800 rounded-lg space-x-4">

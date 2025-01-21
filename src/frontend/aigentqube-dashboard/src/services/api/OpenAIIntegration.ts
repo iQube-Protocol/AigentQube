@@ -10,52 +10,75 @@ interface OpenAIMessage {
 export class OpenAIIntegration implements APIIntegration {
   public readonly id: string = 'openai';
   public readonly name: string = 'OpenAI';
-  public readonly description: string = 'OpenAI API integration for natural language processing';
+  public readonly description: string = 'OpenAI API integration for blockchain and AI interactions';
   public readonly config: APIConfig;
   public status: ServiceStatus = ServiceStatus.INITIALIZING;
   private client: OpenAI | null = null;
   private conversationHistory: OpenAIMessage[] = [];
+  private initializationPromise: Promise<void> | null = null;
+
+  // Enhanced configuration
   private readonly MAX_RETRIES = 3;
   private readonly RETRY_DELAY = 1000; // 1 second
   private readonly MAX_HISTORY_LENGTH = 10;
-  private readonly SYSTEM_PROMPT = `You are an AI assistant integrated with a blockchain application. 
-Your role is to help users interact with the blockchain, create and manage digital assets, and understand complex blockchain concepts.
-- Always provide clear, concise responses
-- When handling blockchain operations, explain the process and any risks involved
-- If you encounter an error, explain what went wrong and suggest next steps
-- Keep responses focused on the current context and user's needs`;
-  private initializationPromise: Promise<void> | null = null;
+  private readonly DEFAULT_MODEL = 'gpt-4';
+
+  // Comprehensive system prompts
+  private readonly SYSTEM_PROMPTS: Record<string, string> = {
+    'default': `You are an advanced AI assistant integrated with a blockchain application. 
+Your core mission is to provide intelligent, context-aware support for blockchain and digital asset interactions.
+
+Key Operational Guidelines:
+- Deliver precise, actionable insights
+- Explain complex blockchain concepts clearly
+- Prioritize user safety and understanding
+- Provide transparent, ethical guidance
+- Adapt communication to user's technical expertise`,
+    
+    'crypto_analyst': `You are a specialized Crypto Analyst AI, focused on delivering sophisticated blockchain and cryptocurrency insights.
+
+Primary Functions:
+- Conduct in-depth cryptocurrency market analysis
+- Provide strategic investment recommendations
+- Explain blockchain technology nuances
+- Assess risk-reward scenarios
+- Offer data-driven market predictions`
+  };
 
   constructor(config: APIConfig) {
-    this.config = config;
-    // Initialize conversation with system prompt
-    this.conversationHistory.push({
-      role: 'system',
-      content: this.SYSTEM_PROMPT
-    });
+    // Use environment variable for API key if not provided
+    const apiKey = config.apiKey || process.env.REACT_APP_OPENAI_API_KEY;
+    
+    if (!apiKey) {
+      console.error('[OpenAI] No API key found');
+      throw new Error('OpenAI API key is required');
+    }
+
+    // Deep clone configuration to prevent external mutations
+    this.config = { 
+      ...config, 
+      apiKey,
+      timeout: config.timeout || 30000,
+      retryAttempts: config.retryAttempts || 3
+    };
+    
+    // Secure initialization of conversation history
+    this.resetConversationHistory();
   }
 
-  private delay(ms: number): Promise<void> {
+  private resetConversationHistory(domain: keyof typeof this.SYSTEM_PROMPTS = 'default'): void {
+    this.conversationHistory = [{
+      role: 'system',
+      content: this.SYSTEM_PROMPTS[domain]
+    }];
+  }
+
+  private async delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  private async retryOperation<T>(
-    operation: () => Promise<T>,
-    retries: number = this.MAX_RETRIES
-  ): Promise<T> {
-    for (let i = 0; i < retries; i++) {
-      try {
-        return await operation();
-      } catch (error) {
-        if (i === retries - 1) throw error;
-        await this.delay(this.RETRY_DELAY * Math.pow(2, i));
-      }
-    }
-    throw new Error('Operation failed after maximum retries');
-  }
-
-  async initialize(): Promise<void> {
-    // If already initializing, return the existing promise
+  public async initialize(domain: keyof typeof this.SYSTEM_PROMPTS = 'default'): Promise<void> {
+    // Prevent multiple simultaneous initialization attempts
     if (this.initializationPromise) {
       return this.initializationPromise;
     }
@@ -67,40 +90,65 @@ Your role is to help users interact with the blockchain, create and manage digit
 
     this.initializationPromise = (async () => {
       try {
-        console.log('Initializing OpenAI integration...');
-        const apiKey = this.config.apiKey;
+        console.log('[OpenAI] Starting initialization...');
         
-        if (!apiKey) {
-          throw new Error('OpenAI API key not provided');
+        // Validate API key
+        if (!this.config.apiKey) {
+          const envApiKey = process.env.REACT_APP_OPENAI_API_KEY;
+          if (!envApiKey) {
+            throw new Error('Missing OpenAI API Key');
+          }
+          this.config.apiKey = envApiKey;
         }
 
-        console.log('API Key type:', apiKey.startsWith('sk-proj-') ? 'Project-scoped' : 'Standard');
-        
-        // Create OpenAI client with browser safety flag
+        // Detailed API key logging (without exposing full key)
+        console.log(`[OpenAI] API Key Type: ${this.config.apiKey?.startsWith('sk-') ? 'Project-scoped' : 'Standard'}`);
+
+        // Create OpenAI client with comprehensive configuration
         this.client = new OpenAI({
-          apiKey: apiKey,
-          dangerouslyAllowBrowser: true // Enable browser usage
+          apiKey: this.config.apiKey,
+          dangerouslyAllowBrowser: true,
+          timeout: this.config.timeout,
         });
 
-        // Single validation attempt
-        const isValid = await this.validate();
-        if (!isValid) {
-          throw new Error('OpenAI API key validation failed');
+        // Reset conversation history
+        this.resetConversationHistory(domain);
+
+        // Validate API key with retry mechanism
+        let validationAttempts = 0;
+        while (validationAttempts < this.MAX_RETRIES) {
+          try {
+            const isValid = await this.validate();
+            if (isValid) {
+              this.status = ServiceStatus.READY;
+              console.log('[OpenAI] Initialization successful');
+              return;
+            }
+            validationAttempts++;
+            await this.delay(this.RETRY_DELAY * Math.pow(2, validationAttempts));
+          } catch (validationError) {
+            console.warn(`[OpenAI] Validation attempt ${validationAttempts + 1} failed`);
+            if (validationAttempts === this.MAX_RETRIES - 1) {
+              throw validationError;
+            }
+          }
         }
 
-        this.status = ServiceStatus.READY;
-        console.log('OpenAI integration initialized successfully');
+        throw new Error('Failed to validate OpenAI API key after maximum attempts');
       } catch (error: any) {
-        console.error('Error initializing OpenAI client:', error);
         this.status = ServiceStatus.ERROR;
+        console.error('[OpenAI] Initialization Error:', error);
+
+        // Detailed error handling
         if (error.response?.status === 401) {
-          throw new Error('Invalid OpenAI API key - please check your API key configuration');
+          throw new Error('Invalid OpenAI API key - please verify your credentials');
         } else if (error.response?.status === 429) {
           throw new Error('OpenAI API rate limit exceeded');
         } else {
-          throw new Error(error.message || 'Failed to initialize OpenAI integration');
+          throw error;
         }
       } finally {
+        // Reset initialization promise
         this.initializationPromise = null;
       }
     })();
@@ -108,122 +156,215 @@ Your role is to help users interact with the blockchain, create and manage digit
     return this.initializationPromise;
   }
 
-  async validate(): Promise<boolean> {
-    if (!this.client) {
-      return false;
-    }
-
+  public async validate(): Promise<boolean> {
     try {
-      console.log('Validating OpenAI API key...');
-      // Single API call to validate
+      if (!this.client) {
+        throw new Error('OpenAI client not initialized');
+      }
+
+      // Comprehensive validation
       const response = await this.client.models.list();
-      console.log('API validation successful:', response.data.length, 'models available');
-      return response.data.length > 0;
+      const availableModels = response.data.map(model => model.id);
+      
+      console.log('[OpenAI] Available Models:', availableModels);
+      
+      // Ensure default model is available
+      const isDefaultModelAvailable = availableModels.includes(this.DEFAULT_MODEL);
+      
+      this.status = isDefaultModelAvailable 
+        ? ServiceStatus.READY 
+        : ServiceStatus.ERROR;
+
+      return this.status === ServiceStatus.READY;
     } catch (error: any) {
-      console.error('OpenAI API validation failed:', error);
+      console.error('[OpenAI] Validation Error:', error);
+      
+      // Detailed error logging
       if (error.response) {
-        console.error('Response status:', error.response.status);
-        console.error('Response data:', error.response.data);
+        console.error('Response Status:', error.response.status);
+        console.error('Response Data:', error.response.data);
       }
+      
+      this.status = ServiceStatus.ERROR;
       return false;
     }
   }
 
-  private trimConversationHistory() {
-    if (this.conversationHistory.length > this.MAX_HISTORY_LENGTH) {
-      // Keep system prompt and last messages
-      const systemPrompt = this.conversationHistory[0];
-      const recentMessages = this.conversationHistory.slice(-this.MAX_HISTORY_LENGTH + 1);
-      this.conversationHistory = [systemPrompt, ...recentMessages];
-    }
-  }
-
-  private async processMessage(message: string, context?: any): Promise<string> {
-    if (!this.client) {
-      throw new Error('OpenAI client not initialized');
-    }
-
+  public async execute(params: any): Promise<APIResponse> {
+    console.log('[OpenAI] Execute method called with params:', JSON.stringify(params, null, 2));
+    
     try {
-      // Add context to the message if provided
-      const userMessage = context 
-        ? `[Context: ${JSON.stringify(context)}]\n${message}`
-        : message;
+      // Validate input with detailed logging
+      const message = params.message || params.input;
+      console.log('[OpenAI] Message received:', message);
+      
+      if (!message) {
+        console.warn('[OpenAI] No message or input provided');
+        return {
+          success: false,
+          error: 'Invalid input: message or input is required',
+          metadata: { 
+            timestamp: new Date(),
+            receivedParams: Object.keys(params)
+          }
+        };
+      }
 
-      // Add user message to history
-      this.conversationHistory.push({
-        role: 'user',
-        content: userMessage,
+      // Diagnostic logging of current service status
+      console.log('[OpenAI] Current Service Status:', {
+        status: this.status,
+        clientInitialized: !!this.client,
+        apiKeyPresent: !!this.config.apiKey
       });
 
-      // Trim history if needed
-      this.trimConversationHistory();
+      // Determine domain
+      const domain = params.domain || 'default';
+      console.log('[OpenAI] Using domain:', domain);
 
-      // Get completion from OpenAI
-      const completion = await this.retryOperation(async () => {
-        return await this.client!.chat.completions.create({
-          model: 'gpt-4',
-          messages: this.conversationHistory,
-          temperature: 0.7,
-          max_tokens: 500,
-          presence_penalty: 0.6,
-          frequency_penalty: 0.2,
-        });
-      });
+      // Process message with detailed error handling
+      try {
+        const response = await this.processMessage(message, domain);
+        console.log('[OpenAI] Response generated successfully');
 
-      // Add assistant response to history
-      const response = completion.choices[0]?.message?.content || '';
-      if (response) {
-        this.conversationHistory.push({
-          role: 'assistant',
-          content: response,
-        });
+        return {
+          success: true,
+          data: response,
+          metadata: { 
+            domain, 
+            timestamp: new Date(),
+            conversationLength: this.conversationHistory.length 
+          }
+        };
+      } catch (processError) {
+        console.error('[OpenAI] Message processing error:', processError);
+        return {
+          success: false,
+          error: processError instanceof Error 
+            ? processError.message 
+            : 'Unknown message processing error',
+          metadata: { 
+            timestamp: new Date(),
+            domain,
+            errorDetails: processError
+          }
+        };
       }
-
-      return response;
     } catch (error: any) {
-      console.error('Error processing message:', error);
-      throw error;
-    }
-  }
-
-  async execute(params: { message: string, context?: any }): Promise<APIResponse> {
-    try {
-      if (this.status !== ServiceStatus.READY) {
-        throw new Error('OpenAI integration not ready');
-      }
-
-      const response = await this.processMessage(params.message, params.context);
-      return {
-        success: true,
-        data: response,
-        metadata: {
-          timestamp: new Date(),
-          messageCount: this.conversationHistory.length
-        }
-      };
-    } catch (error: any) {
-      console.error('Error executing OpenAI request:', error);
-      
-      // Check if error is due to API key
-      if (error.message.includes('API key')) {
-        this.status = ServiceStatus.ERROR;
-      }
-      
+      console.error('[OpenAI] Execution Error:', error);
       return {
         success: false,
-        error: error.message,
-        metadata: {
+        error: error.message || 'Unknown error during API execution',
+        metadata: { 
           timestamp: new Date(),
-          errorType: error.name,
-          status: this.status
+          domain: params.domain || 'default',
+          errorStack: error.stack
         }
       };
     }
   }
 
-  // Clear conversation history but keep system prompt
-  public clearHistory(): void {
+  private async processMessage(message: string, domain: string = 'default'): Promise<string> {
+    console.log(`[OpenAI] Processing message for domain: ${domain}`);
+    
+    // Detailed initialization check
+    console.log('[OpenAI] Pre-processing service status:', {
+      status: this.status,
+      clientInitialized: !!this.client,
+      apiKeyPresent: !!this.config.apiKey
+    });
+
+    // Validate initialization status with more robust handling
+    if (this.status !== ServiceStatus.READY) {
+      console.warn('[OpenAI] Service not ready. Attempting to initialize...');
+      
+      try {
+        // Force initialization
+        await this.initialize('default');
+        console.log('[OpenAI] Initialization completed');
+      } catch (initError) {
+        console.error('[OpenAI] Initialization failed:', initError);
+        throw new Error(`OpenAI service initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
+      }
+    }
+
+    // Ensure client is available
+    if (!this.client) {
+      console.error('[OpenAI] Client is null after initialization');
+      throw new Error('OpenAI client could not be created');
+    }
+
+    try {
+      // Determine system prompt
+      const systemPromptKey = Object.keys(this.SYSTEM_PROMPTS).includes(domain) 
+        ? domain as keyof typeof this.SYSTEM_PROMPTS 
+        : 'default';
+
+      console.log(`[OpenAI] Using system prompt key: ${systemPromptKey}`);
+
+      // Ensure conversation history starts with a system prompt
+      if (this.conversationHistory.length === 0 || 
+          this.conversationHistory[0].role !== 'system') {
+        this.conversationHistory.unshift({
+          role: 'system', 
+          content: this.SYSTEM_PROMPTS[systemPromptKey]
+        });
+      }
+
+      console.log('[OpenAI] Conversation history before request:', 
+        JSON.stringify(this.conversationHistory, null, 2));
+
+      // Create chat completion
+      const completion = await this.client.chat.completions.create({
+        messages: [
+          ...this.conversationHistory,
+          { role: 'user', content: message }
+        ],
+        model: this.DEFAULT_MODEL,
+      });
+
+      console.log('[OpenAI] Completion received:', 
+        JSON.stringify(completion.choices, null, 2));
+
+      // Extract response
+      const response = completion.choices[0]?.message?.content;
+      
+      // Validate response
+      if (!response) {
+        console.warn('[OpenAI] No response generated');
+        throw new Error('No response generated by OpenAI');
+      }
+      
+      // Update conversation history
+      this.conversationHistory.push(
+        { role: 'user', content: message },
+        { role: 'assistant', content: response }
+      );
+      
+      this.trimConversationHistory();
+      
+      console.log('[OpenAI] Final response:', response);
+      return response;
+    } catch (error: any) {
+      console.error(`[OpenAI] Message Processing Error for ${domain} domain:`, error);
+      
+      // Detailed error logging
+      if (error.response) {
+        console.error('Response Status:', error.response.status);
+        console.error('Response Data:', error.response.data);
+      }
+      
+      throw new Error(`Failed to process message: ${error.message}`);
+    }
+  }
+
+  private trimConversationHistory(): void {
+    // Keep system prompt and last MAX_HISTORY_LENGTH messages
     const systemPrompt = this.conversationHistory[0];
-    this.conversationHistory = [systemPrompt];
+    const recentMessages = this.conversationHistory.slice(-this.MAX_HISTORY_LENGTH * 2 + 1);
+    this.conversationHistory = [systemPrompt, ...recentMessages];
+  }
+
+  public clearHistory(domain: keyof typeof this.SYSTEM_PROMPTS = 'default'): void {
+    this.resetConversationHistory(domain);
   }
 }

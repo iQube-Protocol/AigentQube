@@ -1,238 +1,792 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Web3 from 'web3';
 import axios from 'axios';
+import { Web3ReactProvider } from '@web3-react/core';
+import { Web3Provider } from '@ethersproject/providers';
 import DashboardLayout from './components/DashboardLayout';
+import { ContextManager } from './components/ContextManager';
+import ContextTransformationPanel from './components/ContextTransformationPanel';
+import IQubeCreatingPanel from './components/iQubeCreatingPanel';
+import { BlockchainWalletStatus } from './components/BlockchainComponents';
+import { OrchestrationAgent } from './services/OrchestrationAgent';
+import { ContextDomain } from './types/context';
+import { ServiceStatus } from './types/service';
+import { StateUpdate } from './types/state';
+import { 
+  ChakraProvider, 
+  Box, 
+  VStack as ChakraVStack, 
+  Grid, 
+  Text,
+  extendTheme as chakraExtendTheme,
+  Button,
+  useToast
+} from '@chakra-ui/react';
 import AgentEvolutionPanel from './components/AgentEvolutionPanel';
+import { IQubeOperationsPanel } from './components/IQubeOperationsPanel';
+import { IQubeData } from './types/context';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { APIIntegrationManager } from './services/api/APIIntegrationManager';
+import { OpenAIIntegration } from './services/api/OpenAIIntegration';
+import { MetisIntegration } from './services/api/MetisIntegration';
+import { SpecializedDomainManager } from './services/SpecializedDomainManager';
 
-// Define comprehensive interfaces
-interface BlockchainMetrics {
-  transaction_count: number;
-  total_value: number;
-  gas_used: number;
+// Dependency Initialization
+const initializeDependencies = () => {
+  try {
+    // Initialize API Integration Manager
+    const apiManager = new APIIntegrationManager();
+
+    // Initialize OpenAI Integration
+    const openAIIntegration = new OpenAIIntegration({
+      apiKey: process.env.REACT_APP_OPENAI_API_KEY || '',
+      modelName: 'gpt-4',
+      maxTokens: 2048
+    });
+
+    // Initialize Metis Integration with fallback
+    const metisIntegration = new MetisIntegration({
+      apiKey: process.env.REACT_APP_METIS_API_KEY || '',
+      baseURL: process.env.REACT_APP_API_BASE_URL || 'https://metisapi-8501e3beedcf.herokuapp.com'
+    });
+
+    // Initialize Specialized Domain Manager
+    const domainManager = new SpecializedDomainManager();
+
+    // Attempt to register services with API Manager
+    try {
+      apiManager.registerAPI(openAIIntegration);
+      apiManager.registerAPI(metisIntegration);
+    } catch (error) {
+      console.warn('Failed to register services with API Manager:', error);
+    }
+
+    return {
+      apiManager, 
+      openAIIntegration, 
+      metisIntegration, 
+      domainManager
+    };
+  } catch (error) {
+    console.error('Dependency Initialization Partial Failure:', error);
+    // Return partial initialization to allow app to continue
+    return {
+      apiManager: new APIIntegrationManager(),
+      openAIIntegration: null,
+      metisIntegration: null,
+      domainManager: null
+    };
+  }
+};
+
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
 }
 
-interface AgentStatus {
-  agent_id: string;
-  status: string;
-  blockchain_metrics: BlockchainMetrics;
+// Web3 Library Configuration
+function getLibrary(provider: any): Web3Provider {
+  return new Web3Provider(provider);
 }
 
-interface AgentInteraction {
-  query: string;
-  response: string;
-  timestamp: Date;
-}
+const theme = chakraExtendTheme({
+  // Add any custom theme configurations here
+});
+
+// Debugging function to log all initialization steps
+const initializationLogger = (step: string, details?: any) => {
+  console.group('🚀 AigentQube Initialization');
+  console.log(`Step: ${step}`);
+  if (details) console.log('Details:', details);
+  console.groupEnd();
+};
 
 const App: React.FC = () => {
+  // Debug environment variables in component
+  console.log('App component mounted. Environment check:', {
+    OPENAI_KEY: process.env.REACT_APP_OPENAI_API_KEY?.substring(0, 10) + '...',
+    NODE_ENV: process.env.NODE_ENV
+  });
+
+  const toast = useToast();
+  
+  // Initialize Orchestration Agent
+  const [orchestrationAgent, setOrchestrationAgent] = useState<OrchestrationAgent | null>(null);
+  const [isAgentReady, setIsAgentReady] = useState(false);
+  const [agentStatus, setAgentStatus] = useState<{
+    context: boolean;
+    service: boolean;
+    state: boolean;
+  }>({
+    context: false,
+    service: false,
+    state: false
+  });
+  const [initializationError, setInitializationError] = useState<string | null>(null);
+  const [agentError, setAgentError] = useState<string | null>(null);
+  
   // Web3 and Wallet State
   const [web3, setWeb3] = useState<Web3 | null>(null);
-  const [account, setAccount] = useState<string>('');
-  
-  // Agent Management State
-  const [agentStatuses, setAgentStatuses] = useState<AgentStatus[]>([]);
-  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
-  
-  // Interaction State
-  const [userQuery, setUserQuery] = useState<string>('');
-  const [interactions, setInteractions] = useState<AgentInteraction[]>([]);
-  
-  // WebSocket State
-  const [websocket, setWebsocket] = useState<WebSocket | null>(null);
+  const [account, setAccount] = useState<string | null>(null);
+  const [chainId, setChainId] = useState<string | null>(null);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
+  const [isConnecting, setIsConnecting] = useState<boolean>(false);
+  const connectionAttemptRef = useRef<number>(0);
+  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastConnectionAttemptRef = useRef<number>(0);
+  const DEBOUNCE_DELAY = 1000; // 1 second debounce
+  const CONNECTION_TIMEOUT = 30000; // 30 second timeout
 
-  // Add context management state
-  const [context, setContext] = useState<any>(null);
+  // Context and Agent ID State
+  const [context, setContext] = useState<Record<string, any>>({});
+  const [agentId, setAgentId] = useState<string>('');
+  const [iQubeData, setIQubeData] = useState<IQubeData | null>(null);
 
-  // Initialize Web3 and Wallet Connection
-  const initWeb3 = useCallback(async () => {
-    if ((window as any).ethereum) {
-      try {
-        // Request account access
-        await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
-        const web3Instance = new Web3((window as any).ethereum);
-        setWeb3(web3Instance);
-        
-        // Get connected account
-        const accounts = await web3Instance.eth.getAccounts();
-        if (accounts.length > 0) {
-          setAccount(accounts[0]);
+  // Shared state for domain coordination
+  const [selectedDomain, setSelectedDomain] = useState<string>('');
+  const [domainContext, setDomainContext] = useState<Record<string, any>>({});
+  const [isMetisReady, setIsMetisReady] = useState<boolean>(false);
+
+  // Switch to Amoy Network
+  const switchToAmoyNetwork = async () => {
+    if (!window.ethereum) {
+      toast({
+        title: 'MetaMask Not Found',
+        description: 'Please install MetaMask to use this application',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x13882' }], // 80002 in hex
+      });
+    } catch (switchError: any) {
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0x13882',
+              chainName: 'Polygon Amoy Testnet',
+              nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+              rpcUrls: ['https://rpc-amoy.polygon.technology'],
+              blockExplorerUrls: ['https://www.oklink.com/amoy']
+            }]
+          });
+        } catch (addError) {
+          console.error('Error adding Amoy network:', addError);
+          toast({
+            title: 'Network Error',
+            description: 'Failed to add Amoy network to MetaMask',
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+          });
         }
-      } catch (error) {
-        console.error('Web3 initialization error:', error);
+      } else {
+        console.error('Error switching to Amoy network:', switchError);
+        toast({
+          title: 'Network Error',
+          description: 'Failed to switch to Amoy network',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
       }
-    } else {
-      console.warn('Web3 provider not found');
     }
-  }, []);
-
-  // Register Agent with Backend
-  const registerAgent = useCallback(async () => {
-    try {
-      const response = await axios.post('http://localhost:8000/agent/register', {
-        name: `AigentQube Agent ${Date.now()}`,
-        wallet_address: account,
-        api_keys: {
-          // Add any necessary API keys
-        }
-      });
-
-      const newAgent = response.data;
-      setSelectedAgent(newAgent.agent_id);
-    } catch (error) {
-      console.error('Agent registration error:', error);
-    }
-  }, [account]);
-
-  // WebSocket Connection for Real-time Updates
-  const connectWebSocket = useCallback(() => {
-    const ws = new WebSocket('ws://localhost:8000/agent/status');
-    
-    ws.onopen = () => {
-      console.log('WebSocket connection established');
-      setWebsocket(ws);
-    };
-
-    ws.onmessage = (event) => {
-      const agentStatus: AgentStatus = JSON.parse(event.data);
-      setAgentStatuses(prev => 
-        prev.map(status => 
-          status.agent_id === agentStatus.agent_id ? agentStatus : status
-        )
-      );
-    };
-
-    ws.onclose = () => {
-      console.log('WebSocket connection closed');
-      setWebsocket(null);
-    };
-
-    return () => {
-      ws.close();
-    };
-  }, []);
-
-  // Interact with Agent
-  const interactWithAgent = useCallback(async () => {
-    if (!selectedAgent) return;
-    
-    try {
-      const response = await axios.post('http://localhost:8000/agent/interact', {
-        query: userQuery,
-        agent_id: selectedAgent
-      });
-
-      const interaction: AgentInteraction = {
-        query: userQuery,
-        response: response.data.response,
-        timestamp: new Date()
-      };
-      
-      setInteractions(prev => [...prev, interaction]);
-      setUserQuery('');
-    } catch (error) {
-      console.error("Agent interaction error:", error);
-    }
-  }, [selectedAgent, userQuery]);
-
-  // Context change handler
-  const handleContextChange = (newContext: any) => {
-    setContext(newContext);
-    // Additional logic for context updates can be added here
-    console.log('Context Updated:', newContext);
   };
 
-  // Lifecycle Hooks
+  // Initialize Web3 and connect wallet
+  const initializeWeb3 = useCallback(async () => {
+    // If already connected or connecting, or no ethereum provider, don't try again
+    if (account || !window.ethereum) {
+      return;
+    }
+
+    // Debounce check
+    const now = Date.now();
+    if (now - lastConnectionAttemptRef.current < DEBOUNCE_DELAY) {
+      return;
+    }
+    lastConnectionAttemptRef.current = now;
+
+    // If already connecting, show a message and return
+    if (isConnecting) {
+      toast({
+        title: 'Connection in Progress',
+        description: 'Please check MetaMask to approve the connection request',
+        status: 'info',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    // Set connecting state and clear any existing errors
+    setIsConnecting(true);
+    setWalletError(null);
+
+    let connectingToastId: string | number | undefined;
+
+    // Clear any existing timeout
+    if (connectionTimeoutRef.current) {
+      clearTimeout(connectionTimeoutRef.current);
+    }
+
+    // Set new timeout
+    connectionTimeoutRef.current = setTimeout(() => {
+      if (isConnecting) {
+        setIsConnecting(false);
+        if (connectingToastId) {
+          toast.close(connectingToastId);
+        }
+        toast({
+          title: 'Connection Timeout',
+          description: 'The connection attempt timed out. Please try again.',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    }, CONNECTION_TIMEOUT);
+
+    try {
+      const web3Instance = new Web3(window.ethereum);
+      
+      // First check if we're already connected
+      const accounts = await web3Instance.eth.getAccounts();
+      
+      if (accounts && accounts.length > 0) {
+        // Already connected, just use existing connection
+        setWeb3(web3Instance);
+        setAccount(accounts[0]);
+        setIsSignedIn(true);
+        
+        // Get chain ID
+        const chainId = await web3Instance.eth.getChainId();
+        setChainId(chainId.toString());
+        
+        // Check if we need to switch to Amoy network
+        if (chainId !== 80002) {
+          await switchToAmoyNetwork();
+        }
+        
+        setIsConnecting(false);
+        if (connectionTimeoutRef.current) {
+          clearTimeout(connectionTimeoutRef.current);
+        }
+        return;
+      }
+
+      // Show connecting toast
+      connectingToastId = toast({
+        title: 'Connecting to MetaMask',
+        description: 'Please check MetaMask to approve the connection',
+        status: 'info',
+        duration: null,
+        isClosable: false,
+      });
+
+      try {
+        // Request accounts
+        const requestedAccounts = await window.ethereum.request({ 
+          method: 'eth_requestAccounts',
+          params: []
+        });
+
+        if (connectingToastId) {
+          toast.close(connectingToastId);
+        }
+
+        if (requestedAccounts && requestedAccounts[0]) {
+          setWeb3(web3Instance);
+          setAccount(requestedAccounts[0]);
+          setIsSignedIn(true);
+
+          // Get chain ID
+          const chainId = await web3Instance.eth.getChainId();
+          setChainId(chainId.toString());
+
+          // Check if we need to switch to Amoy network
+          if (chainId !== 80002) {
+            await switchToAmoyNetwork();
+          }
+
+          toast({
+            title: 'Wallet Connected',
+            description: `Connected to account ${requestedAccounts[0].slice(0, 6)}...${requestedAccounts[0].slice(-4)}`,
+            status: 'success',
+            duration: 3000,
+            isClosable: true,
+          });
+        }
+      } catch (error: any) {
+        if (connectingToastId) {
+          toast.close(connectingToastId);
+        }
+
+        // Handle the "already processing" error specifically
+        if (error.code === -32002) {
+          toast({
+            title: 'Connection Request Pending',
+            description: 'Please open MetaMask and approve the connection request',
+            status: 'warning',
+            duration: 5000,
+            isClosable: true,
+          });
+          return;
+        }
+
+        console.error('Error connecting wallet:', error);
+        setWalletError(error.message);
+        toast({
+          title: 'Connection Error',
+          description: error.message,
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error in web3 initialization:', error);
+      setWalletError(error.message);
+      toast({
+        title: 'Initialization Error',
+        description: error.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsConnecting(false);
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+      }
+    }
+  }, [account, isConnecting, toast, switchToAmoyNetwork]);
+
+  // Handle Context Updates with domain coordination
+  const handleContextChange = useCallback((newContext: Record<string, any>) => {
+    setContext(newContext);
+    
+    // Update domain context if it's a domain-related change
+    if (newContext.specializedState) {
+      setSelectedDomain(newContext.specializedState);
+      setDomainContext((prevContext: Record<string, any>) => ({
+        ...prevContext,
+        domain: newContext.specializedState,
+        metadata: newContext
+      }));
+    }
+  }, []);
+
+  const handleIQubeDataUpdate = (data: IQubeData | null) => {
+    setIQubeData(data);
+  };
+
+  // Setup Web3 event listeners
   useEffect(() => {
-    initWeb3();
-  }, [initWeb3]);
+    if (!window.ethereum) {
+      return;
+    }
+
+    const handleAccountsChanged = (accounts: string[]) => {
+      if (accounts.length === 0) {
+        setAccount(null);
+        setIsSignedIn(false);
+      } else {
+        setAccount(accounts[0]);
+        setIsSignedIn(true);
+      }
+    };
+
+    const handleChainChanged = (chainId: string) => {
+      setChainId(chainId);
+      window.location.reload();
+    };
+
+    const handleDisconnect = () => {
+      setAccount(null);
+      setIsSignedIn(false);
+    };
+
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+    window.ethereum.on('chainChanged', handleChainChanged);
+    window.ethereum.on('disconnect', handleDisconnect);
+
+    // Only initialize if not connected and not currently connecting
+    if (!account && !isConnecting) {
+      // Add a small delay to prevent rapid re-initialization
+      const timer = setTimeout(() => {
+        initializeWeb3();
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+
+    return () => {
+      window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      window.ethereum.removeListener('chainChanged', handleChainChanged);
+      window.ethereum.removeListener('disconnect', handleDisconnect);
+    };
+  }, [account, initializeWeb3, isConnecting]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const initializeApplication = useCallback(async () => {
+    try {
+      initializationLogger('Starting Application Initialization');
+
+      // Validate critical environment variables
+      const requiredEnvVars = [
+        'REACT_APP_OPENAI_API_KEY',
+        'REACT_APP_METIS_API_KEY',
+      ];
+
+      const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+      if (missingVars.length > 0) {
+        console.warn(`Missing environment variables: ${missingVars.join(', ')}`);
+      }
+
+      initializationLogger('Environment Variables Validated');
+
+      // Initialize dependencies with fallback
+      const { 
+        apiManager, 
+        openAIIntegration, 
+        metisIntegration, 
+        domainManager 
+      } = initializeDependencies();
+
+      // Create Orchestration Agent with API Manager
+      const agent = new OrchestrationAgent(
+        apiManager,  // Explicitly pass APIIntegrationManager
+        openAIIntegration || undefined, 
+        metisIntegration || undefined, 
+        domainManager || undefined
+      );
+
+      // Explicitly set initialization state
+      setIsAgentReady(false);
+      setAgentStatus({
+        context: false,
+        service: false,
+        state: false
+      });
+
+      // Try to initialize, with explicit error handling
+      try {
+        console.log('[App] Starting OrchestrationAgent initialization');
+        
+        // Await full initialization with a timeout
+        const initializationTimeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Initialization timeout')), 30000)
+        );
+
+        await Promise.race([
+          agent.initialize(),
+          initializationTimeout
+        ]);
+
+        console.log('[App] OrchestrationAgent initialized successfully');
+        
+        // Set the agent
+        setOrchestrationAgent(agent);
+        
+        // Explicitly validate service status
+        const serviceStatus = agent.getServiceStatus();
+        console.log('[App] Service Status:', serviceStatus);
+
+        // Update agent status with explicit checks
+        setAgentStatus({
+          context: serviceStatus.context.isActive,
+          service: serviceStatus.service.isActive,
+          state: serviceStatus.state.isActive
+        });
+
+        // Determine agent readiness with strict criteria
+        const isReady = serviceStatus.context.isActive && 
+                        serviceStatus.service.isActive && 
+                        serviceStatus.state.isActive;
+        
+        // Set readiness with logging
+        console.log(`[App] Agent Readiness: ${isReady}`);
+        setIsAgentReady(isReady);
+
+        // Show warning if not fully initialized
+        if (!isReady) {
+          toast({
+            title: 'Partial Service Availability',
+            description: 'Some AI services may have limited functionality',
+            status: 'warning',
+            duration: 5000,
+            isClosable: true,
+          });
+        }
+      } catch (initError) {
+        console.error('[App] OrchestrationAgent Initialization Error:', initError);
+        
+        // Set agent with limited functionality
+        setOrchestrationAgent(agent);
+        
+        // Explicitly set not ready
+        setIsAgentReady(false);
+        setAgentStatus({
+          context: false,
+          service: false,
+          state: false
+        });
+
+        // Detailed error toast
+        toast({
+          title: 'AI Services Initialization Failed',
+          description: initError instanceof Error 
+            ? initError.message 
+            : 'Unable to initialize AI services',
+          status: 'error',
+          duration: 9000,
+          isClosable: true,
+        });
+      }
+
+      initializationLogger('Application Initialization Complete');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      console.error('🔥 Initialization Encountered Issues:', errorMessage);
+      setInitializationError(errorMessage);
+
+      toast({
+        title: 'Initialization Warning',
+        description: errorMessage,
+        status: 'warning',
+        duration: 9000,
+        isClosable: true,
+        position: 'top'
+      });
+    }
+  }, [toast]);
+
+  // Add useEffect to track agent status changes
+  useEffect(() => {
+    if (orchestrationAgent) {
+      const checkAgentStatus = () => {
+        const serviceStatus = orchestrationAgent.getServiceStatus();
+        setAgentStatus({
+          context: serviceStatus.context.isActive,
+          service: serviceStatus.service.isActive,
+          state: serviceStatus.state.isActive
+        });
+      };
+
+      // Initial check
+      checkAgentStatus();
+
+      // Optional: Set up periodic status checks
+      const statusInterval = setInterval(checkAgentStatus, 30000); // Every 30 seconds
+
+      return () => clearInterval(statusInterval);
+    }
+  }, [orchestrationAgent]);
 
   useEffect(() => {
-    const cleanup = connectWebSocket();
-    return cleanup;
-  }, [connectWebSocket]);
+    initializeApplication();
+  }, [initializeApplication]);
 
-  // Render Blockchain Metrics
-  const renderBlockchainMetrics = (metrics: BlockchainMetrics) => (
-    <div className="blockchain-metrics">
-      <p>Transactions: {metrics.transaction_count}</p>
-      <p>Total Value: {metrics.total_value}</p>
-      <p>Gas Used: {metrics.gas_used}</p>
-    </div>
-  );
+  // Render initialization error if present
+  if (initializationError) {
+    return (
+      <Box 
+        height="100vh" 
+        display="flex" 
+        flexDirection="column" 
+        justifyContent="center" 
+        alignItems="center" 
+        bg="red.50" 
+        p={8}
+      >
+        <Text fontSize="2xl" color="red.600" mb={4}>
+          Application Initialization Failed
+        </Text>
+        <Text color="red.500" textAlign="center">
+          {initializationError}
+        </Text>
+        <Box mt={4}>
+          <Text fontSize="sm" color="gray.500">
+            Please check your configuration and try again.
+          </Text>
+        </Box>
+      </Box>
+    );
+  }
 
-  // Render Interaction History
-  const renderInteractions = () => (
-    <div className="space-y-2">
-      {interactions.map((interaction, index) => (
-        <div key={index} className="border p-2 rounded">
-          <p><strong>Query:</strong> {interaction.query}</p>
-          <p><strong>Response:</strong> {interaction.response}</p>
-        </div>
-      ))}
-    </div>
-  );
+  // Monitor Layer Alignment
+  useEffect(() => {
+    const checkAlignment = async () => {
+      if (orchestrationAgent) {
+        const isAligned = await orchestrationAgent.validateLayerAlignment();
+        if (!isAligned) {
+          toast({
+            title: 'Layer Misalignment Detected',
+            description: 'Some application layers are not properly synchronized',
+            status: 'warning',
+            duration: null,
+            isClosable: true,
+          });
+        }
+      }
+    };
+
+    const interval = setInterval(checkAlignment, 30000);
+    return () => clearInterval(interval);
+  }, [toast]);
+
+  // Subscribe to Orchestration Updates
+  useEffect(() => {
+    const unsubscribe = orchestrationAgent?.subscribe((state) => {
+      console.log('Orchestration State Updated:', state);
+      
+      // Handle layer status changes
+      if (state.context.error || state.service.error || state.state.error) {
+        toast({
+          title: 'Layer Error Detected',
+          description: 'One or more layers reported an error',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    });
+
+    return () => unsubscribe?.();
+  }, [toast]);
 
   return (
-    <div className="aigentqube-app">
-      <DashboardLayout
-        context={context}
-        onContextChange={handleContextChange}
-        agentId={selectedAgent}
-      >
-        {/* Wallet Connection */}
-        <div className="mb-4">
-          <button 
-            onClick={initWeb3}
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            {account ? `Connected: ${account.slice(0, 6)}...` : 'Connect Wallet'}
-          </button>
-        </div>
-        
-        {/* Agent Registration */}
-        {account && (
-          <button 
-            onClick={registerAgent}
-            className="bg-green-500 text-white px-4 py-2 rounded"
-          >
-            Register New Agent
-          </button>
-        )}
-        
-        {/* Agent Status */}
-        {agentStatuses.map(status => (
-          <div key={status.agent_id} className="mb-4">
-            <h2>Agent: {status.agent_id}</h2>
-            <p>Status: {status.status}</p>
-            {renderBlockchainMetrics(status.blockchain_metrics)}
-          </div>
-        ))}
-        
-        {/* Agent Interaction */}
-        {selectedAgent && (
-          <div className="mt-4">
-            <input 
-              type="text"
-              value={userQuery}
-              onChange={(e) => setUserQuery(e.target.value)}
-              placeholder="Enter your query"
-              className="border p-2 w-full rounded"
-            />
-            <button 
-              onClick={interactWithAgent}
-              className="bg-purple-500 text-white px-4 py-2 rounded mt-2"
+    <ErrorBoundary 
+      fallback={
+        <Box 
+          height="100vh" 
+          display="flex" 
+          justifyContent="center" 
+          alignItems="center" 
+          bg="red.50"
+        >
+          <Text color="red.600">
+            An unexpected error occurred. Please refresh the page.
+          </Text>
+        </Box>
+      }
+    >
+      <ChakraProvider theme={theme}>
+        <Web3ReactProvider getLibrary={getLibrary}>
+          <div className="App min-h-screen bg-gray-900 text-white">
+            <DashboardLayout
+              context={context}
+              onContextChange={handleContextChange}
+              agentId={agentId}
+              orchestrationAgent={orchestrationAgent}
+              isAgentReady={isAgentReady}
             >
-              Send Query
-            </button>
-            
-            {/* Interaction History */}
-            <div className="mt-4">
-              <h3 className="font-bold">Interaction History</h3>
-              {renderInteractions()}
-            </div>
+              <Grid
+                templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }}
+                gap={6}
+                p={4}
+              >
+                {/* Left Column */}
+                <ChakraVStack spacing={6} align="stretch">
+                  <Box className="wallet-status-container">
+                    <BlockchainWalletStatus
+                      account={account}
+                      chainId={chainId}
+                      isConnecting={isConnecting}
+                      error={walletError}
+                      onConnect={initializeWeb3}
+                      onDisconnect={() => {}}
+                      onSwitchNetwork={switchToAmoyNetwork}
+                    />
+                  </Box>
+
+                  {isAgentReady && orchestrationAgent && (
+                    <Box className="agent-evolution-container">
+                      <AgentEvolutionPanel
+                        context={{
+                          specializedState: selectedDomain,
+                          web3,
+                          account,
+                          isSignedIn,
+                          error: agentError,
+                          isMetisReady
+                        }}
+                        onContextChange={handleContextChange}
+                        agentId={agentId}
+                        orchestrationAgent={orchestrationAgent}
+                      />
+                    </Box>
+                  )}
+
+                  {/* Show error if agent initialization failed */}
+                  {agentError && (
+                    <Box p={4} bg="red.600" color="white" borderRadius="md">
+                      <Text>Failed to initialize AI agent: {agentError}</Text>
+                    </Box>
+                  )}
+
+                  {/* Show loading state while agent is initializing */}
+                  {!isAgentReady && !agentError && (
+                    <Box p={4} bg="gray.700" borderRadius="md">
+                      <Text>Initializing AI agent...</Text>
+                    </Box>
+                  )}
+                  <IQubeOperationsPanel
+                    onIQubeDataUpdate={handleIQubeDataUpdate}
+                    orchestrationAgent={orchestrationAgent}
+                    onContextUpdate={setContext}
+                  />
+                </ChakraVStack>
+
+                {/* Right Column */}
+                <ChakraVStack spacing={6} align="stretch">
+                  <ContextManager 
+                    web3={web3}
+                    account={account}
+                    onContextChange={handleContextChange}
+                  />
+                  <ContextTransformationPanel 
+                    orchestrationAgent={isAgentReady ? orchestrationAgent : undefined}
+                    context={{
+                      specializedState: 'AigentQube',
+                      web3,
+                      account,
+                      isSignedIn,
+                      error: agentError,
+                      iQubeData: iQubeData
+                    }}
+                  />
+                  <IQubeCreatingPanel 
+                    web3={web3}
+                    account={account}
+                  />
+                </ChakraVStack>
+              </Grid>
+            </DashboardLayout>
           </div>
-        )}
-      </DashboardLayout>
-    </div>
+        </Web3ReactProvider>
+      </ChakraProvider>
+    </ErrorBoundary>
   );
 };
 

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
+import { ethers } from 'ethers';
 import { 
   Modal, 
   ModalOverlay, 
@@ -8,9 +9,11 @@ import {
   ModalCloseButton, 
   ModalBody, 
   Button,
-  useDisclosure 
+  useDisclosure,
+  useToast
 } from '@chakra-ui/react';
 import QubeViewer from './QubeViewer';
+import { registerQube } from '../utils/contractInteraction';
 
 interface IQubeOperationsProps {
   context?: any;
@@ -20,6 +23,7 @@ interface IQubeOperationsProps {
   onDecryptBlakQube?: (iQubeId: string) => void;
   onShareiQube?: (iQubeId: string) => void;
   onMintiQube?: (iQubeId: string) => void;
+  signer?: ethers.Signer;
 }
 
 interface IQubeDetails {
@@ -35,7 +39,8 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
   onViewMetaQube,
   onDecryptBlakQube,
   onShareiQube,
-  onMintiQube
+  onMintiQube,
+  signer
 }) => {
   const [iQubeTokenId, setIQubeTokenId] = useState('');
   const [iQubeDetails, setIQubeDetails] = useState<IQubeDetails | null>(null);
@@ -292,53 +297,103 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
   }, [iQubeTokenId, showError, mockBlakQubeData, onContextChange]);
 
   const handleMintToken = useCallback(async () => {
-    try {
-      const response = await axios.post('http://localhost:8000/iqube/mint', {
-        // Add any necessary minting parameters
-        creator: agentId || 'unknown'
-      });
+    if (!signer) {
+      showError('Please connect your wallet first');
+      return;
+    }
 
-      const newTokenId = response.data.tokenId;
+    try {
+      // Create sample data for minting
+      const qubeType = "DataQube";  // or other types like "AgentQube"
+      const qubeAddress = await signer.getAddress();
+      const qubeHash = ethers.utils.id(Date.now().toString()); // Generate a unique hash
+
+      // Register the Qube using the smart contract
+      const receipt = await registerQube(
+        qubeType,
+        qubeAddress,
+        qubeHash,
+        signer,
+        {
+          name: 'Sample iQube',
+          description: 'A test iQube',
+          creator: qubeAddress,
+          encryptionLevel: 'High',
+          ownerType: 'Person',
+          ownerIdentifiability: 'Semi-Anon',
+          customAddress: '',
+          customHash: '',
+          transactionDate: Date.now()
+        }
+      );
+
+      if (receipt) {
+        const newTokenId = receipt.events?.[0]?.args?.tokenId?.toString() || '';
+        setIQubeTokenId(newTokenId);
+        
+        // Update UI with the new token details
+        setIQubeDetails({
+          tokenId: newTokenId,
+          name: 'Sample iQube',
+          domain: 'Test Domain'
+        });
+
+        // Update context
+        onContextChange?.({
+          iQubeDetails: {
+            tokenId: newTokenId,
+            name: 'Sample iQube',
+            domain: 'Test Domain'
+          }
+        });
+      }
+    } catch (err: any) {
+      showError(err.message || 'Failed to mint iQube token');
+      console.error('Minting error:', err);
+    }
+  }, [signer, showError, onContextChange]);
+
+  const mintIQube = async (
+    qubeAddress: string,
+    qubeHash: string,
+    signer: ethers.providers.JsonRpcSigner,
+    metadata: {
+      name: string;
+      description: string;
+      image?: string;
+      attributes?: Array<{ trait_type: string; value: string }>;
+    }
+  ) => {
+    // Register the Qube using the smart contract
+    const receipt = await registerQube(
+      "DataQube",
+      qubeAddress,
+      qubeHash,
+      signer,
+      metadata
+    );
+
+    if (receipt) {
+      const newTokenId = receipt.events?.[0]?.args?.tokenId?.toString() || '';
       setIQubeTokenId(newTokenId);
       
-      // Set the mock data
-      setMetaQubeData(mockMetaQubeData);
-      
-      // Activate the iQube with mock data
-      setIQubeActivated({
-        tokenId: mockMetaQubeData.id,
-        name: 'Mock iQube',
-        userProfile: 'User Profile'
+      // Update UI with the new token details
+      setIQubeDetails({
+        tokenId: newTokenId,
+        name: metadata.name,
+        domain: 'Test Domain'
       });
 
-      // Explicitly set the encrypted BlakQube data as the current state
-      setBlakQubeDecrypted(mockEncryptedBlakQubeData);
-
-      // Update context if onContextChange is provided
+      // Update context
       onContextChange?.({
         iQubeDetails: {
-          tokenId: mockMetaQubeData.id,
-          name: 'Mock iQube',
-          domain: mockMetaQubeData.metadata.domain
-        },
-        iQubeActivated: {
-          tokenId: mockMetaQubeData.id,
-          name: 'Mock iQube',
-          userProfile: 'User Profile'
-        },
-        blakQubeDecrypted: {
-          encrypted: mockEncryptedBlakQubeData,
-          decrypted: mockBlakQubeData
+          tokenId: newTokenId,
+          name: metadata.name,
+          domain: 'Test Domain'
         }
       });
-      
-      // Optionally fetch details of newly minted iQube
-      await fetchIQubeDetails();
-    } catch (err) {
-      showError('Failed to mint iQube token');
-      console.error(err);
     }
-  }, [agentId, fetchIQubeDetails, showError, mockMetaQubeData, mockBlakQubeData, mockEncryptedBlakQubeData, onContextChange]);
+  };
 
   const renderBlakQubeData = () => {
     // Flatten the BlackQube data into key-value pairs for grid display
@@ -640,7 +695,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           <ModalHeader>iQube Registry</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <QubeViewer />
+            <QubeViewer address={''} />
           </ModalBody>
         </ModalContent>
       </Modal>

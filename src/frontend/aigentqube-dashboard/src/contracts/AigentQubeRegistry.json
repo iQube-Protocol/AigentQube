@@ -1,0 +1,262 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "AigentQubeRegistry",
+  "sourceName": "contracts/AigentQubeRegistry.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "qubeAddress",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "qubeType",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "qubeHash",
+          "type": "string"
+        }
+      ],
+      "name": "QubeRegistered",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "qubeAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "qubeHash",
+          "type": "string"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "iQubeName",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "iQubeCreator",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "iQubeType",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "ownerType",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "ownerIdentifiability",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "transactionDate",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "sensitivityScore",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "verifiabilityScore",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "accuracyScore",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "riskScore",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct AigentQubeRegistry.MetaQubeDetails",
+          "name": "metaQube",
+          "type": "tuple"
+        }
+      ],
+      "name": "registerDataQube",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "qubeAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "qubeHash",
+          "type": "string"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "iQubeName",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "iQubeCreator",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "iQubeType",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "ownerType",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "ownerIdentifiability",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "transactionDate",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "sensitivityScore",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "verifiabilityScore",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "accuracyScore",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "riskScore",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct AigentQubeRegistry.MetaQubeDetails",
+          "name": "metaQube",
+          "type": "tuple"
+        }
+      ],
+      "name": "registerContentQube",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "qubeAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "qubeHash",
+          "type": "string"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "iQubeName",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "iQubeCreator",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "iQubeType",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "ownerType",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "ownerIdentifiability",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "transactionDate",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "sensitivityScore",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "verifiabilityScore",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "accuracyScore",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "riskScore",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct AigentQubeRegistry.MetaQubeDetails",
+          "name": "metaQube",
+          "type": "tuple"
+        }
+      ],
+      "name": "registerAgentQube",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]
+}

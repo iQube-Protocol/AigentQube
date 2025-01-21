@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import BlockchainService from '../services/BlockchainService';
+import { blockchainService } from '../services/BlockchainService';
 import { 
   Box, 
   Button, 
@@ -11,16 +11,22 @@ import {
   useToast
 } from '@chakra-ui/react';
 
-export function BlockchainWalletStatus() {
-  const [account, setAccount] = useState<string | null>(null);
+interface BlockchainWalletStatusProps {
+  isConnected: boolean;
+  account: string;
+}
+
+export const BlockchainWalletStatus: React.FC<BlockchainWalletStatusProps> = ({
+  isConnected,
+  account
+}) => {
   const toast = useToast();
 
   const connectWallet = async () => {
     try {
-      const connectedAccount = await BlockchainService.connectWallet();
+      const connectedAccount = await blockchainService.connectWallet();
       
       if (connectedAccount) {
-        setAccount(connectedAccount);
         toast({
           title: "Wallet Connected",
           description: `Connected with address: ${connectedAccount}`,
@@ -49,7 +55,7 @@ export function BlockchainWalletStatus() {
       borderWidth={1} 
       borderRadius="lg"
     >
-      {account ? (
+      {isConnected ? (
         <VStack>
           <Text>Connected Wallet:</Text>
           <Text fontWeight="bold">{account}</Text>
@@ -72,7 +78,7 @@ export function QubeBlockchainRegistration() {
 
   useEffect(() => {
     const checkWalletConnection = async () => {
-      const connectedAccount = await BlockchainService.connectWallet();
+      const connectedAccount = await blockchainService.connectWallet();
       if (connectedAccount) {
         setAccount(connectedAccount);
       }
@@ -96,7 +102,7 @@ export function QubeBlockchainRegistration() {
       // Parse metadata as JSON
       const parsedMetadata = metadata ? JSON.parse(metadata) : {};
 
-      const txHash = await BlockchainService.registerQube(
+      const txHash = await blockchainService.registerQube(
         name, 
         qubeType, 
         parsedMetadata

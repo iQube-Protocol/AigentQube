@@ -32,7 +32,7 @@ const AGENT_DOMAINS = {
       { label: 'Blockchain Security', value: 'Robust Encryption Techniques' }
     ]
   },
-  AGENT_AI_COACH: {
+  AGENTIC_AI_COACH: {
     name: 'Agent AI Coach',
     description: 'Focused on AI-driven innovation strategies and startup ecosystems',
     icon: '🧠',

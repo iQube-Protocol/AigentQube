@@ -1,11 +1,20 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import App from './app'; 
+import App from './App';
 
-// Create a new axios mock adapter
+// Mock Web3 and axios
+jest.mock('web3', () => ({
+  __esModule: true,
+  default: jest.fn(() => ({
+    eth: {
+      getAccounts: jest.fn().mockResolvedValue(['0x1234567890123456789012345678901234567890'])
+    }
+  }))
+}));
+
 const mock = new MockAdapter(axios);
 
 describe('AigentQube Dashboard', () => {
@@ -13,7 +22,7 @@ describe('AigentQube Dashboard', () => {
     // Reset mocks before each test
     mock.reset();
     
-    // Mock Web3 and Ethereum
+    // Mock Ethereum object
     (window as any).ethereum = {
       request: jest.fn().mockResolvedValue(['0x1234567890123456789012345678901234567890']),
       on: jest.fn(),
@@ -21,10 +30,10 @@ describe('AigentQube Dashboard', () => {
     };
   });
 
-  test('renders dashboard title', () => {
+  test('renders dashboard header', () => {
     render(<App />);
-    const titleElement = screen.getByText(/AigentQube Dashboard/i);
-    expect(titleElement).toBeInTheDocument();
+    const headerElement = screen.getByText(/AigentQube Staging Dashboard/i);
+    expect(headerElement).toBeInTheDocument();
   });
 
   test('wallet connection button works', async () => {
@@ -32,7 +41,7 @@ describe('AigentQube Dashboard', () => {
     const connectButton = screen.getByText(/Connect Wallet/i);
     
     fireEvent.click(connectButton);
-    
+
     await waitFor(() => {
       expect(screen.getByText(/Connected: 0x1234.../i)).toBeInTheDocument();
     });
@@ -45,10 +54,11 @@ describe('AigentQube Dashboard', () => {
     });
 
     render(<App />);
-    const agentInteractionButton = screen.getByText(/Interact with Agent/i);
     
-    fireEvent.click(agentInteractionButton);
-    
+    // Simulate agent interaction
+    const interactButton = screen.getByText(/Interact with Agent/i);
+    fireEvent.click(interactButton);
+
     await waitFor(() => {
       expect(screen.getByText(/Agent: test_agent_123/i)).toBeInTheDocument();
       expect(screen.getByText(/Test AI response/i)).toBeInTheDocument();

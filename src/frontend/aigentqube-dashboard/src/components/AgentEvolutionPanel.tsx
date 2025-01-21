@@ -1,10 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
+import { SpecializedDomain, DOMAIN_METADATA } from '../types/domains';
+import { OrchestrationAgentInterface } from '../types/orchestration';
+import { Box } from '@chakra-ui/react';
 
 interface AgentEvolutionPanelProps {
   context: any;
   onContextChange: (context: any) => void;
   agentId?: string;
+  orchestrationAgent: OrchestrationAgentInterface | null;
 }
 
 interface IQubeDetails {
@@ -16,41 +20,75 @@ interface IQubeDetails {
 const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({ 
   context, 
   onContextChange, 
-  agentId 
+  agentId,
+  orchestrationAgent 
 }) => {
   const [baseState, setBaseState] = useState('Generic AI');
-  const [specializedState, setSpecializedState] = useState('');
-  const [iQubeTokenId, setIQubeTokenId] = useState('');
+  const [specializedState, setSpecializedState] = useState<string | null>(null);
+  const [iQubeTokenId, setIQubeTokenId] = useState<string>('');
   const [iQubeDetails, setIQubeDetails] = useState<IQubeDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metaQubeData, setMetaQubeData] = useState<any>(null);
   const [blakQubeDecrypted, setBlakQubeDecrypted] = useState<any>(null);
+  
+  // Verify orchestrationAgent is ready
+  useEffect(() => {
+    if (orchestrationAgent && !orchestrationAgent.isInitialized()) {
+      console.error('Agent Not Ready: The orchestration agent is not fully initialized');
+    }
+  }, [orchestrationAgent]);
 
   const agentDomains = [
-    { name: 'Bitcoin Advisor', icon: '💰' },
-    { name: 'Crypto Analyst', icon: '₿' },
-    { name: 'Guardian Aigent', icon: '🛡️' },
-    { name: 'Agent AI Coach', icon: '🧠' }
+    { name: SpecializedDomain.BLOCKCHAIN_ADVISOR, icon: '💰' },
+    { name: SpecializedDomain.CRYPTO_ANALYST, icon: '₿' },
+    { name: SpecializedDomain.GUARDIAN_AIGENT, icon: '🛡️' },
+    { name: SpecializedDomain.AI_COACH, icon: '🧠' }
   ];
 
-  const handleDomainSelection = (domain: string) => {
-    setSpecializedState(domain);
-    onContextChange({
-      baseState,
-      specializedState: domain,
-      iQubeDetails
-    });
+  const handleDomainChange = async (domain: SpecializedDomain) => {
+    if (!orchestrationAgent) {
+      console.error('Orchestration agent not available');
+      return;
+    }
+
+    try {
+      // Update the specialized state immediately
+      setSpecializedState(domain);
+      
+      // Update context
+      if (onContextChange) {
+        onContextChange({
+          ...context,
+          specializedState: domain
+        });
+      }
+
+      console.log(`Domain selection updated: ${domain}`);
+    } catch (error: any) {
+      console.error('Failed to update domain selection:', error);
+      setError(`Failed to select ${domain}: ${error.message}`);
+    }
   };
+
+  const handleDomainSelection = useCallback(async (domain: string) => {
+    if (!orchestrationAgent) {
+      console.error('Orchestration agent not available');
+      return;
+    }
+
+    try {
+      await handleDomainChange(domain as SpecializedDomain);
+    } catch (error: any) {
+      console.error('Error in domain selection:', error);
+      setError(`Failed to select domain: ${error.message}`);
+    }
+  }, [orchestrationAgent, handleDomainChange]);
 
   const fetchIQubeDetails = useCallback(async () => {
     if (!iQubeTokenId) {
       setError('Please enter a valid iQube Token ID');
       return;
     }
-
-    setIsLoading(true);
-    setError(null);
 
     try {
       console.log(`Fetching iQube details for Token ID: ${iQubeTokenId}`);
@@ -131,8 +169,6 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
         console.error('Unexpected error:', err);
         setError('Failed to fetch iQube details. An unexpected error occurred.');
       }
-    } finally {
-      setIsLoading(false);
     }
   }, [iQubeTokenId, agentId, onContextChange, agentDomains]);
 
@@ -199,39 +235,19 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
         </button>
       </div>
 
-      {/* MetaQube and BlakQube Data Display */}
-      {metaQubeData && (
-        <div className="metaqube-data mt-4 bg-blue-900 p-3 rounded">
-          <h3 className="font-bold mb-2">MetaQube Data</h3>
-          <pre className="text-xs overflow-auto">
-            {JSON.stringify(metaQubeData, null, 2)}
-          </pre>
-        </div>
-      )}
-
-      {blakQubeDecrypted && (
-        <div className="blakqube-data mt-4 bg-purple-900 p-3 rounded">
-          <h3 className="font-bold mb-2">BlakQube Decrypted</h3>
-          <pre className="text-xs overflow-auto">
-            {JSON.stringify(blakQubeDecrypted, null, 2)}
-          </pre>
-        </div>
-      )}
-
-      {/* Domain Specialization */}
-      <div className="payload-addition">
-        <h3 className="font-medium mb-2">Specialize Agent Domain</h3>
+      {/* Specialized Domains Section */}
+      <div className="specialized-domains-section mt-4">
+        <h3 className="text-lg font-semibold mb-2">Specialized Domains</h3>
         <div className="grid grid-cols-2 gap-2">
           {agentDomains.map((domain) => (
             <button
               key={domain.name}
-              onClick={() => handleDomainSelection(domain.name)}
+              onClick={() => handleDomainChange(domain.name as SpecializedDomain)}
               className={`
-                flex items-center justify-center space-x-2 
-                p-3 rounded transition duration-300
-                ${specializedState === domain.name 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}
+                p-3 rounded flex items-center justify-center space-x-2 transition-all duration-300 ease-in-out
+                ${specializedState === domain.name
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-700 hover:bg-gray-600'}
               `}
             >
               <span>{domain.icon}</span>
@@ -241,18 +257,45 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
         </div>
       </div>
 
-      {/* Specialized State */}
+      {/* Status Display */}
       {specializedState && (
-        <div className="specialized-state mt-4">
-          <h3 className="font-medium mb-2">Current Specialization</h3>
-          <div className="bg-green-800 rounded p-3 flex items-center space-x-2">
-            <span>🧠</span>
-            <span>
-              {specializedState} 
-              {iQubeDetails ? ` (iQube: ${iQubeDetails.name})` : ''} Mode Activated
-            </span>
+        <div className="status-display mt-4">
+          <div className="bg-green-800 rounded p-3">
+            <div className="flex items-center space-x-2">
+              <span>🧠</span>
+              <span>
+                {specializedState} 
+                {iQubeDetails ? ` (iQube: ${iQubeDetails.name})` : ''} Active
+              </span>
+            </div>
+            <div className="text-sm text-gray-300 mt-2">
+              Use chat interface to engage specialist agents.
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Debug Info (Optional) */}
+      {process.env.NODE_ENV === 'development' && (
+        <>
+          {metaQubeData && (
+            <div className="debug-data mt-4 bg-blue-900 p-3 rounded">
+              <h3 className="font-bold mb-2">MetaQube Data</h3>
+              <pre className="text-xs overflow-auto">
+                {JSON.stringify(metaQubeData, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          {blakQubeDecrypted && (
+            <div className="debug-data mt-4 bg-purple-900 p-3 rounded">
+              <h3 className="font-bold mb-2">BlakQube Data</h3>
+              <pre className="text-xs overflow-auto">
+                {JSON.stringify(blakQubeDecrypted, null, 2)}
+              </pre>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

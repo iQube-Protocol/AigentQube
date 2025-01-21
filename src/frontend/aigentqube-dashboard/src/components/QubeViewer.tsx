@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import BlockchainService from '../services/BlockchainService';
+import React, { useEffect, useState } from 'react';
 import { 
   Box, 
-  VStack, 
   Text, 
+  VStack, 
   Heading, 
   Table, 
   Thead, 
@@ -16,6 +15,7 @@ import {
   Spinner,
   useToast
 } from '@chakra-ui/react';
+import { blockchainService } from '../services/BlockchainService';
 
 interface QubeData {
   id: string;
@@ -26,43 +26,42 @@ interface QubeData {
   metadata: Record<string, any>;
 }
 
-const QubeViewer: React.FC = () => {
+interface QubeViewerProps {
+  address: string;
+}
+
+const QubeViewer: React.FC<QubeViewerProps> = ({ address }) => {
   const [qubes, setQubes] = useState<QubeData[]>([]);
+  const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
-  const [account, setAccount] = useState<string | null>(null);
   const toast = useToast();
 
   useEffect(() => {
     const fetchQubes = async () => {
       try {
-        // First, connect wallet
-        const connectedAccount = await BlockchainService.connectWallet();
-        
-        if (connectedAccount) {
-          setAccount(connectedAccount);
-          
-          // Fetch Qubes for the connected account
-          const fetchedQubes = await BlockchainService.getQubesByOwner(connectedAccount);
-          setQubes(fetchedQubes);
-          setIsLoading(false);
-        } else {
-          throw new Error('Wallet connection failed');
-        }
-      } catch (error) {
-        console.error('Error fetching Qubes:', error);
+        const fetchedQubes = await blockchainService.getQubesByOwner(address);
+        setQubes(fetchedQubes);
+        setError('');
+        setIsLoading(false);
+      } catch (err: any) {
+        console.error('Error fetching Qubes:', err);
+        setError('Qube Retrieval Failed');
+        setQubes([]);
+        setIsLoading(false);
         toast({
           title: "Qube Retrieval Failed",
-          description: error instanceof Error ? error.message : 'Unknown error',
+          description: err instanceof Error ? err.message : 'Unknown error',
           status: "error",
           duration: 5000,
           isClosable: true
         });
-        setIsLoading(false);
       }
     };
 
-    fetchQubes();
-  }, []);
+    if (address) {
+      fetchQubes();
+    }
+  }, [address, toast]);
 
   const renderQubeTypeBadge = (type: QubeData['qubeType']) => {
     const badgeColors = {
@@ -86,16 +85,19 @@ const QubeViewer: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <Box p={4} bg="red.50" borderRadius="md">
+        <Text color="red.500">{error}</Text>
+      </Box>
+    );
+  }
+
   return (
     <VStack spacing={4} align="stretch" p={4}>
-      <Heading size="md" mb={4}>
-        {account ? `Qubes for ${account.substring(0, 6)}...${account.substring(account.length - 4)}` : 'Qube Registry'}
-      </Heading>
-
+      <Heading size="md">Your Qubes</Heading>
       {qubes.length === 0 ? (
-        <Box textAlign="center" p={4} bg="gray.100" borderRadius="md">
-          <Text>No Qubes registered yet</Text>
-        </Box>
+        <Text>No Qubes found</Text>
       ) : (
         <TableContainer>
           <Table variant="simple">

@@ -1,43 +1,50 @@
+import axios, { AxiosInstance, AxiosError } from 'axios';
 import { APIIntegration, APIResponse, APIConfig } from './APIIntegrationManager';
 import { ServiceStatus } from '../../types/service';
 
-interface MetisConfig extends APIConfig {
-  apiKey: string;
+interface UserProfile {
+  Name: string;
+  Number: string;
+  Email: string;
+  Organization: string;
+  interests: string[];
 }
 
-interface UserInfo {
+interface Holding {
+  currency: string;
+  holding: number;
+}
+
+interface InitializationPayload {
   public_keys: string[];
-  user_profile: {
-    Name: string;
-    Number: string;
-    Email: string;
-    Organization: string;
-    interests: string[];
-  };
-  holdings: Array<{
-    currency: string;
-    holding: number;
-  }>;
+  user_profile: UserProfile;
+  holdings: Holding[];
   transaction_history: any[];
 }
 
-export class MetisIntegration implements APIIntegration {
-  public readonly id: string;
-  public readonly name: string = 'Metis AI Service';
-  public readonly description: string = 'Specialized domain service powered by Metis AI';
-  private _status: ServiceStatus = ServiceStatus.INITIALIZING;
-  public readonly config: MetisConfig;
+interface MetisConfig extends APIConfig {
+  apiKey?: string;
+}
 
-  constructor(config: MetisConfig) {
-    this.id = `metis-${Date.now()}`;
-    this.config = {
-      ...config,
-      baseURL: process.env.REACT_APP_API_BASE_URL || 'https://metisapi-8501e3beedcf.herokuapp.com',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': config.apiKey
+export class MetisIntegration implements APIIntegration {
+  public readonly id: string = 'metis';
+  public readonly name: string = 'Metis AI Service';
+  public readonly description: string = 'Crypto Analyst Domain AI Service';
+  
+  private _status: ServiceStatus = ServiceStatus.INITIALIZING;
+  private axiosInstance: AxiosInstance;
+  private baseURL: string = 'https://metisapi-8501e3beedcf.herokuapp.com';
+  private apiKey: string = 'Hephaestus-Athena-1976-Bangalore-182003-Ricci';
+
+  constructor(config: MetisConfig = {}) {
+    this.axiosInstance = axios.create({
+      baseURL: this.baseURL,
+      timeout: 30000, // Increased timeout to 30 seconds
+      // More lenient error handling
+      validateStatus: function (status) {
+        return status >= 200 && status < 600; // Accept wider range of status codes
       }
-    };
+    });
   }
 
   get status(): ServiceStatus {
@@ -46,10 +53,11 @@ export class MetisIntegration implements APIIntegration {
 
   public async initialize(): Promise<void> {
     try {
-      console.log('Initializing Metis service');
-      
-      const userPayload = {
-        public_keys: ["bc1p4hm2mdgfhag5742q37xuh28cnecccuckwrpjuw6fy0ssuz0lmmzsnv7u9h"],
+      // Initialization payload matching the provided structure
+      const payload: InitializationPayload = {
+        public_keys: [
+          "bc1p4hm2mdgfhag5742q37xuh28cnecccuckwrpjuw6fy0ssuz0lmmzsnv7u9h"
+        ],
         user_profile: {
           Name: "",
           Number: "",
@@ -65,144 +73,149 @@ export class MetisIntegration implements APIIntegration {
         transaction_history: []
       };
 
-      const response = await fetch(`${this.config.baseURL}/initialize`, {
-        method: 'POST',
+      // Perform initialization POST request
+      const response = await this.axiosInstance.post('/initialize', payload, {
         headers: {
-          'X-API-Key': this.config.apiKey || '',
+          'X-API-Key': this.apiKey,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(userPayload)
+        }
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Metis initialization error:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorText: errorText
-        });
-        
-        this._status = ServiceStatus.ERROR;
-        throw new Error(`Failed to initialize Metis API: ${errorText}`);
-      }
-
-      console.log('Metis service initialized successfully');
-      this._status = ServiceStatus.READY;
-    } catch (error: any) {
-      console.error('Metis initialization failed:', error.message);
-      this._status = ServiceStatus.ERROR;
-      throw error;
-    }
-  }
-
-  public async execute(params: { 
-    input: string, 
-    domain?: string 
-  }): Promise<APIResponse> {
-    if (this._status !== ServiceStatus.READY) {
-      return {
-        success: false,
-        error: 'Metis service not initialized',
-        data: null
-      };
-    }
-
-    try {
-      let url: URL;
-      
-      // Use different endpoint based on domain
-      if (params.domain === 'AI Coach') {
-        url = new URL(`${this.config.baseURL}/teaching`);
+      // Check initialization success
+      if (response.status === 200) {
+        this._status = ServiceStatus.READY;
+        console.log('[Metis API] Successfully initialized');
       } else {
-        url = new URL(`${this.config.baseURL}/service`);
+        this._status = ServiceStatus.PARTIAL;
+        console.warn('[Metis API] Initialization returned non-200 status:', response.status);
       }
-      
-      url.search = new URLSearchParams({ input: params.input }).toString();
+    } catch (error) {
+      console.error('[Metis API] Initialization failed:', error);
+      this._status = ServiceStatus.ERROR;
+      throw new Error(`Metis API Initialization Error: ${error.message}`);
+    }
+  }
 
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-          'X-API-Key': this.config.apiKey || ''
-        }
-      });
+  public async execute(params: any): Promise<APIResponse> {
+    try {
+      // Extract input flexibly
+      const input = params.message || params.input || params.query;
+      const domain = params.domain || 'crypto_analyst';
 
-      if (!response.ok) {
-        const errorText = await response.text();
+      // Validate input
+      if (!input) {
         return {
           success: false,
-          error: `HTTP error! status: ${response.status} - ${errorText}`,
-          data: null
+          error: 'Invalid input: message, input, or query is required',
+          metadata: { 
+            timestamp: new Date(),
+            domain,
+            receivedParams: Object.keys(params)
+          }
         };
       }
 
-      const data = await response.json();
-      return {
-        success: true,
-        data: data.response,
-        error: null
-      };
+      // Construct URL exactly like the JavaScript example
+      const url = new URL(`${this.baseURL}/service`);
+      const queryParams = { input };
+      url.search = new URLSearchParams(queryParams).toString();
+
+      try {
+        // Perform GET request
+        const response = await this.axiosInstance.get(url.toString(), {
+          params: queryParams
+        });
+
+        // Check if response is ok
+        if (response.status < 200 || response.status >= 600) {
+          return {
+            success: false,
+            error: `HTTP error! status: ${response.status}`,
+            metadata: { 
+              timestamp: new Date(),
+              domain
+            }
+          };
+        }
+
+        // Parse JSON response
+        const data = response.data;
+
+        // Validate response data
+        if (!data || !data.response) {
+          return {
+            success: false,
+            error: 'No valid response received from Metis API',
+            metadata: { 
+              timestamp: new Date(),
+              domain,
+              rawResponse: data
+            }
+          };
+        }
+
+        return {
+          success: true,
+          data: data.response,
+          metadata: { 
+            domain, 
+            timestamp: new Date(),
+            originalResponse: data
+          }
+        };
+      } catch (fetchError) {
+        console.error('[Metis API] Fetch Error during execution:', fetchError);
+        return {
+          success: false,
+          error: `Fetch error: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`,
+          metadata: { 
+            timestamp: new Date(),
+            domain,
+            errorDetails: fetchError
+          }
+        };
+      }
     } catch (error: any) {
-      console.error('Metis service execution error:', error);
+      console.error('[Metis API] Unexpected Execution Error:', error);
+
       return {
         success: false,
-        error: error.message,
-        data: null
+        error: error.message || 'Unexpected error during Metis API execution',
+        metadata: { 
+          timestamp: new Date(),
+          domain: params.domain || 'crypto_analyst',
+          errorDetails: error
+        }
       };
     }
   }
 
-  public async validate(): Promise<boolean> {
+  // Simplified query processing method
+  public async processQuery(query: string): Promise<string> {
     try {
-      const response = await fetch(`${this.config.baseURL}/health`, {
-        method: 'GET',
-        headers: {
-          'X-API-Key': this.config.apiKey || ''
-        }
+      // Construct URL exactly like the JavaScript example
+      const url = new URL(`${this.baseURL}/service`);
+      const params = { input: query };
+      url.search = new URLSearchParams(params).toString();
+
+      // Perform GET request
+      const response = await this.axiosInstance.get(url.toString(), {
+        params
       });
 
-      return response.ok;
-    } catch {
-      return false;
-    }
-  }
-
-  private async makeRequest(
-    endpoint: string, 
-    method: string = 'POST', 
-    body?: any
-  ): Promise<APIResponse> {
-    try {
-      const response = await fetch(`${this.config.baseURL}${endpoint}`, {
-        method: method,
-        headers: {
-          'X-API-Key': this.config.apiKey || '',
-          'Content-Type': 'application/json'
-        },
-        body: body ? JSON.stringify(body) : undefined
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        return {
-          success: false,
-          error: `HTTP error! status: ${response.status} - ${errorText}`,
-          data: null
-        };
+      // Check if response is ok
+      if (response.status < 200 || response.status >= 600) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      return {
-        success: true,
-        data: data,
-        error: null
-      };
-    } catch (error: any) {
-      console.error('Metis API Request Error:', error);
-      return {
-        success: false,
-        error: error.message,
-        data: null
-      };
+      // Parse JSON response
+      const data = response.data;
+
+      // Return response or fallback
+      return data.response || 'No response generated';
+    } catch (error) {
+      console.error('[Metis API] Query processing error:', error);
+      return error instanceof Error ? error.message : 'Error processing query';
     }
   }
 }

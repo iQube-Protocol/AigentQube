@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Box, Text, Input, Button, VStack, Flex, useToast } from '@chakra-ui/react';
 import { OrchestrationAgent } from '../services/OrchestrationAgent';
-import { Box, Input, Button, VStack, Text, useToast, Flex } from '@chakra-ui/react';
+import { SpecializedDomain, DOMAIN_METADATA } from '../types/domains';
 
 interface ChatInterfaceProps {
   context?: any;
@@ -10,8 +11,8 @@ interface ChatInterfaceProps {
 
 interface Message {
   id: number;
-  sender: 'user' | 'agent';
-  text: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
   timestamp: Date;
   error?: boolean;
 }
@@ -22,214 +23,405 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   orchestrationAgent
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentDomain, setCurrentDomain] = useState<string>(orchestrationAgent?.getCurrentDomain() || 'AigentQube');
+  const [isApiInitialized, setIsApiInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
+  // Add initialization effect
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const initializeApi = async () => {
+      if (!orchestrationAgent) {
+        console.warn('No OrchestrationAgent provided');
+        setError('OrchestrationAgent not initialized');
+        return;
+      }
+      
+      setIsLoading(true);
+      try {
+        // Check if OrchestrationAgent is initialized
+        console.log('Checking OrchestrationAgent initialization status');
+        const isInitialized = orchestrationAgent.isInitialized();
+        console.log('OrchestrationAgent initialization status:', isInitialized);
 
-  useEffect(() => {
-    const checkInitialization = async () => {
-      if (orchestrationAgent) {
-        try {
-          console.log('Checking orchestration agent status...');
-          const status = await orchestrationAgent.getStatus();
-          console.log('Status:', status);
-          const isReady = status.context.isActive && 
-                         status.service.isActive && 
-                         status.state.isActive;
-          
-          console.log('Is agent ready?', isReady);
-          setIsInitialized(isReady);
-          
-          if (!isReady) {
-            console.log('Agent not ready. Layers:', {
-              context: status.context.isActive,
-              service: status.service.isActive,
-              state: status.state.isActive
-            });
+        // If not initialized, attempt to initialize
+        if (!isInitialized) {
+          console.log('Attempting to initialize OrchestrationAgent');
+          try {
+            await orchestrationAgent.initialize();
+            console.log('OrchestrationAgent initialized successfully');
+          } catch (initError) {
+            console.error('Failed to initialize OrchestrationAgent:', initError);
+            throw new Error(`Initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
           }
-        } catch (error) {
-          console.error('Failed to check orchestration agent status:', error);
-          setIsInitialized(false);
         }
-      } else {
-        console.log('No orchestration agent provided');
-        setIsInitialized(false);
+
+        const apiKey = process.env.REACT_APP_METIS_API_KEY;
+        if (!apiKey) {
+          throw new Error('Metis API key not found in environment variables');
+        }
+
+        // Only initialize if it's a specialized domain
+        if (currentDomain !== 'AigentQube' && currentDomain !== 'Generic AI') {
+          // Initialize Metis API for the current domain
+          console.log(`Initializing specialized domain: ${currentDomain}`);
+          await orchestrationAgent.initializeSpecializedDomain(currentDomain as SpecializedDomain, {
+            apiKey,
+            instructions: DOMAIN_METADATA[currentDomain as SpecializedDomain]?.defaultInstructions || ''
+          });
+          
+          setIsApiInitialized(true);
+          console.log(`API initialized for domain: ${currentDomain}`);
+          
+          // Add system message for successful initialization
+          setMessages(prev => [...prev, {
+            id: Date.now(),
+            role: 'system',
+            content: `${currentDomain} services initialized and ready.`,
+            timestamp: new Date()
+          }]);
+        } else {
+          // For generic domains, just mark as initialized
+          setIsApiInitialized(true);
+          console.log('Using generic domain, no special initialization needed');
+        }
+      } catch (error: any) {
+        const errorMessage = `API initialization failed: ${error.message}`;
+        setError(errorMessage);
+        console.error('API initialization error:', error);
+        
+        // Add error message to chat
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          role: 'system',
+          content: errorMessage,
+          timestamp: new Date(),
+          error: true
+        }]);
+
+        // Show toast notification
+        toast({
+          title: 'Initialization Error',
+          description: errorMessage,
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    // Initial check
-    checkInitialization();
+    // Retry mechanism with exponential backoff
+    const initializeWithRetry = async (retries = 3, delay = 1000) => {
+      try {
+        await initializeApi();
+      } catch (error) {
+        if (retries > 0) {
+          console.log(`Retrying initialization. Attempts left: ${retries}`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          await initializeWithRetry(retries - 1, delay * 2);
+        } else {
+          throw error;
+        }
+      }
+    };
 
-    // Set up status check interval
-    const interval = setInterval(checkInitialization, 2000);
+    initializeWithRetry();
+  }, [currentDomain, orchestrationAgent, toast]);
 
-    return () => clearInterval(interval);
-  }, [orchestrationAgent]);
+  useEffect(() => {
+    if (context?.specializedState && context.specializedState !== currentDomain) {
+      handleDomainChange(context.specializedState);
+    }
+  }, [context?.specializedState]);
 
-  const sendMessage = async () => {
-    if (inputMessage.trim() === '') return;
-    if (!isInitialized) {
+  const handleDomainChange = async (domain: string) => {
+    if (!orchestrationAgent) return;
+
+    setError(null);
+    setIsLoading(true);
+    setIsApiInitialized(false);
+
+    try {
+      setCurrentDomain(domain);
+      
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        role: 'system',
+        content: `Switching to ${domain} mode...`,
+        timestamp: new Date()
+      }]);
+    } catch (error: any) {
+      setError(`Failed to switch to ${domain}: ${error.message}`);
+      console.error('Error changing domain:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue.trim() || !orchestrationAgent) {
       toast({
-        title: 'Not Ready',
-        description: 'The AI Assistant is still initializing. Please wait.',
+        title: 'Submission Error',
+        description: !orchestrationAgent 
+          ? 'OrchestrationAgent not available' 
+          : 'Please enter a message',
         status: 'warning',
         duration: 3000,
         isClosable: true,
       });
       return;
     }
-    if (isProcessing) return;
-
-    const newUserMessage: Message = {
+    
+    // Add user message
+    const userMessage: Message = {
       id: Date.now(),
-      sender: 'user',
-      text: inputMessage,
+      role: 'user',
+      content: inputValue,
       timestamp: new Date()
     };
-
-    setMessages(prev => [...prev, newUserMessage]);
-    setInputMessage('');
-    setIsProcessing(true);
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setIsLoading(true);
+    setError(null);
 
     try {
-      // Process through orchestration agent
-      const response = await orchestrationAgent.processCommand(inputMessage, context);
+      // Check and attempt to initialize if not ready
+      if (!isApiInitialized) {
+        try {
+          // Ensure OrchestrationAgent is initialized
+          if (!orchestrationAgent.isInitialized()) {
+            console.log('Attempting to initialize OrchestrationAgent before submission');
+            await orchestrationAgent.initialize();
+          }
 
-      if (response.success) {
-        const agentResponse: Message = {
-          id: Date.now() + 1,
-          sender: 'agent',
-          text: response.data,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, agentResponse]);
+          // Re-check API initialization
+          const apiKey = process.env.REACT_APP_METIS_API_KEY;
+          if (!apiKey) {
+            throw new Error('Metis API key not found in environment variables');
+          }
+
+          // Initialize specialized domain if needed
+          if (currentDomain !== 'AigentQube' && currentDomain !== 'Generic AI') {
+            await orchestrationAgent.initializeSpecializedDomain(currentDomain as SpecializedDomain, {
+              apiKey,
+              instructions: DOMAIN_METADATA[currentDomain as SpecializedDomain]?.defaultInstructions || ''
+            });
+          }
+        } catch (initError) {
+          throw new Error(`Initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
+        }
+      }
+
+      // Perform query using Metis service
+      const response = await orchestrationAgent.queryDomain(currentDomain, inputValue);
+
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to get response');
+      }
+
+      // If the response is for Metis service in Crypto Analyst domain, use the new method
+      if (currentDomain === 'Crypto Analyst') {
+        const url = new URL('https://metisapi-8501e3beedcf.herokuapp.com/service');
+        const params = { input: inputValue };
+        url.search = new URLSearchParams(params).toString();
+
+        try {
+          const metisResponse = await fetch(url.toString(), {
+            method: 'GET',
+          });
+
+          if (!metisResponse.ok) {
+            throw new Error(`HTTP error! status: ${metisResponse.status}`);
+          }
+
+          const data = await metisResponse.json();
+
+          // Ensure we have a valid response
+          if (!data || !data.response) {
+            throw new Error('No valid response received from Metis API');
+          }
+
+          // Update messages with Metis response
+          setMessages(prev => [...prev, { 
+            id: Date.now() + 1,
+            role: 'assistant',
+            content: data.response,
+            timestamp: new Date()
+          }]);
+        } catch (metisError) {
+          throw new Error(`Metis API Error: ${metisError instanceof Error ? metisError.message : 'Unknown error'}`);
+        }
       } else {
-        throw new Error(response.error || 'Unknown error occurred');
+        // For other domains, use existing response handling
+        setMessages(prev => [...prev, { 
+          id: Date.now() + 1,
+          role: 'assistant',
+          content: response.data.toString(),
+          timestamp: new Date()
+        }]);
       }
     } catch (error: any) {
-      console.error('Chat processing error:', error);
+      const errorMessage = `Error: ${error.message}`;
       
-      const errorMessage: Message = {
-        id: Date.now() + 1,
-        sender: 'agent',
-        text: `I apologize, but I encountered an error: ${error.message}`,
+      // More detailed error handling
+      if (error.message.includes('not initialized')) {
+        setIsApiInitialized(false);
+        toast({
+          title: 'Service Unavailable',
+          description: 'Please wait while services are reinitialized',
+          status: 'warning',
+          duration: 5000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: 'Chat Error',
+          description: errorMessage,
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+
+      setError(errorMessage);
+      console.error('Chat error:', error);
+      
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        role: 'system',
+        content: errorMessage,
         timestamp: new Date(),
         error: true
-      };
-
-      setMessages(prev => [...prev, errorMessage]);
-
-      toast({
-        title: 'Error',
-        description: error.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+      }]);
     } finally {
-      setIsProcessing(false);
+      setIsLoading(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+  const handlePromptInsert = (prompt: string) => {
+    setInputValue(prompt);
+    const inputElement = document.querySelector('.chat-interface input') as HTMLInputElement;
+    if (inputElement) {
+      inputElement.focus();
     }
   };
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   return (
     <Box 
-      className={className}
-      height="100%"
+      className="chat-interface"
+      bg="gray.800"
+      height="600px"
       display="flex"
       flexDirection="column"
-      bg="gray.800"
-      p={6}
-      borderRadius="lg"
     >
-      {!isInitialized ? (
-        <Flex justify="center" align="center" height="100%">
-          <Text>Initializing chat interface...</Text>
-        </Flex>
-      ) : (
-        <VStack spacing={4} flex={1}>
-          <Box 
-            width="full"
-            overflowY="auto"
-            flex={1}
-            bg="gray.900"
-            borderRadius="md"
-            p={4}
-            minHeight="300px"
-          >
-            <VStack spacing={3} align="stretch">
-              {messages.map((message) => (
-                <Box 
-                  key={message.id} 
-                  alignSelf={message.sender === 'user' ? 'flex-end' : 'flex-start'}
-                  maxWidth="80%"
-                >
-                  <Box
-                    bg={message.sender === 'user' 
-                      ? 'blue.600' 
-                      : message.error 
-                        ? 'red.600' 
-                        : 'gray.700'}
-                    color="white"
-                    borderRadius="lg"
-                    px={4}
-                    py={2}
-                  >
-                    <Text>{message.text}</Text>
-                    <Text 
-                      fontSize="xs" 
-                      opacity={0.7}
-                      mt={1}
-                    >
-                      {message.timestamp.toLocaleTimeString()}
-                    </Text>
-                  </Box>
-                </Box>
-              ))}
-              <div ref={messagesEndRef} />
-            </VStack>
-          </Box>
+      <Flex 
+        justify="space-between" 
+        align="center" 
+        bg="gray.700" 
+        p={3} 
+        borderTopRadius="lg"
+      >
+        <Text fontSize="lg" fontWeight="bold">{currentDomain}</Text>
+        {isLoading && <Text fontSize="sm" color="gray.400">Processing...</Text>}
+      </Flex>
 
-          <Flex width="full" gap={2}>
+      <Box 
+        flex="1"
+        overflowY="auto"
+        p={4}
+        css={{
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            width: '10px',
+            background: 'var(--chakra-colors-gray-900)',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'var(--chakra-colors-gray-700)',
+            borderRadius: '24px',
+          },
+        }}
+      >
+        <VStack spacing={4} align="stretch">
+          {messages.map((message, index) => (
+            <Box 
+              key={index}
+              alignSelf={message.role === 'user' ? 'flex-end' : message.role === 'assistant' ? 'flex-start' : 'center'}
+              maxWidth="80%"
+            >
+              <Box
+                bg={message.role === 'user' 
+                  ? 'blue.600' 
+                  : message.role === 'assistant' 
+                    ? 'gray.700' 
+                    : 'gray.600'}
+                color="white"
+                px={4}
+                py={2}
+                borderRadius="lg"
+                boxShadow="md"
+              >
+                <Text whiteSpace="pre-wrap">{message.content}</Text>
+              </Box>
+            </Box>
+          ))}
+          <div ref={messagesEndRef} />
+        </VStack>
+      </Box>
+
+      {error && (
+        <Box 
+          bg="red.600" 
+          color="white" 
+          p={2} 
+          mx={4} 
+          mb={2} 
+          borderRadius="md"
+        >
+          {error}
+        </Box>
+      )}
+
+      <Box 
+        p={4} 
+        bg="gray.700" 
+        borderBottomRadius="lg"
+      >
+        <form onSubmit={handleSubmit}>
+          <Flex gap={2}>
             <Input
-              flex={1}
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
               placeholder="Type your message..."
-              disabled={isProcessing}
-              bg="gray.700"
+              bg="gray.800"
               color="white"
               _placeholder={{ color: 'gray.400' }}
+              disabled={isLoading}
+              borderColor="gray.600"
+              _hover={{ borderColor: 'gray.500' }}
+              _focus={{ borderColor: 'blue.500', boxShadow: 'none' }}
             />
             <Button
-              onClick={sendMessage}
-              isLoading={isProcessing}
-              loadingText="Sending..."
+              type="submit"
               colorScheme="blue"
+              isDisabled={isLoading || !inputValue.trim()}
               px={8}
+              _hover={{ bg: 'blue.500' }}
             >
               Send
             </Button>
           </Flex>
-        </VStack>
-      )}
+        </form>
+      </Box>
     </Box>
   );
 };

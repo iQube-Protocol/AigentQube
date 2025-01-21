@@ -6,9 +6,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'aigentqube-primary': '#3B82F6',
-        'aigentqube-secondary': '#10B981',
-        'aigentqube-background': '#F3F4F6',
+        'aigent-primary': '#3182CE',  // Chakra UI blue.500
+        'aigent-secondary': '#718096', // Chakra UI gray.500
       },
       fontFamily: {
         'sans': ['Inter', 'system-ui', 'sans-serif'],
@@ -19,4 +18,7 @@ module.exports = {
     },
   },
   plugins: [],
+  corePlugins: {
+    preflight: false  // Disable Tailwind's reset styles to prevent conflicts with Chakra UI
+  }
 };
