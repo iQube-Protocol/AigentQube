@@ -1,5 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, Text, Input, Button, VStack, Flex, useToast } from '@chakra-ui/react';
+import { 
+  Box, 
+  Text, 
+  Input, 
+  Button, 
+  VStack, 
+  Flex, 
+  useToast, 
+  Heading, 
+  SimpleGrid,
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter,
+  Divider
+} from '@chakra-ui/react';
 import { OrchestrationAgent } from '../services/OrchestrationAgent';
 import { SpecializedDomain, DOMAIN_METADATA } from '../types/domains';
 
@@ -11,11 +26,217 @@ interface ChatInterfaceProps {
 
 interface Message {
   id: number;
+  uniqueId: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
   error?: boolean;
 }
+
+// Define the structure for a prompt recommendation
+interface PromptRecommendation {
+  heading: string;
+  subHeading: string;
+  prompt: string;
+  placeholders?: Record<string, string>;
+}
+
+// Mapping of domain-specific prompt recommendations
+const DOMAIN_PROMPT_RECOMMENDATIONS: Record<SpecializedDomain, PromptRecommendation[]> = {
+  'AigentQube': [
+    {
+      heading: 'iQube Overview',
+      subHeading: 'Performance Metrics',
+      prompt: 'Provide a comprehensive overview of my iQube\'s current performance metrics and suggest optimization strategies.'
+    },
+    {
+      heading: 'Integration Assistance',
+      subHeading: 'Workflow Optimization',
+      prompt: 'Guide me through integrating AigentQube features into my existing workflow for maximum efficiency.'
+    },
+    {
+      heading: 'Strategic Insights',
+      subHeading: 'Future Planning',
+      prompt: 'Develop a comprehensive strategy for future growth and technological advancement.'
+    }
+  ],
+  'Bitcoin Advisor': [
+    {
+      heading: 'Network Analysis',
+      subHeading: 'Connectivity Insights',
+      prompt: 'Analyze Bitcoin network performance with connection strength at {network}. What improvements are recommended?'
+    },
+    {
+      heading: 'Consensus Participation',
+      subHeading: 'Governance Strategy',
+      prompt: 'With current consensus participation at {governance}, what strategies should be implemented to optimize network contribution?'
+    },
+    {
+      heading: 'Market Trend Prediction',
+      subHeading: 'Advanced Analysis',
+      prompt: 'Conduct an in-depth market analysis of Bitcoin, identifying potential trends and investment opportunities.'
+    }
+  ],
+  'Guardian Aigent': [
+    {
+      heading: 'Sovereignty Review',
+      subHeading: 'Data Protection',
+      prompt: 'Current data sovereignty score is {sovereignty}. Analyze potential vulnerabilities and recommend improvements.'
+    },
+    {
+      heading: 'AI Safety Optimization',
+      subHeading: 'Security Measures',
+      prompt: 'With an AI safety score of {safety}, what additional safety measures should be implemented?'
+    },
+    {
+      heading: 'Ethical AI Compliance',
+      subHeading: 'Regulatory Alignment',
+      prompt: 'Provide a comprehensive review of current AI ethical standards and recommend strategies for regulatory compliance.'
+    }
+  ],
+  'Crypto Analyst': [
+    {
+      heading: 'Token Analysis',
+      subHeading: 'DeFi Performance',
+      prompt: 'Analyze the current state of major DeFi protocols, focusing on TVL, yields, and risk metrics.'
+    },
+    {
+      heading: 'Cross-Chain Security',
+      subHeading: 'Risk Mitigation',
+      prompt: 'Evaluate the security status of major cross-chain bridges and recommend risk mitigation strategies.'
+    },
+    {
+      heading: 'Portfolio Optimization',
+      subHeading: 'Digital Asset Strategy',
+      prompt: 'Develop a comprehensive crypto portfolio strategy considering current market conditions, risk tolerance, and emerging blockchain technologies.'
+    }
+  ],
+  'Agent AI Coach': [
+    {
+      heading: 'Model Evaluation',
+      subHeading: 'Performance Metrics',
+      prompt: 'Evaluate the current AI model performance metrics and suggest optimization strategies.'
+    },
+    {
+      heading: 'Training Data Quality',
+      subHeading: 'Data Improvement',
+      prompt: 'Analyze training data quality and recommend improvements for better model performance.'
+    },
+    {
+      heading: 'Learning Techniques',
+      subHeading: 'Advanced Development',
+      prompt: 'Explore and recommend advanced machine learning techniques to enhance the current AI model\'s capabilities and learning efficiency.'
+    }
+  ]
+};
+
+// Prompt Recommendation Component
+const PromptRecommendations: React.FC<{
+  currentDomain: string;
+  onRecommendationSelect: (prompt: string) => void;
+}> = ({ currentDomain, onRecommendationSelect }) => {
+  const [recommendations, setRecommendations] = useState<PromptRecommendation[]>(
+    DOMAIN_PROMPT_RECOMMENDATIONS[currentDomain as SpecializedDomain] || []
+  );
+
+  // Reset recommendations when domain changes
+  useEffect(() => {
+    setRecommendations(
+      DOMAIN_PROMPT_RECOMMENDATIONS[currentDomain as SpecializedDomain] || []
+    );
+  }, [currentDomain]);
+
+  // Handle recommendation selection
+  const handleRecommendationSelect = (rec: PromptRecommendation) => {
+    // Insert the prompt
+    onRecommendationSelect(rec.prompt);
+    
+    // Remove the selected recommendation
+    setRecommendations(prev => prev.filter(r => r !== rec));
+  };
+
+  // Determine grid columns based on remaining recommendations
+  const gridColumns = recommendations.length === 3 ? 3 : 
+                      recommendations.length === 2 ? 2 : 
+                      recommendations.length === 1 ? 1 : 0;
+
+  return (
+    <Flex 
+      position="absolute" 
+      bottom="50px"  // Position just above chat input
+      left="0"
+      right="0"
+      justifyContent="center"
+      alignItems="center"
+      px={4}
+      zIndex={10}  // Ensure recommendations are above messages
+      pointerEvents="none"  // Allow clicking through to messages
+    >
+      <SimpleGrid 
+        columns={gridColumns} 
+        spacing={2} 
+        width="110%"  // Increase width to 110%
+        maxWidth="880px"  // Proportionally increase max width
+        pointerEvents="auto"  // Re-enable pointer events for the grid itself
+      >
+        {recommendations.map((rec, index) => (
+          <Card 
+            key={`recommendation-${rec.heading}-${index}`}  // Ensure unique key
+            variant="elevated" 
+            cursor="pointer" 
+            transition="all 0.2s"
+            height="60%" 
+            opacity={1}  // Full opacity
+            bg="rgba(17, 24, 39, 0.9)"  // Slightly lighter and slightly transparent grey
+            _hover={{ 
+              transform: 'scale(1.02)', 
+              boxShadow: 'md',
+              bg: "rgba(17, 24, 39, 0.95)"  // Even slightly lighter on hover
+            }}
+            onClick={() => handleRecommendationSelect(rec)}
+            color="white"
+            borderRadius="md"
+            pointerEvents="auto"  // Enable pointer events for individual cards
+          >
+            <CardHeader 
+              pb={1} 
+              height="40%" 
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              textAlign="center"
+            >
+              <Heading 
+                size="xs" 
+                textTransform="uppercase" 
+                color="white"
+                textAlign="center"
+              >
+                {rec.heading}
+              </Heading>
+            </CardHeader>
+            <CardBody 
+              pt={1} 
+              height="60%" 
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              textAlign="center"
+            >
+              <Text 
+                fontSize="xs" 
+                color="gray.400"
+                textAlign="center"
+              >
+                {rec.subHeading}
+              </Text>
+            </CardBody>
+          </Card>
+        ))}
+      </SimpleGrid>
+    </Flex>
+  );
+};
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
   context,
@@ -79,6 +300,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           // Add system message for successful initialization
           setMessages(prev => [...prev, {
             id: Date.now(),
+            uniqueId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             role: 'system',
             content: `${currentDomain} services initialized and ready.`,
             timestamp: new Date()
@@ -96,6 +318,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         // Add error message to chat
         setMessages(prev => [...prev, {
           id: Date.now(),
+          uniqueId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           role: 'system',
           content: errorMessage,
           timestamp: new Date(),
@@ -151,6 +374,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       
       setMessages(prev => [...prev, {
         id: Date.now(),
+        uniqueId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         role: 'system',
         content: `Switching to ${domain} mode...`,
         timestamp: new Date()
@@ -159,6 +383,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setError(`Failed to switch to ${domain}: ${error.message}`);
       console.error('Error changing domain:', error);
     }
+  };
+
+  const createMessage = (content: string, role: 'user' | 'assistant' | 'system', error?: boolean): Message => {
+    const timestamp = Date.now();
+    const uniqueId = `${role}-${timestamp}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    return {
+      id: timestamp,
+      uniqueId,
+      role,
+      content,
+      timestamp: new Date(),
+      error: error || false
+    };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -176,17 +414,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       return;
     }
     
-    // Add user message
-    const userMessage: Message = {
-      id: Date.now(),
-      role: 'user',
-      content: inputValue,
-      timestamp: new Date()
-    };
+    const userMessage = createMessage(inputValue, 'user');
+    
+    // Add user message immediately
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
-    setError(null);
 
     try {
       // Check and attempt to initialize if not ready
@@ -246,69 +479,59 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           }
 
           // Update messages with Metis response
-          setMessages(prev => [...prev, { 
-            id: Date.now() + 1,
-            role: 'assistant',
-            content: data.response,
-            timestamp: new Date()
-          }]);
+          setMessages(prev => [...prev, createMessage(data.response, 'assistant')]);
         } catch (metisError) {
           throw new Error(`Metis API Error: ${metisError instanceof Error ? metisError.message : 'Unknown error'}`);
         }
       } else {
         // For other domains, use existing response handling
-        setMessages(prev => [...prev, { 
-          id: Date.now() + 1,
-          role: 'assistant',
-          content: response.data.toString(),
-          timestamp: new Date()
-        }]);
+        setMessages(prev => [...prev, createMessage(response.data.toString(), 'assistant')]);
       }
     } catch (error: any) {
-      const errorMessage = `Error: ${error.message}`;
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       
-      // More detailed error handling
-      if (error.message.includes('not initialized')) {
-        setIsApiInitialized(false);
-        toast({
-          title: 'Service Unavailable',
-          description: 'Please wait while services are reinitialized',
-          status: 'warning',
-          duration: 5000,
-          isClosable: true,
-        });
-      } else {
-        toast({
-          title: 'Chat Error',
-          description: errorMessage,
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
+      // Modify error message creation
+      const errorSystemMessage = createMessage(errorMessage, 'system', true);
+      
+      // Toast and error handling remain the same
+      toast({
+        title: 'Chat Error',
+        description: errorMessage,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
 
       setError(errorMessage);
       console.error('Chat error:', error);
       
-      setMessages(prev => [...prev, {
-        id: Date.now(),
-        role: 'system',
-        content: errorMessage,
-        timestamp: new Date(),
-        error: true
-      }]);
+      setMessages(prev => [...prev, errorSystemMessage]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handlePromptInsert = (prompt: string) => {
-    setInputValue(prompt);
-    const inputElement = document.querySelector('.chat-interface input') as HTMLInputElement;
-    if (inputElement) {
-      inputElement.focus();
-    }
+  // Method to handle inserting recommended prompts
+  const handlePromptInsert = (recommendedPrompt: string) => {
+    // Set the input value to the recommended prompt
+    setInputValue(recommendedPrompt);
+    
+    // Optional: Automatically trigger message sending
+    // Uncomment the next line if you want to auto-send the recommended prompt
+    // handleSubmit();
   };
+
+  useEffect(() => {
+    const keyCount: {[key: string]: number} = {};
+    messages.forEach(message => {
+      const key = `msg-${message.uniqueId}`;
+      keyCount[key] = (keyCount[key] || 0) + 1;
+      
+      if (keyCount[key] > 1) {
+        console.error('Duplicate key detected:', key, message);
+      }
+    });
+  }, [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -321,6 +544,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       height="600px"
       display="flex"
       flexDirection="column"
+      position="relative"
     >
       <Flex 
         justify="space-between" 
@@ -334,43 +558,65 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </Flex>
 
       <Box 
-        flex="1"
-        overflowY="auto"
-        p={4}
+        flex="1" 
+        overflowY="auto"  // Enable vertical scrolling
+        pb="100px"  // Add padding at the bottom to ensure last message is visible
         css={{
           '&::-webkit-scrollbar': {
-            width: '8px',
+            width: '4px',
           },
           '&::-webkit-scrollbar-track': {
-            width: '10px',
-            background: 'var(--chakra-colors-gray-900)',
+            background: 'transparent',
           },
           '&::-webkit-scrollbar-thumb': {
-            background: 'var(--chakra-colors-gray-700)',
-            borderRadius: '24px',
+            background: 'rgba(255,255,255,0.2)',
+            borderRadius: '4px',
           },
         }}
       >
-        <VStack spacing={4} align="stretch">
-          {messages.map((message, index) => (
+        <VStack 
+          spacing={4} 
+          align="stretch" 
+          p={4}
+        >
+          {messages.map((message) => (
             <Box 
-              key={index}
-              alignSelf={message.role === 'user' ? 'flex-end' : message.role === 'assistant' ? 'flex-start' : 'center'}
+              key={`msg-${message.uniqueId}`}  
+              alignSelf={
+                message.role === 'user' ? 'flex-end' : 
+                message.role === 'assistant' ? 'flex-start' : 
+                'center'
+              }
               maxWidth="80%"
             >
               <Box
-                bg={message.role === 'user' 
-                  ? 'blue.600' 
-                  : message.role === 'assistant' 
-                    ? 'gray.700' 
-                    : 'gray.600'}
+                bg={
+                  message.role === 'user' ? 'blue.600' : 
+                  message.role === 'assistant' ? 'gray.700' : 
+                  message.error ? 'red.600' : 'gray.600'
+                }
                 color="white"
                 px={4}
                 py={2}
                 borderRadius="lg"
                 boxShadow="md"
+                position="relative"
               >
-                <Text whiteSpace="pre-wrap">{message.content}</Text>
+                <Text>{message.content}</Text>
+                {message.error && (
+                  <Box 
+                    position="absolute" 
+                    top="-8px" 
+                    right="-8px"
+                    bg="red.700"
+                    color="white"
+                    borderRadius="full"
+                    p={1}
+                    fontSize="xs"
+                  >
+                    Error
+                  </Box>
+                )}
               </Box>
             </Box>
           ))}
@@ -379,22 +625,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </Box>
 
       {error && (
-        <Box 
-          bg="red.600" 
-          color="white" 
-          p={2} 
-          mx={4} 
-          mb={2} 
-          borderRadius="md"
-        >
+        <Box color="red.500" p={4}>
           {error}
         </Box>
       )}
 
+      <PromptRecommendations 
+        currentDomain={currentDomain} 
+        onRecommendationSelect={handlePromptInsert} 
+      />
+
       <Box 
         p={4} 
-        bg="gray.700" 
-        borderBottomRadius="lg"
+        bg="gray.700"
       >
         <form onSubmit={handleSubmit}>
           <Flex gap={2}>

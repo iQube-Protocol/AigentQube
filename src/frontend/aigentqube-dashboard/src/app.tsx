@@ -607,6 +607,107 @@ const App: React.FC = () => {
     initializeApplication();
   }, [initializeApplication]);
 
+  // Monitor Layer Alignment
+  const checkAlignment = useCallback(async () => {
+    try {
+      if (orchestrationAgent) {
+        // Check if validateLayerAlignment method exists and is a function
+        if (typeof orchestrationAgent.validateLayerAlignment === 'function') {
+          const isAligned = await orchestrationAgent.validateLayerAlignment();
+          if (!isAligned) {
+            toast({
+              title: 'Layer Misalignment Detected',
+              description: 'Some application layers are not properly synchronized',
+              status: 'warning',
+              duration: null,
+              isClosable: true,
+            });
+          }
+        } else {
+          console.warn('OrchestrationAgent does not have a validateLayerAlignment method');
+          toast({
+            title: 'Agent Configuration Issue',
+            description: 'Layer alignment validation is not supported',
+            status: 'warning',
+            duration: 5000,
+            isClosable: true,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Alignment check failed:', error);
+      toast({
+        title: 'Alignment Check Error',
+        description: 'Unable to validate layer alignment',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  }, [orchestrationAgent, toast]);
+
+  useEffect(() => {
+    if (orchestrationAgent) {
+      const interval = setInterval(checkAlignment, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [checkAlignment, orchestrationAgent]);
+
+  // Subscribe to Orchestration Updates
+  const handleOrchestrationUpdate = useCallback((state) => {
+    try {
+      console.log('Orchestration State Updated:', state);
+      
+      // Safely handle state updates
+      if (state?.context?.error || state?.service?.error || state?.state?.error) {
+        toast({
+          title: 'Layer Error Detected',
+          description: 'One or more layers reported an error',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      console.error('Orchestration update error:', error);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    // Robust check for subscribe method
+    if (orchestrationAgent) {
+      // Check if subscribe method exists and is a function
+      if (typeof orchestrationAgent.subscribe === 'function') {
+        try {
+          const unsubscribe = orchestrationAgent.subscribe(handleOrchestrationUpdate);
+          return () => {
+            if (typeof unsubscribe === 'function') {
+              unsubscribe();
+            }
+          };
+        } catch (subscribeError) {
+          console.error('Failed to subscribe to OrchestrationAgent:', subscribeError);
+          toast({
+            title: 'Subscription Error',
+            description: 'Could not subscribe to agent updates',
+            status: 'warning',
+            duration: 5000,
+            isClosable: true,
+          });
+        }
+      } else {
+        console.warn('OrchestrationAgent does not have a subscribe method');
+        toast({
+          title: 'Agent Configuration Issue',
+          description: 'OrchestrationAgent lacks subscription capabilities',
+          status: 'warning',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    }
+  }, [orchestrationAgent, handleOrchestrationUpdate, toast]);
+
   // Render initialization error if present
   if (initializationError) {
     return (
@@ -633,47 +734,6 @@ const App: React.FC = () => {
       </Box>
     );
   }
-
-  // Monitor Layer Alignment
-  useEffect(() => {
-    const checkAlignment = async () => {
-      if (orchestrationAgent) {
-        const isAligned = await orchestrationAgent.validateLayerAlignment();
-        if (!isAligned) {
-          toast({
-            title: 'Layer Misalignment Detected',
-            description: 'Some application layers are not properly synchronized',
-            status: 'warning',
-            duration: null,
-            isClosable: true,
-          });
-        }
-      }
-    };
-
-    const interval = setInterval(checkAlignment, 30000);
-    return () => clearInterval(interval);
-  }, [toast]);
-
-  // Subscribe to Orchestration Updates
-  useEffect(() => {
-    const unsubscribe = orchestrationAgent?.subscribe((state) => {
-      console.log('Orchestration State Updated:', state);
-      
-      // Handle layer status changes
-      if (state.context.error || state.service.error || state.state.error) {
-        toast({
-          title: 'Layer Error Detected',
-          description: 'One or more layers reported an error',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
-    });
-
-    return () => unsubscribe?.();
-  }, [toast]);
 
   return (
     <ErrorBoundary 

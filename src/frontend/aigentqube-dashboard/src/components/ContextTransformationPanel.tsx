@@ -228,66 +228,6 @@ const ContextTransformationPanel: React.FC<ContextTransformationPanelProps> = ({
           </Box>
         )}
       </div>
-
-      {/* Recommended Actions */}
-      <div>
-        <h3 className="text-lg font-medium text-gray-300 mb-3">
-          {getDomainTitle()} 
-        </h3>
-        <div className="grid grid-cols-2 gap-4">
-          {recommendedPrompts.slice(0, 2).map((prompt, index) => (
-            <div
-              key={index}
-              className="bg-gray-700 p-4 rounded-lg border border-gray-600 cursor-pointer hover:bg-gray-600 transition-colors"
-              onClick={() => onPromptInsert && onPromptInsert(prompt.prompt)}
-            >
-              <div className="text-sm font-medium text-white mb-2">
-                {prompt.action}
-              </div>
-              <div className="text-sm text-gray-400">
-                {prompt.prompt}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Recommended Actions */}
-      {recommendedActions && recommendedActions.length > 0 && (
-        <div className="recommended-actions mt-6">
-          <h3 className="text-lg font-medium text-gray-300 mb-3">
-            {getDomainTitle()}
-            {context?.iQubeData && (
-              <span className="text-sm text-gray-400 ml-2">
-                (Personalized based on your iQube data)
-              </span>
-            )}
-          </h3>
-          <div className="grid grid-cols-2 gap-4">
-            {recommendedActions.slice(0, 2).map((action, index) => (
-              <div 
-                key={index} 
-                className="bg-gray-700 p-4 rounded-lg border border-gray-600 cursor-pointer hover:bg-gray-600 transition-colors"
-                onClick={() => {
-                  if (onPromptInsert) {
-                    onPromptInsert(action.prompt);
-                    const inputElement = document.querySelector('.chat-interface input');
-                    if (inputElement) {
-                      inputElement.scrollIntoView({ behavior: 'smooth' });
-                      inputElement.focus();
-                    }
-                  }
-                }}
-              >
-                <h4 className="font-semibold mb-2">{action.action}</h4>
-                <p className="text-sm text-gray-400">
-                  {action.prompt}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

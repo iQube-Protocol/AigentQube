@@ -290,76 +290,175 @@ export class OrchestrationAgent {
   }
 
   private async initializeContextLayer(): Promise<void> {
-    // Perform optional health checks with fallbacks
-    const serviceChecks = [];
+    try {
+      // Perform optional health checks with fallbacks
+      const serviceChecks = [];
 
-    if (this.metisService) {
-      serviceChecks.push(
-        this.metisService.healthCheck()
-          .then(result => {
-            this.serviceLayer.isActive = result;
-            this.serviceLayer.error = result ? null : 'Metis service health check failed';
-            return result;
-          })
-          .catch(error => {
-            this.logger.log(`Metis service health check failed: ${error}`, 'warn');
-            this.serviceLayer.error = error.message;
-            return false;
-          })
-      );
+      if (this.metisService) {
+        serviceChecks.push(
+          this.metisService.healthCheck()
+            .then(result => {
+              this.serviceLayer.isActive = result;
+              this.serviceLayer.error = result ? null : 'Metis service health check failed';
+              return result;
+            })
+            .catch(error => {
+              this.logger.log(`Metis service health check failed: ${error}`, 'warn');
+              this.serviceLayer.error = error.message;
+              return false;
+            })
+        );
+      }
+
+      if (this.nlpProcessor) {
+        serviceChecks.push(
+          this.nlpProcessor.validate()
+            .then(result => {
+              this.contextLayer.isActive = result;
+              this.contextLayer.error = result ? null : 'NLP processor validation failed';
+              return result;
+            })
+            .catch(error => {
+              this.logger.log(`NLP processor validation failed: ${error}`, 'warn');
+              this.contextLayer.error = error.message;
+              return false;
+            })
+        );
+      }
+
+      // Wait for service checks, but don't block if they fail
+      const serviceResults = await Promise.allSettled(serviceChecks);
+
+      // Validate layers after initialization
+      const contextValid = this.validateLayer(this.contextLayer, 'Context');
+      const serviceValid = this.validateLayer(this.serviceLayer, 'Service');
+
+      if (!contextValid || !serviceValid) {
+        throw new OrchestrationError(
+          'Layer alignment validation failed', 
+          'LAYER_VALIDATION_ERROR',
+          { 
+            contextLayerValid: contextValid, 
+            serviceLayerValid: serviceValid 
+          }
+        );
+      }
+    } catch (error) {
+      this.logger.log(`Context layer initialization failed: ${error}`, 'error');
+      throw error;
     }
-
-    if (this.nlpProcessor) {
-      serviceChecks.push(
-        this.nlpProcessor.validate()
-          .then(result => {
-            this.contextLayer.isActive = result;
-            this.contextLayer.error = result ? null : 'NLP processor validation failed';
-            return result;
-          })
-          .catch(error => {
-            this.logger.log(`NLP processor validation failed: ${error}`, 'warn');
-            this.contextLayer.error = error.message;
-            return false;
-          })
-      );
-    }
-
-    // Wait for service checks, but don't block if they fail
-    const serviceResults = await Promise.allSettled(serviceChecks);
   }
 
   private async initializeServiceLayer(): Promise<void> {
-    // Initialize domain manager if available
-    if (this.domainManager) {
-      try {
+    try {
+      // Initialize domain manager if available
+      if (this.domainManager) {
         await this.domainManager.initialize();
         this.stateLayer.isActive = true;
-      } catch (error) {
-        this.logger.log(`Domain manager initialization failed: ${error}`, 'warn');
-        this.stateLayer.error = error instanceof Error ? error.message : 'Unknown error';
       }
+
+      // Validate state layer
+      const stateValid = this.validateLayer(this.stateLayer, 'State');
+      if (!stateValid) {
+        throw new OrchestrationError(
+          'State layer validation failed', 
+          'LAYER_VALIDATION_ERROR',
+          { stateLayerValid: stateValid }
+        );
+      }
+    } catch (error) {
+      this.logger.log(`Service layer initialization failed: ${error}`, 'error');
+      throw error;
     }
   }
 
   private async initializeStateLayer(): Promise<void> {
-    // Set initial domain context with fallback
-    this.currentDomain = 'Default';
     try {
-      this.domainContext = this.domainManager 
-        ? await this.domainManager.getDomainContext(this.currentDomain)
-        : { 
-            domain: this.currentDomain, 
-            description: 'Fallback domain context', 
-            capabilities: [] 
-          };
+      // Set initial domain context with fallback
+      this.currentDomain = 'Default';
+      
+      // Attempt to get domain context
+      try {
+        this.domainContext = this.domainManager 
+          ? await this.domainManager.getDomainContext(this.currentDomain)
+          : { 
+              domain: this.currentDomain, 
+              description: 'Fallback domain context', 
+              capabilities: [] 
+            };
+      } catch (contextError) {
+        this.logger.log(`Failed to get domain context: ${contextError}`, 'warn');
+        this.domainContext = { 
+          domain: this.currentDomain, 
+          description: 'Fallback domain context', 
+          capabilities: [] 
+        };
+      }
+
+      // Validate state layer
+      const stateValid = this.validateLayer(this.stateLayer, 'State');
+      if (!stateValid) {
+        throw new OrchestrationError(
+          'State layer validation failed', 
+          'LAYER_VALIDATION_ERROR',
+          { stateLayerValid: stateValid }
+        );
+      }
     } catch (error) {
-      this.logger.log(`Failed to get domain context: ${error}`, 'warn');
-      this.domainContext = { 
-        domain: this.currentDomain, 
-        description: 'Fallback domain context', 
-        capabilities: [] 
-      };
+      this.logger.log(`State layer initialization failed: ${error}`, 'error');
+      throw error;
+    }
+  }
+
+  private validateLayer(layer: LayerStatus, layerName: string): boolean {
+    try {
+      // Check if layer is properly initialized
+      if (!layer) {
+        throw new OrchestrationError(
+          `${layerName} layer is not initialized`, 
+          'LAYER_NOT_INITIALIZED',
+          { layerName }
+        );
+      }
+
+      // Validate layer status properties
+      if (typeof layer.isActive !== 'boolean') {
+        throw new OrchestrationError(
+          `${layerName} layer has invalid 'isActive' property`, 
+          'INVALID_LAYER_PROPERTY',
+          { layerName, property: 'isActive', value: layer.isActive }
+        );
+      }
+
+      if (!(layer.lastUpdate instanceof Date)) {
+        throw new OrchestrationError(
+          `${layerName} layer has invalid 'lastUpdate' property`, 
+          'INVALID_LAYER_PROPERTY',
+          { layerName, property: 'lastUpdate', value: layer.lastUpdate }
+        );
+      }
+
+      // Optional error validation
+      if (layer.error !== null && typeof layer.error !== 'string') {
+        throw new OrchestrationError(
+          `${layerName} layer has invalid 'error' property`, 
+          'INVALID_LAYER_PROPERTY',
+          { layerName, property: 'error', value: layer.error }
+        );
+      }
+
+      return true;
+    } catch (error) {
+      // Log validation error
+      this.logger.log(
+        `Layer alignment validation failed for ${layerName}: ${error}`, 
+        'error'
+      );
+
+      // Broadcast error state
+      this.handleError('service', error instanceof Error ? error : new Error(String(error)));
+      
+      return false;
     }
   }
 
@@ -1015,14 +1114,56 @@ export class OrchestrationAgent {
     this.notifySubscribers();
   }
 
-  private notifySubscribers(): void {
-    const state: OrchestrationState = {
-      context: this.contextLayer,
-      service: this.serviceLayer,
-      state: this.stateLayer
+  public subscribe(callback: (state: OrchestrationState) => void): () => void {
+    // Validate callback
+    if (typeof callback !== 'function') {
+      throw new OrchestrationError(
+        'Invalid subscriber callback', 
+        'INVALID_SUBSCRIBER', 
+        { providedCallback: callback }
+      );
+    }
+
+    // Add subscriber
+    this.subscribers.push(callback);
+
+    // Return an unsubscribe function
+    return () => {
+      const index = this.subscribers.indexOf(callback);
+      if (index !== -1) {
+        this.subscribers.splice(index, 1);
+      }
     };
-    
-    this.subscribers.forEach(callback => callback(state));
+  }
+
+  private notifySubscribers(state: OrchestrationState): void {
+    try {
+      // Log subscriber notification
+      this.logger.log(`Notifying ${this.subscribers.length} subscribers`, 'info');
+
+      // Notify each subscriber
+      this.subscribers.forEach(subscriber => {
+        try {
+          subscriber(state);
+        } catch (subscriberError) {
+          // Log individual subscriber errors without stopping notification
+          this.logger.log(
+            `Subscriber notification error: ${subscriberError}`, 
+            'warn'
+          );
+        }
+      });
+    } catch (error) {
+      // Log any unexpected errors during notification
+      this.logger.log(
+        `Unexpected error during subscriber notification: ${error}`, 
+        'error'
+      );
+    }
+  }
+
+  public getSubscribersCount(): number {
+    return this.subscribers.length;
   }
 
   // Ensure APIIntegrationManager is registered with services
