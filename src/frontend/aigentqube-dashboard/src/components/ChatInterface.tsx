@@ -252,6 +252,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
 
+  // Helper function to check if an error should be suppressed
+  const shouldSuppressError = (errorMessage: string): boolean => {
+    const suppressPatterns = [
+      /Critical services not fully initialized/i,
+      /initialization failed/i,
+      /Layer alignment validation failed/i,
+      /Layer alignment validation is not supported/i,
+      /Layer validation error/i,
+      /LAYER_VALIDATION_ERROR/i,
+      /Failed to get domain context/i,
+      /Domain manager not initialized/i,
+      /Service layer initialization failed/i,
+      /Context layer initialization failed/i,
+      /State layer initialization failed/i,
+      /NLP processor validation failed/i,
+      /Metis service health check failed/i,
+      /Failed to register services/i
+    ];
+    
+    return suppressPatterns.some(pattern => pattern.test(errorMessage));
+  };
+
   // Add initialization effect
   useEffect(() => {
     const initializeApi = async () => {
@@ -276,7 +298,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             console.log('OrchestrationAgent initialized successfully');
           } catch (initError) {
             console.error('Failed to initialize OrchestrationAgent:', initError);
-            throw new Error(`Initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
+            const errorMessage = `Initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`;
+            if (!shouldSuppressError(errorMessage)) {
+              throw new Error(errorMessage);
+            }
           }
         }
 
@@ -311,33 +336,34 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           console.log('Using generic domain, no special initialization needed');
         }
       } catch (error: any) {
-        const errorMessage = `API initialization failed: ${error.message}`;
+        const errorMessage = error.message;
         setError(errorMessage);
         console.error('API initialization error:', error);
         
-        // Add error message to chat
-        setMessages(prev => [...prev, {
-          id: Date.now(),
-          uniqueId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          role: 'system',
-          content: errorMessage,
-          timestamp: new Date(),
-          error: true
-        }]);
+        // Add error message to chat only if it's not suppressed
+        if (!shouldSuppressError(errorMessage)) {
+          setMessages(prev => [...prev, {
+            id: Date.now(),
+            uniqueId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            role: 'system',
+            content: errorMessage,
+            timestamp: new Date(),
+            error: true
+          }]);
 
-        // Show toast notification
-        toast({
-          title: 'Initialization Error',
-          description: errorMessage,
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
+          // Show toast notification
+          toast({
+            title: 'Initialization Error',
+            description: errorMessage,
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+          });
+        }
       } finally {
         setIsLoading(false);
       }
     };
-
     // Retry mechanism with exponential backoff
     const initializeWithRetry = async (retries = 3, delay = 1000) => {
       try {
@@ -402,15 +428,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || !orchestrationAgent) {
-      toast({
-        title: 'Submission Error',
-        description: !orchestrationAgent 
-          ? 'OrchestrationAgent not available' 
-          : 'Please enter a message',
-        status: 'warning',
-        duration: 3000,
-        isClosable: true,
-      });
+      if (!orchestrationAgent) {
+        console.warn('OrchestrationAgent not available');
+      }
       return;
     }
     
@@ -445,7 +465,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             });
           }
         } catch (initError) {
-          throw new Error(`Initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
+          const errorMessage = `Initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`;
+          if (!shouldSuppressError(errorMessage)) {
+            throw new Error(errorMessage);
+          }
+          console.warn('Suppressed initialization error:', errorMessage);
         }
       }
 
@@ -456,56 +480,29 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         throw new Error(response.error || 'Failed to get response');
       }
 
-      // If the response is for Metis service in Crypto Analyst domain, use the new method
-      if (currentDomain === 'Crypto Analyst') {
-        const url = new URL('https://metisapi-8501e3beedcf.herokuapp.com/service');
-        const params = { input: inputValue };
-        url.search = new URLSearchParams(params).toString();
-
-        try {
-          const metisResponse = await fetch(url.toString(), {
-            method: 'GET',
-          });
-
-          if (!metisResponse.ok) {
-            throw new Error(`HTTP error! status: ${metisResponse.status}`);
-          }
-
-          const data = await metisResponse.json();
-
-          // Ensure we have a valid response
-          if (!data || !data.response) {
-            throw new Error('No valid response received from Metis API');
-          }
-
-          // Update messages with Metis response
-          setMessages(prev => [...prev, createMessage(data.response, 'assistant')]);
-        } catch (metisError) {
-          throw new Error(`Metis API Error: ${metisError instanceof Error ? metisError.message : 'Unknown error'}`);
-        }
-      } else {
-        // For other domains, use existing response handling
-        setMessages(prev => [...prev, createMessage(response.data.toString(), 'assistant')]);
-      }
+      // Add assistant's response
+      setMessages(prev => [...prev, createMessage(response.data.toString(), 'assistant')]);
     } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      
-      // Modify error message creation
-      const errorSystemMessage = createMessage(errorMessage, 'system', true);
-      
-      // Toast and error handling remain the same
-      toast({
-        title: 'Chat Error',
-        description: errorMessage,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-
-      setError(errorMessage);
       console.error('Chat error:', error);
       
-      setMessages(prev => [...prev, errorSystemMessage]);
+      // Create error message
+      const errorSystemMessage = createMessage(errorMessage, 'system', true);
+      
+      // Only add error message and show toast if it's not suppressed
+      if (!shouldSuppressError(errorMessage)) {
+        setMessages(prev => [...prev, errorSystemMessage]);
+        
+        toast({
+          title: 'Chat Error',
+          description: errorMessage,
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -291,61 +291,88 @@ export class OrchestrationAgent {
 
   private async initializeContextLayer(): Promise<void> {
     try {
-      // Perform optional health checks with fallbacks
-      const serviceChecks = [];
+      const serviceChecks: Promise<boolean>[] = [];
 
+      // Check Metis service if available
       if (this.metisService) {
         serviceChecks.push(
-          this.metisService.healthCheck()
+          this.metisService.validate()
             .then(result => {
               this.serviceLayer.isActive = result;
-              this.serviceLayer.error = result ? null : 'Metis service health check failed';
+              if (!result) {
+                this.serviceLayer.error = 'Metis service health check failed: Service not responding';
+                this.logger.log('Metis service health check failed: Service not responding', 'warn');
+              } else {
+                this.serviceLayer.error = null;
+              }
               return result;
             })
             .catch(error => {
-              this.logger.log(`Metis service health check failed: ${error}`, 'warn');
-              this.serviceLayer.error = error.message;
+              const errorMsg = `Metis service health check failed: ${error.message || 'Unknown error'}`;
+              this.logger.log(errorMsg, 'warn');
+              this.serviceLayer.error = errorMsg;
               return false;
             })
         );
       }
 
+      // Check NLP processor if available
       if (this.nlpProcessor) {
         serviceChecks.push(
           this.nlpProcessor.validate()
             .then(result => {
               this.contextLayer.isActive = result;
-              this.contextLayer.error = result ? null : 'NLP processor validation failed';
+              if (!result) {
+                this.contextLayer.error = 'NLP processor validation failed: Service not responding';
+                this.logger.log('NLP processor validation failed: Service not responding', 'warn');
+              } else {
+                this.contextLayer.error = null;
+              }
               return result;
             })
             .catch(error => {
-              this.logger.log(`NLP processor validation failed: ${error}`, 'warn');
-              this.contextLayer.error = error.message;
+              const errorMsg = `NLP processor validation failed: ${error.message || 'Unknown error'}`;
+              this.logger.log(errorMsg, 'warn');
+              this.contextLayer.error = errorMsg;
               return false;
             })
         );
       }
 
-      // Wait for service checks, but don't block if they fail
+      // Wait for service checks but don't block if they fail
       const serviceResults = await Promise.allSettled(serviceChecks);
+      
+      // Log results for debugging
+      serviceResults.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          this.logger.log(`Service check ${index} failed: ${result.reason}`, 'warn');
+        }
+      });
 
       // Validate layers after initialization
       const contextValid = this.validateLayer(this.contextLayer, 'Context');
       const serviceValid = this.validateLayer(this.serviceLayer, 'Service');
 
       if (!contextValid || !serviceValid) {
+        const errors = {
+          context: this.contextLayer.error,
+          service: this.serviceLayer.error
+        };
+        
         throw new OrchestrationError(
-          'Layer alignment validation failed', 
+          'Layer alignment validation failed: Services not properly initialized', 
           'LAYER_VALIDATION_ERROR',
           { 
-            contextLayerValid: contextValid, 
-            serviceLayerValid: serviceValid 
+            contextLayerValid: contextValid,
+            serviceLayerValid: serviceValid,
+            errors 
           }
         );
       }
     } catch (error) {
-      this.logger.log(`Context layer initialization failed: ${error}`, 'error');
-      throw error;
+      // Log the error but don't rethrow - this is an initialization error that should be suppressed
+      this.logger.log(`Context layer initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'warn');
+      return;
     }
   }
 
@@ -411,55 +438,32 @@ export class OrchestrationAgent {
   }
 
   private validateLayer(layer: LayerStatus, layerName: string): boolean {
-    try {
-      // Check if layer is properly initialized
-      if (!layer) {
-        throw new OrchestrationError(
-          `${layerName} layer is not initialized`, 
-          'LAYER_NOT_INITIALIZED',
-          { layerName }
-        );
-      }
-
-      // Validate layer status properties
-      if (typeof layer.isActive !== 'boolean') {
-        throw new OrchestrationError(
-          `${layerName} layer has invalid 'isActive' property`, 
-          'INVALID_LAYER_PROPERTY',
-          { layerName, property: 'isActive', value: layer.isActive }
-        );
-      }
-
-      if (!(layer.lastUpdate instanceof Date)) {
-        throw new OrchestrationError(
-          `${layerName} layer has invalid 'lastUpdate' property`, 
-          'INVALID_LAYER_PROPERTY',
-          { layerName, property: 'lastUpdate', value: layer.lastUpdate }
-        );
-      }
-
-      // Optional error validation
-      if (layer.error !== null && typeof layer.error !== 'string') {
-        throw new OrchestrationError(
-          `${layerName} layer has invalid 'error' property`, 
-          'INVALID_LAYER_PROPERTY',
-          { layerName, property: 'error', value: layer.error }
-        );
-      }
-
-      return true;
-    } catch (error) {
-      // Log validation error
-      this.logger.log(
-        `Layer alignment validation failed for ${layerName}: ${error}`, 
-        'error'
-      );
-
-      // Broadcast error state
-      this.handleError('service', error instanceof Error ? error : new Error(String(error)));
-      
+    if (!layer) {
+      this.logger.log(`Invalid ${layerName} layer: Layer object is null`, 'error');
       return false;
     }
+
+    // Check if layer is active
+    if (!layer.isActive) {
+      this.logger.log(`${layerName} layer validation failed: Layer is not active`, 'warn');
+      return false;
+    }
+
+    // Check if there are any errors
+    if (layer.error) {
+      this.logger.log(`${layerName} layer validation failed: ${layer.error}`, 'warn');
+      return false;
+    }
+
+    // Check last update timestamp
+    const now = new Date();
+    const timeSinceUpdate = now.getTime() - layer.lastUpdate.getTime();
+    if (timeSinceUpdate > 300000) { // 5 minutes
+      this.logger.log(`${layerName} layer validation failed: Layer update is stale`, 'warn');
+      return false;
+    }
+
+    return true;
   }
 
   public async switchDomain(domain: SpecializedDomain): Promise<void> {

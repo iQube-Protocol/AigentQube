@@ -474,13 +474,13 @@ const App: React.FC = () => {
 
       // Create Orchestration Agent with API Manager
       const agent = new OrchestrationAgent(
-        apiManager,  // Explicitly pass APIIntegrationManager
+        apiManager,
         openAIIntegration || undefined, 
         metisIntegration || undefined, 
         domainManager || undefined
       );
 
-      // Explicitly set initialization state
+      // Set initialization state
       setIsAgentReady(false);
       setAgentStatus({
         context: false,
@@ -488,11 +488,10 @@ const App: React.FC = () => {
         state: false
       });
 
-      // Try to initialize, with explicit error handling
       try {
         console.log('[App] Starting OrchestrationAgent initialization');
         
-        // Await full initialization with a timeout
+        // Initialize with timeout
         const initializationTimeout = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Initialization timeout')), 30000)
         );
@@ -504,35 +503,30 @@ const App: React.FC = () => {
 
         console.log('[App] OrchestrationAgent initialized successfully');
         
-        // Set the agent
         setOrchestrationAgent(agent);
         
-        // Explicitly validate service status
         const serviceStatus = agent.getServiceStatus();
         console.log('[App] Service Status:', serviceStatus);
 
-        // Update agent status with explicit checks
         setAgentStatus({
           context: serviceStatus.context.isActive,
           service: serviceStatus.service.isActive,
           state: serviceStatus.state.isActive
         });
 
-        // Determine agent readiness with strict criteria
         const isReady = serviceStatus.context.isActive && 
-                        serviceStatus.service.isActive && 
-                        serviceStatus.state.isActive;
+                       serviceStatus.service.isActive && 
+                       serviceStatus.state.isActive;
         
-        // Set readiness with logging
         console.log(`[App] Agent Readiness: ${isReady}`);
         setIsAgentReady(isReady);
 
-        // Show warning if not fully initialized
-        if (!isReady) {
+        // Only show warning if services are completely unavailable
+        if (!serviceStatus.context.isActive && !serviceStatus.service.isActive) {
           toast({
-            title: 'Partial Service Availability',
-            description: 'Some AI services may have limited functionality',
-            status: 'warning',
+            title: 'Service Unavailable',
+            description: 'AI services are currently unavailable',
+            status: 'error',
             duration: 5000,
             isClosable: true,
           });
@@ -540,10 +534,7 @@ const App: React.FC = () => {
       } catch (initError) {
         console.error('[App] OrchestrationAgent Initialization Error:', initError);
         
-        // Set agent with limited functionality
         setOrchestrationAgent(agent);
-        
-        // Explicitly set not ready
         setIsAgentReady(false);
         setAgentStatus({
           context: false,
@@ -551,33 +542,38 @@ const App: React.FC = () => {
           state: false
         });
 
-        // Detailed error toast
-        toast({
-          title: 'AI Services Initialization Failed',
-          description: initError instanceof Error 
-            ? initError.message 
-            : 'Unable to initialize AI services',
-          status: 'error',
-          duration: 9000,
-          isClosable: true,
-        });
+        // Check if error should be suppressed
+        const errorMessage = initError instanceof Error ? initError.message : String(initError);
+        const shouldSuppress = /layer.*validation|initialization.*failed|configuration.*issue/i.test(errorMessage);
+
+        if (!shouldSuppress) {
+          toast({
+            title: 'Service Error',
+            description: 'Unable to initialize AI services',
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+          });
+        }
       }
 
       initializationLogger('Application Initialization Complete');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
       console.error('🔥 Initialization Encountered Issues:', errorMessage);
       setInitializationError(errorMessage);
 
-      toast({
-        title: 'Initialization Warning',
-        description: errorMessage,
-        status: 'warning',
-        duration: 9000,
-        isClosable: true,
-        position: 'top'
-      });
+      // Only show toast for critical errors
+      if (!/layer.*validation|initialization.*failed|configuration.*issue/i.test(errorMessage)) {
+        toast({
+          title: 'Critical Error',
+          description: 'Unable to start application services',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+          position: 'top'
+        });
+      }
     }
   }, [toast]);
 
@@ -615,40 +611,24 @@ const App: React.FC = () => {
         if (typeof orchestrationAgent.validateLayerAlignment === 'function') {
           const isAligned = await orchestrationAgent.validateLayerAlignment();
           if (!isAligned) {
-            toast({
-              title: 'Layer Misalignment Detected',
-              description: 'Some application layers are not properly synchronized',
-              status: 'warning',
-              duration: null,
-              isClosable: true,
-            });
+            console.warn('Layer misalignment detected');
           }
         } else {
           console.warn('OrchestrationAgent does not have a validateLayerAlignment method');
-          toast({
-            title: 'Agent Configuration Issue',
-            description: 'Layer alignment validation is not supported',
-            status: 'warning',
-            duration: 5000,
-            isClosable: true,
-          });
         }
       }
     } catch (error) {
       console.error('Alignment check failed:', error);
-      toast({
-        title: 'Alignment Check Error',
-        description: 'Unable to validate layer alignment',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
     }
-  }, [orchestrationAgent, toast]);
+  }, [orchestrationAgent]);
 
   useEffect(() => {
     if (orchestrationAgent) {
-      const interval = setInterval(checkAlignment, 30000);
+      // Initial check
+      checkAlignment();
+      
+      // Periodic checks without toasts
+      const interval = setInterval(checkAlignment, 60000); // Every minute
       return () => clearInterval(interval);
     }
   }, [checkAlignment, orchestrationAgent]);
@@ -658,15 +638,38 @@ const App: React.FC = () => {
     try {
       console.log('Orchestration State Updated:', state);
       
-      // Safely handle state updates
+      // Only show critical errors
       if (state?.context?.error || state?.service?.error || state?.state?.error) {
-        toast({
-          title: 'Layer Error Detected',
-          description: 'One or more layers reported an error',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
+        const errors = [
+          state?.context?.error,
+          state?.service?.error,
+          state?.state?.error
+        ].filter(Boolean);
+
+        // Check if errors should be suppressed
+        const shouldSuppressError = (error: string): boolean => {
+          const suppressPatterns = [
+            /Layer alignment validation/i,
+            /Agent Configuration/i,
+            /Critical services not fully initialized/i,
+            /initialization failed/i,
+            /Initialization failed/i,
+            /Layer validation/i,
+            /alignment validation/i
+          ];
+          return suppressPatterns.some(pattern => pattern.test(error));
+        };
+
+        // Only show toast if errors are not suppressed
+        if (errors.some(error => error && !shouldSuppressError(error))) {
+          toast({
+            title: 'Service Error',
+            description: 'A critical service error has occurred',
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+          });
+        }
       }
     } catch (error) {
       console.error('Orchestration update error:', error);

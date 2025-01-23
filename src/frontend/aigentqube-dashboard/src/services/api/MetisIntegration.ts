@@ -115,69 +115,45 @@ export class MetisIntegration implements APIIntegration {
         };
       }
 
-      // Construct URL exactly like the JavaScript example
-      const url = new URL(`${this.baseURL}/service`);
-      const queryParams = { input };
-      url.search = new URLSearchParams(queryParams).toString();
-
       try {
-        // Perform GET request
-        const response = await this.axiosInstance.get(url.toString(), {
-          params: queryParams
+        // Make a simple GET request with the input parameter
+        const response = await this.axiosInstance.get('/service', {
+          params: { input },
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
         });
 
-        // Check if response is ok
-        if (response.status < 200 || response.status >= 600) {
-          return {
-            success: false,
-            error: `HTTP error! status: ${response.status}`,
-            metadata: { 
-              timestamp: new Date(),
-              domain
-            }
-          };
-        }
-
-        // Parse JSON response
-        const data = response.data;
-
         // Validate response data
-        if (!data || !data.response) {
+        if (!response.data || !response.data.response) {
+          console.error('[Metis API] Invalid response structure:', response.data);
           return {
             success: false,
             error: 'No valid response received from Metis API',
             metadata: { 
               timestamp: new Date(),
               domain,
-              rawResponse: data
+              rawResponse: response.data
             }
           };
         }
 
         return {
           success: true,
-          data: data.response,
+          data: response.data.response,
           metadata: { 
             domain, 
             timestamp: new Date(),
-            originalResponse: data
+            originalResponse: response.data
           }
         };
-      } catch (fetchError) {
-        console.error('[Metis API] Fetch Error during execution:', fetchError);
-        return {
-          success: false,
-          error: `Fetch error: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`,
-          metadata: { 
-            timestamp: new Date(),
-            domain,
-            errorDetails: fetchError
-          }
-        };
+      } catch (error: any) {
+        console.error('[Metis API] Request Error:', error.response?.data || error.message);
+        throw new Error(error.response?.data?.error || error.message || 'Failed to get response from Metis API');
       }
     } catch (error: any) {
-      console.error('[Metis API] Unexpected Execution Error:', error);
-
+      console.error('[Metis API] Execution Error:', error);
       return {
         success: false,
         error: error.message || 'Unexpected error during Metis API execution',
