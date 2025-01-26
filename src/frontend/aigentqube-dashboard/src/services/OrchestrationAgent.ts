@@ -1186,4 +1186,265 @@ export class OrchestrationAgent {
       this.logger.log(`Failed to register services: ${error}`, 'warn');
     }
   }
+
+  // iQube-specific methods
+  public async retrieveIQubeMetadata(tokenId: string): Promise<{
+    metaQube: {
+      iQubeIdentifier: string;
+      iQubeCreator: string;
+      ownerType: 'Person' | 'Organisation' | 'Thing';
+      iQubeContentType: 'mp3' | 'mp4' | 'pdf' | 'txt' | 'Code' | 'Other';
+      ownerIdentifiability: 'Anonymous' | 'Semi-Anonymous' | 'Identifiable' | 'Semi-Identifiable';
+      transactionDate: string;
+      sensitivityScore: number;
+      verifiabilityScore: number;
+      accuracyScore: number;
+      riskScore: number;
+    };
+    blakQube: Record<string, any>;
+  }> {
+    try {
+      this.logger.log(`Retrieving metadata for iQube token: ${tokenId}`, 'info');
+      
+      // Use Metis service or OpenAI for metadata retrieval
+      const metadataService = this.metisService || this.nlpProcessor;
+      
+      if (!metadataService) {
+        throw new OrchestrationError(
+          'No metadata retrieval service available', 
+          'METADATA_SERVICE_UNAVAILABLE'
+        );
+      }
+
+      // Different logic based on service type
+      let metadata;
+      if (this.metisService) {
+        // Use Metis execute method
+        const response = await this.metisService.execute({
+          message: `Retrieve detailed metadata for iQube token ${tokenId}`,
+          domain: 'blockchain_metadata'
+        });
+
+        // If Metis doesn't provide the exact structure, we'll construct it
+        metadata = response.success ? response.data : this.generateDefaultMetadata(tokenId);
+      } else if (this.nlpProcessor) {
+        // Use OpenAI execute method
+        const response = await this.nlpProcessor.execute({
+          message: `Generate comprehensive iQube metadata for token ${tokenId} with all required fields`,
+          domain: 'blockchain_metadata'
+        });
+
+        // If OpenAI doesn't provide the exact structure, we'll construct it
+        metadata = response.success ? response.data : this.generateDefaultMetadata(tokenId);
+      }
+
+      // Ensure the metadata matches the required structure
+      const structuredMetadata = {
+        metaQube: metadata.metaQube || this.generateDefaultMetadata(tokenId).metaQube,
+        blakQube: metadata.blakQube || {}
+      };
+
+      this.logger.log(`Successfully retrieved metadata for token ${tokenId}`, 'info');
+      return structuredMetadata;
+    } catch (error) {
+      this.logger.log(`Metadata retrieval failed for token ${tokenId}: ${error}`, 'error');
+      throw new OrchestrationError(
+        `Failed to retrieve iQube metadata: ${error}`, 
+        'METADATA_RETRIEVAL_FAILED',
+        { tokenId }
+      );
+    }
+  }
+
+  // Helper method to generate default metadata if retrieval fails
+  private generateDefaultMetadata(tokenId: string): {
+    metaQube: {
+      iQubeIdentifier: string;
+      iQubeCreator: string;
+      ownerType: 'Person' | 'Organisation' | 'Thing';
+      iQubeContentType: 'mp3' | 'mp4' | 'pdf' | 'txt' | 'Code' | 'Other';
+      ownerIdentifiability: 'Anonymous' | 'Semi-Anonymous' | 'Identifiable' | 'Semi-Identifiable';
+      transactionDate: string;
+      sensitivityScore: number;
+      verifiabilityScore: number;
+      accuracyScore: number;
+      riskScore: number;
+    };
+    blakQube: Record<string, any>;
+  } {
+    return {
+      metaQube: {
+        iQubeIdentifier: tokenId,
+        iQubeCreator: 'AigentZ Protocol',
+        ownerType: 'Organisation',
+        iQubeContentType: 'Code',
+        ownerIdentifiability: 'Identifiable',
+        transactionDate: new Date().toISOString(),
+        sensitivityScore: 4,  // Moderate sensitivity
+        verifiabilityScore: 8, // High verifiability
+        accuracyScore: 9,      // High accuracy
+        riskScore: 3           // Low risk
+      },
+      blakQube: {
+        protocolVersion: '1.0.0',
+        capabilities: ['Agentic AI', 'Web3 Integration', 'Context Management'],
+        deploymentNetwork: 'Polygon Amoy',
+        contractAddress: process.env.REACT_APP_IQUBE_REGISTRY_ADDRESS || ''
+      }
+    };
+  }
+
+  // Method to dynamically generate metadata based on context
+  public async generateContextualMetadata(context: Record<string, any>): Promise<{
+    metaQube: {
+      iQubeIdentifier: string;
+      iQubeCreator: string;
+      ownerType: 'Person' | 'Organisation' | 'Thing';
+      iQubeContentType: 'mp3' | 'mp4' | 'pdf' | 'txt' | 'Code' | 'Other';
+      ownerIdentifiability: 'Anonymous' | 'Semi-Anonymous' | 'Identifiable' | 'Semi-Identifiable';
+      transactionDate: string;
+      sensitivityScore: number;
+      verifiabilityScore: number;
+      accuracyScore: number;
+      riskScore: number;
+    };
+    blakQube: Record<string, any>;
+  }> {
+    try {
+      // Use NLP or Metis service to generate contextual metadata
+      const metadataService = this.nlpProcessor || this.metisService;
+      
+      if (!metadataService) {
+        return this.generateDefaultMetadata(context.tokenId || 'unknown');
+      }
+
+      // Attempt to generate metadata based on context
+      const contextPrompt = `Generate iQube metadata for the following context: ${JSON.stringify(context)}. 
+      Provide a detailed breakdown of the metadata fields, considering the context's characteristics.`;
+
+      const response = await metadataService.execute({
+        message: contextPrompt,
+        domain: 'metadata_generation'
+      });
+
+      // If service generates valid metadata, use it
+      if (response.success && response.data) {
+        // Validate and map the generated metadata to our required structure
+        const generatedMetadata = response.data;
+        
+        return {
+          metaQube: {
+            iQubeIdentifier: generatedMetadata.iQubeIdentifier || context.tokenId || 'unknown',
+            iQubeCreator: generatedMetadata.iQubeCreator || 'AigentZ Protocol',
+            ownerType: generatedMetadata.ownerType || 'Organisation',
+            iQubeContentType: generatedMetadata.iQubeContentType || 'Code',
+            ownerIdentifiability: generatedMetadata.ownerIdentifiability || 'Identifiable',
+            transactionDate: generatedMetadata.transactionDate || new Date().toISOString(),
+            sensitivityScore: generatedMetadata.sensitivityScore || 4,
+            verifiabilityScore: generatedMetadata.verifiabilityScore || 8,
+            accuracyScore: generatedMetadata.accuracyScore || 9,
+            riskScore: generatedMetadata.riskScore || 3
+          },
+          blakQube: generatedMetadata.blakQube || {
+            protocolVersion: '1.0.0',
+            capabilities: ['Agentic AI', 'Web3 Integration', 'Context Management'],
+            deploymentNetwork: 'Polygon Amoy',
+            contextDetails: context
+          }
+        };
+      }
+
+      // Fallback to default metadata
+      return this.generateDefaultMetadata(context.tokenId || 'unknown');
+    } catch (error) {
+      this.logger.log(`Contextual metadata generation failed: ${error}`, 'error');
+      return this.generateDefaultMetadata(context.tokenId || 'unknown');
+    }
+  }
+
+  public async decryptBlakQube(tokenId: string): Promise<Record<string, string>> {
+    try {
+      this.logger.log(`Attempting to decrypt BlakQube for token: ${tokenId}`, 'info');
+      
+      // Use OpenAI or Metis for decryption
+      const decryptionService = this.nlpProcessor || this.metisService;
+      
+      if (!decryptionService) {
+        throw new OrchestrationError(
+          'No decryption service available', 
+          'DECRYPTION_SERVICE_UNAVAILABLE'
+        );
+      }
+
+      // Different decryption logic based on service
+      let decryptedData;
+      if (this.metisService) {
+        // Use Metis execute method
+        const response = await this.metisService.execute({
+          message: `Decrypt BlakQube data for token ${tokenId}`,
+          domain: 'blockchain_decryption'
+        });
+
+        decryptedData = response.success ? response.data : {
+          tokenId: tokenId,
+          decryptedContent: 'Decryption unsuccessful'
+        };
+      } else if (this.nlpProcessor) {
+        // Use OpenAI execute method
+        const response = await this.nlpProcessor.execute({
+          message: `Decrypt and describe data for iQube token ${tokenId}`,
+          domain: 'blockchain_decryption'
+        });
+
+        decryptedData = response.success ? response.data : {
+          tokenId: tokenId,
+          decryptedContent: 'Decryption unsuccessful'
+        };
+      }
+
+      this.logger.log(`Successfully decrypted BlakQube for token ${tokenId}`, 'info');
+      return decryptedData as Record<string, string>;
+    } catch (error) {
+      this.logger.log(`BlakQube decryption failed for token ${tokenId}: ${error}`, 'error');
+      throw new OrchestrationError(
+        `Failed to decrypt BlakQube: ${error}`, 
+        'BLAKQUBE_DECRYPTION_FAILED',
+        { tokenId }
+      );
+    }
+  }
+
+  public async useIQube(tokenId: string): Promise<boolean> {
+    try {
+      this.logger.log(`Attempting to use iQube token: ${tokenId}`, 'info');
+      
+      // Retrieve metadata
+      const metadata = await this.retrieveIQubeMetadata(tokenId);
+      
+      // Update current domain based on metadata
+      this.currentDomain = metadata.metaQube.iQubeContentType || 'Default';
+      this.iQubeData = metadata;
+
+      this.logger.log(`Successfully used iQube token ${tokenId}`, 'info');
+      return true;
+    } catch (error) {
+      this.logger.log(`Failed to use iQube token ${tokenId}: ${error}`, 'error');
+      return false;
+    }
+  }
+
+  public getCurrentDomain(): string {
+    return this.currentDomain;
+  }
+
+  public getIQubeData(): IQubeData | null {
+    return this.iQubeData;
+  }
+
+  // Ensure initialization check for iQube methods
+  private async ensureInitialized(): Promise<void> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+  }
 }

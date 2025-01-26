@@ -1,28 +1,121 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Button,
-  VStack,
-  Text,
-  useToast,
-  Input,
-  HStack,
-  Badge
+import React, { useState, useCallback } from 'react';
+import axios from 'axios';
+import { 
+  Box, 
+  Button, 
+  VStack, 
+  Text, 
+  useToast, 
+  Input, 
+  HStack, 
+  Badge,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter
 } from '@chakra-ui/react';
+import { OrchestrationAgent } from '../utils/OrchestrationAgent';
+import PolygonNFTInterface from '../utilities/MetaContract';
+
+// Helper function to format display values
+const formatDisplayValue = (value: any, isBlakQube: boolean = false): string => {
+  if (value === null || value === undefined) return 'N/A';
+  
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  
+  return value.toString();
+};
 
 interface IQubeOperationsPanelProps {
   orchestrationAgent: OrchestrationAgent | null;
+  nftInterface?: PolygonNFTInterface;
   onContextUpdate?: (context: any) => void;
 }
 
 export const IQubeOperationsPanel: React.FC<IQubeOperationsPanelProps> = ({
   orchestrationAgent,
+  nftInterface,
   onContextUpdate
 }) => {
   const [tokenId, setTokenId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [metaQubeData, setMetaQubeData] = useState<Record<string, string>>({});
+  const [blakQubeData, setBlakQubeData] = useState<Record<string, string>>({});
+  const [decryptionError, setDecryptionError] = useState<string | null>(null);
+  const [isMetadataModalOpen, setIsMetadataModalOpen] = useState(false);
   const toast = useToast();
 
+  // Metadata Extraction Function
+  const extractAndFormatMetadata = useCallback(async (metadata: any) => {
+    try {
+      // Extract MetaQube and BlakQube data from attributes
+      const metaQubeAttrs = metadata.attributes?.find((attr: any) => attr.trait_type === 'metaQube')?.value || {};
+      const blakQubeAttrs = metadata.attributes?.find((attr: any) => attr.trait_type === 'blakQube')?.value || {};
+      
+      // Remove blakQube-related fields
+      const {
+        blakQubeKey,
+        blakQubeLocation,
+        blakQubeIdentifier,
+        ...cleanMetaQubeData
+      } = metaQubeAttrs;
+
+      // Format MetaQube values
+      const formattedMetaQubeData = Object.entries(cleanMetaQubeData).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [key]: formatDisplayValue(value, false)
+        }),
+        {}
+      );
+
+      // Format BlakQube values
+      const formattedBlakQubeData = Object.entries(blakQubeAttrs).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [key]: formatDisplayValue(value, true)
+        }),
+        {}
+      );
+
+      return {
+        metaQubeData: formattedMetaQubeData,
+        blakQubeData: formattedBlakQubeData
+      };
+    } catch (error) {
+      console.error('Metadata extraction error:', error);
+      throw error;
+    }
+  }, []);
+
+  // Decryption Error Handler
+  const handleDecryptionError = useCallback((error: any) => {
+    let userMessage = 'An unexpected error occurred during decryption';
+
+    if (error.code === 4001 || error.message?.includes('user rejected')) {
+      userMessage = 'Decryption was rejected. You can try again when ready.';
+    } else if (error.message?.includes('network')) {
+      userMessage = 'Network error. Please check your connection.';
+    } else if (error.message?.includes('permission')) {
+      userMessage = 'You do not have permission to decrypt this iQube.';
+    }
+
+    setDecryptionError(userMessage);
+    toast({
+      title: 'Decryption Error',
+      description: userMessage,
+      status: 'error',
+      duration: 5000,
+      isClosable: true
+    });
+  }, [toast]);
+
+  // Main iQube Use Function
   const handleUseIQube = async () => {
     if (!tokenId) {
       toast({
@@ -36,11 +129,37 @@ export const IQubeOperationsPanel: React.FC<IQubeOperationsPanelProps> = ({
     }
 
     setIsLoading(true);
+    setDecryptionError(null);
     try {
       if (!orchestrationAgent) {
         throw new Error('Orchestration agent not initialized');
       }
 
+      // Retrieve iQube Metadata
+      const metadata = await orchestrationAgent.retrieveIQubeMetadata(tokenId);
+      
+      // Extract and format metadata
+      const { metaQubeData, blakQubeData } = await extractAndFormatMetadata(metadata);
+      
+      // Attempt to decrypt BlakQube if needed
+      let decryptedBlakQubeData = {};
+      try {
+        decryptedBlakQubeData = await orchestrationAgent.decryptBlakQube(tokenId);
+      } catch (decryptError) {
+        handleDecryptionError(decryptError);
+      }
+
+      // Set extracted and decrypted data
+      setMetaQubeData(metaQubeData);
+      setBlakQubeData({
+        ...blakQubeData,
+        ...decryptedBlakQubeData
+      });
+
+      // Open metadata modal
+      setIsMetadataModalOpen(true);
+
+      // Use iQube
       const success = await orchestrationAgent.useIQube(tokenId);
       if (success) {
         toast({
@@ -54,7 +173,9 @@ export const IQubeOperationsPanel: React.FC<IQubeOperationsPanelProps> = ({
         // Update context if callback provided
         if (onContextUpdate) {
           onContextUpdate({
-            iQubeData: orchestrationAgent.getIQubeData(),
+            iQubeData: metadata,
+            metaQubeData,
+            blakQubeData,
             specializedState: orchestrationAgent.getCurrentDomain()
           });
         }
@@ -117,6 +238,52 @@ export const IQubeOperationsPanel: React.FC<IQubeOperationsPanelProps> = ({
           Example Token IDs: iqube-high-001, iqube-opt-001, iqube-sec-001
         </Text>
       </VStack>
+
+      {/* Metadata Modal */}
+      <Modal 
+        isOpen={isMetadataModalOpen} 
+        onClose={() => setIsMetadataModalOpen(false)}
+        size="xl"
+      >
+        <ModalOverlay />
+        <ModalContent bg="gray.800">
+          <ModalHeader>iQube Metadata</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            {decryptionError && (
+              <Text color="red.500" mb={4}>
+                {decryptionError}
+              </Text>
+            )}
+            <VStack align="stretch" spacing={3}>
+              <Text fontWeight="bold">MetaQube Data:</Text>
+              {Object.entries(metaQubeData).map(([key, value]) => (
+                <HStack key={key} justify="space-between">
+                  <Text>{key}:</Text>
+                  <Text>{value}</Text>
+                </HStack>
+              ))}
+              
+              <Text fontWeight="bold" mt={4}>BlakQube Data:</Text>
+              {Object.entries(blakQubeData).map(([key, value]) => (
+                <HStack key={key} justify="space-between">
+                  <Text>{key}:</Text>
+                  <Text>{value}</Text>
+                </HStack>
+              ))}
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button 
+              colorScheme="blue" 
+              mr={3} 
+              onClick={() => setIsMetadataModalOpen(false)}
+            >
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };

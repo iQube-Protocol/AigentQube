@@ -15,7 +15,14 @@ import {
   Select, 
   VStack, 
   Text,
-  useToast 
+  useToast,
+  HStack,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
+  Textarea,
+  Heading
 } from '@chakra-ui/react';
 
 interface IQubeCreatingPanelProps {
@@ -115,20 +122,155 @@ const IQubeCreatingPanel: React.FC<IQubeCreatingPanelProps> = ({
   // Minting Logic for Each Qube Type
   const mintQube = async () => {
     try {
-      if (!web3 || !account) {
-        throw new Error('Web3 or wallet not connected');
+      console.log('Mint Qube called with:', { web3, account });
+
+      // Comprehensive validation
+      if (!web3) {
+        console.error('Web3 is not initialized');
+        toast({
+          title: 'Error',
+          description: 'Web3 is not initialized. Please connect your wallet.',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+        return;
       }
 
-      const timestamp = Date.now().toString();
-      const nonce = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+      if (!account) {
+        console.error('No account connected');
+        toast({
+          title: 'Error',
+          description: 'No wallet account connected. Please connect your wallet.',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+        return;
+      }
+
+      // Debug: Log Web3 instance details with more comprehensive check
+      console.log('Web3 Instance Full Details:', {
+        version: web3.version,
+        utils: Object.keys(web3.utils),
+        eth: Object.keys(web3.eth),
+        currentProvider: web3.currentProvider,
+        isConnected: web3.eth.net ? await web3.eth.net.isListening() : 'Unable to check connection'
+      });
+
+      // Validate Web3 connection and network
+      let networkId, chainId;
+      try {
+        networkId = await web3.eth.net.getId();
+        chainId = await web3.eth.getChainId();
+      } catch (networkError) {
+        console.error('Network detection error:', networkError);
+        toast({
+          title: 'Network Error',
+          description: 'Unable to detect network. Please check your wallet connection.',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+        return;
+      }
+
+      const expectedNetworkId = 80002; // Polygon Amoy Testnet
+      const expectedChainId = '0x' + expectedNetworkId.toString(16); // Hex representation
+
+      console.log('Current Network Details:', {
+        networkId,
+        chainId,
+        expectedNetworkId,
+        expectedChainId
+      });
+
+      // Validate network
+      if (BigInt(networkId) !== BigInt(expectedNetworkId) || BigInt(chainId) !== BigInt(expectedNetworkId)) {
+        try {
+          // Attempt to switch network
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: expectedChainId }]
+          });
+        } catch (switchError: any) {
+          console.error('Network switch error:', switchError);
+          
+          // This error code indicates that the chain has not been added to MetaMask
+          if (switchError.code === 4902) {
+            try {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: expectedChainId,
+                  chainName: 'Polygon Amoy Testnet',
+                  nativeCurrency: {
+                    name: 'MATIC',
+                    symbol: 'MATIC',
+                    decimals: 18
+                  },
+                  rpcUrls: ['https://rpc-amoy.polygon.technology'],
+                  blockExplorerUrls: ['https://www.oklink.com/amoy']
+                }]
+              });
+            } catch (addError) {
+              console.error('Failed to add network:', addError);
+              toast({
+                title: 'Network Error',
+                description: 'Failed to add Polygon Amoy Testnet to MetaMask',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+              });
+              return;
+            }
+          } else {
+            toast({
+              title: 'Network Error',
+              description: `Please switch to Polygon Amoy Testnet (Network ID: ${expectedNetworkId})`,
+              status: 'error',
+              duration: 5000,
+              isClosable: true,
+            });
+            return;
+          }
+        }
+      }
+
+      const timestamp = Date.now();
+      const nonce = Math.floor(Math.random() * 1000000);
       
-      // Generate unique identifier for the Qube using Web3
+      // Validate base details
+      if (!baseQubeDetails.name || baseQubeDetails.name.trim().length === 0) {
+        toast({
+          title: 'Validation Error',
+          description: 'iQube name cannot be empty',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+        return;
+      }
+
       const encodedParams = web3.eth.abi.encodeParameters(
-        ['address', 'uint256', 'string'],
+        ['address', 'uint256', 'uint256'],
         [account, timestamp, nonce]
       );
-      const qubeHash = web3.utils.sha3(encodedParams) || '';
-      console.log('Generated hash:', qubeHash);
+      
+      // Generate hash using keccak256
+      const qubeHash = web3.utils.keccak256(encodedParams);
+      
+      if (!qubeHash) {
+        throw new Error('Failed to generate Qube hash');
+      }
+
+      console.log('Hash generation details:', {
+        account,
+        timestamp,
+        nonce,
+        encodedParams,
+        qubeHash
+      });
       
       // Generate a deterministic address for the Qube
       const qubeAddress = await generateQubeAddress(account, qubeHash);
@@ -136,18 +278,18 @@ const IQubeCreatingPanel: React.FC<IQubeCreatingPanelProps> = ({
       
       const metaQubeDetails: MetaQubeDetails = {
         name: baseQubeDetails.name,
-        description: baseQubeDetails.description,
+        description: baseQubeDetails.description || 'No description provided',
         creator: account,
         encryptionLevel: 'High',
         ownerType: baseQubeDetails.ownerType,
         ownerIdentifiability: baseQubeDetails.ownerIdentifiability,
         customAddress: qubeAddress,
         customHash: qubeHash,
-        transactionDate: parseInt(timestamp),
-        sensitivityScore: baseQubeDetails.sensitivityScore,
-        verifiabilityScore: baseQubeDetails.verifiabilityScore,
-        accuracyScore: baseQubeDetails.accuracyScore,
-        riskScore: baseQubeDetails.riskScore
+        transactionDate: timestamp,
+        sensitivityScore: baseQubeDetails.sensitivityScore || 0,
+        verifiabilityScore: baseQubeDetails.verifiabilityScore || 0,
+        accuracyScore: baseQubeDetails.accuracyScore || 0,
+        riskScore: baseQubeDetails.riskScore || 0
       };
 
       console.log('Minting with details:', {
@@ -157,29 +299,67 @@ const IQubeCreatingPanel: React.FC<IQubeCreatingPanelProps> = ({
         meta: metaQubeDetails
       });
 
+      // Prepare additional metadata based on Qube type
+      let additionalMetadata;
+      switch (activeTokenType) {
+        case 'DataQube':
+          additionalMetadata = dataQubeDetails;
+          break;
+        case 'ContentQube':
+          additionalMetadata = contentQubeDetails;
+          break;
+        case 'AgentQube':
+          additionalMetadata = agentQubeDetails;
+          break;
+        default:
+          throw new Error(`Unsupported Qube type: ${activeTokenType}`);
+      }
+
       // Call registerQube with Web3
       const receipt = await registerQube(
         activeTokenType,
         qubeAddress,
         qubeHash,
         account,
-        metaQubeDetails
+        { ...metaQubeDetails, additionalDetails: additionalMetadata }
       );
 
       console.log('Minting successful:', receipt);
       toast({
         title: 'Success',
-        description: 'iQube minted successfully',
+        description: `${activeTokenType} minted successfully`,
         status: 'success',
         duration: 5000,
         isClosable: true,
       });
 
+      // Optional: Reset form or perform additional actions after successful minting
+      resetFormAfterMinting();
+
     } catch (error: any) {
-      console.error('Minting error:', error);
+      console.error('Comprehensive Minting error:', error);
+      
+      // Detailed error handling
+      let errorMessage = 'Failed to mint iQube';
+      if (error.code === 4001) {
+        errorMessage = 'Transaction was rejected by user';
+      } else if (error.message.includes('insufficient funds')) {
+        errorMessage = 'Insufficient funds for transaction';
+      } else if (error.message.includes('wrong network') || error.message.includes('Network ID')) {
+        errorMessage = 'Please switch to Polygon Amoy Testnet';
+      }
+
+      // Log additional error details for debugging
+      console.error('Detailed Error:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        code: error.code
+      });
+
       toast({
         title: 'Error',
-        description: error.message || 'Failed to mint iQube',
+        description: errorMessage,
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -187,14 +367,66 @@ const IQubeCreatingPanel: React.FC<IQubeCreatingPanelProps> = ({
     }
   };
 
+  // Helper function to reset form after minting
+  const resetFormAfterMinting = () => {
+    // Reset state to initial values
+    setBaseQubeDetails({
+      name: 'AigentZ DataQube #' + (Math.floor(Math.random() * 1000)).toString().padStart(3, '0'),
+      creator: 'AigentZ Protocol',
+      description: 'Initial AigentZ Protocol DataQube for testing minting functionality',
+      ownerType: 'Organization',
+      ownerIdentifiability: 'Identifiable',
+      sensitivityScore: 4,
+      verifiabilityScore: 8,
+      accuracyScore: 9,
+      riskScore: 3,
+      transactionDate: Date.now()
+    });
+
+    // Reset type-specific details
+    setDataQubeDetails({
+      iQubeType: 'DataQube',
+      encryptionLevel: 'High',
+      dataPoints: [
+        { 
+          name: 'Protocol',
+          value: 'AigentZ',
+          source: 'System'
+        },
+        {
+          name: 'Capabilities',
+          value: 'Agentic AI, Web3 Integration, Context Management',
+          source: 'System'
+        },
+        {
+          name: 'Network',
+          value: 'Polygon Amoy Testnet',
+          source: 'Blockchain'
+        }
+      ],
+      blackQubeDetails: {
+        protocolVersion: '1.0.0',
+        capabilities: ['Agentic AI', 'Web3 Integration', 'Context Management'],
+        deploymentNetwork: 'Polygon Amoy',
+        contractAddress: process.env.REACT_APP_IQUBE_REGISTRY_ADDRESS
+      }
+    });
+
+    // Reset other Qube type details similarly
+  };
+
   // Render method for MetaQube base details
   const renderMetaQubeBaseDetails = () => (
     <VStack spacing={4} width="full">
       <FormControl isRequired>
-        <FormLabel>iQube Name</FormLabel>
+        <FormLabel color="gray.300">iQube Name</FormLabel>
         <Input 
           placeholder="Enter iQube Name"
           value={baseQubeDetails.name}
+          bg="gray.700"
+          borderColor="gray.600"
+          color="gray.100"
+          _placeholder={{ color: 'gray.500' }}
           onChange={(e) => setBaseQubeDetails(prev => ({
             ...prev,
             name: e.target.value
@@ -202,19 +434,15 @@ const IQubeCreatingPanel: React.FC<IQubeCreatingPanelProps> = ({
         />
       </FormControl>
 
-      <FormControl isRequired>
-        <FormLabel>Creator</FormLabel>
-        <Input 
-          value={baseQubeDetails.creator}
-          isReadOnly
-        />
-      </FormControl>
-
       <FormControl>
-        <FormLabel>Description</FormLabel>
-        <Input 
-          placeholder="Enter Description"
+        <FormLabel color="gray.300">Description</FormLabel>
+        <Textarea 
+          placeholder="Enter iQube Description"
           value={baseQubeDetails.description}
+          bg="gray.700"
+          borderColor="gray.600"
+          color="gray.100"
+          _placeholder={{ color: 'gray.500' }}
           onChange={(e) => setBaseQubeDetails(prev => ({
             ...prev,
             description: e.target.value
@@ -223,388 +451,416 @@ const IQubeCreatingPanel: React.FC<IQubeCreatingPanelProps> = ({
       </FormControl>
 
       <FormControl isRequired>
-        <FormLabel>Owner Type</FormLabel>
-        <Select 
+        <FormLabel color="gray.300">Owner Type</FormLabel>
+        <Select
           value={baseQubeDetails.ownerType}
+          bg="gray.700"
+          borderColor="gray.600"
+          color="gray.100"
+          _placeholder={{ color: 'gray.500' }}
           onChange={(e) => setBaseQubeDetails(prev => ({
             ...prev,
             ownerType: e.target.value as 'Person' | 'Organization' | 'Thing'
           }))}
         >
-          <option value="Person">Person</option>
           <option value="Organization">Organization</option>
+          <option value="Person">Person</option>
           <option value="Thing">Thing</option>
         </Select>
       </FormControl>
 
       <FormControl isRequired>
-        <FormLabel>Owner Identifiability</FormLabel>
-        <Select 
+        <FormLabel color="gray.300">Owner Identifiability</FormLabel>
+        <Select
           value={baseQubeDetails.ownerIdentifiability}
+          bg="gray.700"
+          borderColor="gray.600"
+          color="gray.100"
+          _placeholder={{ color: 'gray.500' }}
           onChange={(e) => setBaseQubeDetails(prev => ({
             ...prev,
             ownerIdentifiability: e.target.value as 'Anon' | 'Semi-Anon' | 'Identifiable' | 'Semi-Identifiable'
           }))}
         >
-          <option value="Anon">Anonymous</option>
-          <option value="Semi-Anon">Semi-Anonymous</option>
           <option value="Identifiable">Identifiable</option>
           <option value="Semi-Identifiable">Semi-Identifiable</option>
+          <option value="Anon">Anonymous</option>
+          <option value="Semi-Anon">Semi-Anonymous</option>
         </Select>
       </FormControl>
 
-      {/* Scoring Fields */}
-      <FormControl isRequired>
-        <FormLabel>Sensitivity Score (1-10)</FormLabel>
-        <Select 
-          value={baseQubeDetails.sensitivityScore}
-          onChange={(e) => setBaseQubeDetails(prev => ({
-            ...prev,
-            sensitivityScore: parseInt(e.target.value)
-          }))}
-        >
-          {[...Array(10)].map((_, i) => (
-            <option key={i+1} value={i+1}>{i+1}</option>
-          ))}
-        </Select>
-      </FormControl>
+      <HStack width="full">
+        <FormControl>
+          <FormLabel color="gray.300">Sensitivity Score</FormLabel>
+          <Slider
+            defaultValue={baseQubeDetails.sensitivityScore}
+            min={0}
+            max={10}
+            onChange={(val) => setBaseQubeDetails(prev => ({
+              ...prev,
+              sensitivityScore: val
+            }))}
+          >
+            <SliderTrack bg="gray.700">
+              <SliderFilledTrack bg="teal.500" />
+            </SliderTrack>
+            <SliderThumb bg="teal.300" />
+          </Slider>
+        </FormControl>
 
-      <FormControl isRequired>
-        <FormLabel>Verifiability Score (1-10)</FormLabel>
-        <Select 
-          value={baseQubeDetails.verifiabilityScore}
-          onChange={(e) => setBaseQubeDetails(prev => ({
-            ...prev,
-            verifiabilityScore: parseInt(e.target.value)
-          }))}
-        >
-          {[...Array(10)].map((_, i) => (
-            <option key={i+1} value={i+1}>{i+1}</option>
-          ))}
-        </Select>
-      </FormControl>
+        <FormControl>
+          <FormLabel color="gray.300">Verifiability Score</FormLabel>
+          <Slider
+            defaultValue={baseQubeDetails.verifiabilityScore}
+            min={0}
+            max={10}
+            onChange={(val) => setBaseQubeDetails(prev => ({
+              ...prev,
+              verifiabilityScore: val
+            }))}
+          >
+            <SliderTrack bg="gray.700">
+              <SliderFilledTrack bg="teal.500" />
+            </SliderTrack>
+            <SliderThumb bg="teal.300" />
+          </Slider>
+        </FormControl>
+      </HStack>
 
-      <FormControl isRequired>
-        <FormLabel>Accuracy Score (1-10)</FormLabel>
-        <Select 
-          value={baseQubeDetails.accuracyScore}
-          onChange={(e) => setBaseQubeDetails(prev => ({
-            ...prev,
-            accuracyScore: parseInt(e.target.value)
-          }))}
-        >
-          {[...Array(10)].map((_, i) => (
-            <option key={i+1} value={i+1}>{i+1}</option>
-          ))}
-        </Select>
-      </FormControl>
+      <HStack width="full">
+        <FormControl>
+          <FormLabel color="gray.300">Accuracy Score</FormLabel>
+          <Slider
+            defaultValue={baseQubeDetails.accuracyScore}
+            min={0}
+            max={10}
+            onChange={(val) => setBaseQubeDetails(prev => ({
+              ...prev,
+              accuracyScore: val
+            }))}
+          >
+            <SliderTrack bg="gray.700">
+              <SliderFilledTrack bg="teal.500" />
+            </SliderTrack>
+            <SliderThumb bg="teal.300" />
+          </Slider>
+        </FormControl>
 
-      <FormControl isRequired>
-        <FormLabel>Risk Score (1-10)</FormLabel>
-        <Select 
-          value={baseQubeDetails.riskScore}
-          onChange={(e) => setBaseQubeDetails(prev => ({
-            ...prev,
-            riskScore: parseInt(e.target.value)
-          }))}
-        >
-          {[...Array(10)].map((_, i) => (
-            <option key={i+1} value={i+1}>{i+1}</option>
-          ))}
-        </Select>
-      </FormControl>
+        <FormControl>
+          <FormLabel color="gray.300">Risk Score</FormLabel>
+          <Slider
+            defaultValue={baseQubeDetails.riskScore}
+            min={0}
+            max={10}
+            onChange={(val) => setBaseQubeDetails(prev => ({
+              ...prev,
+              riskScore: val
+            }))}
+          >
+            <SliderTrack bg="gray.700">
+              <SliderFilledTrack bg="teal.500" />
+            </SliderTrack>
+            <SliderThumb bg="teal.300" />
+          </Slider>
+        </FormControl>
+      </HStack>
     </VStack>
   );
 
-  // Existing render methods for specific Qube types...
-  // (renderDataQubeForm, renderContentQubeForm, renderAgentQubeForm)
-  // would be updated similarly to include more comprehensive details
-
-  const renderTokenTypeSelector = () => (
-    <div className="grid grid-cols-3 gap-2 mb-4">
-      {['DataQube', 'ContentQube', 'AgentQube'].map(type => (
-        <button
-          key={type}
-          onClick={() => setActiveTokenType(type as any)}
-          className={`
-            py-2 rounded transition-all duration-300 ease-in-out
-            ${activeTokenType === type 
-              ? 'bg-[#047857] text-white' 
-              : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}
-          `}
-        >
-          {type}
-        </button>
-      ))}
-    </div>
-  );
-
-  const renderDataQubeForm = () => (
-    <div className="space-y-4">
-      {/* First Row: iQube Type and Encryption Level */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="bg-gray-700 p-2 rounded">
-          <span className="text-gray-400 block text-xs">iQube Type</span>
-          <select 
-            value={dataQubeDetails.iQubeType}
-            onChange={(e) => setDataQubeDetails(prev => ({ ...prev, iQubeType: e.target.value }))}
-            className="w-full bg-gray-800 text-white rounded"
-          >
-            <option value="DataQube">DataQube</option>
-          </select>
-        </div>
-        <div className="bg-gray-700 p-2 rounded">
-          <span className="text-gray-400 block text-xs">Encryption Level</span>
-          <select 
-            value={dataQubeDetails.encryptionLevel}
-            onChange={(e) => setDataQubeDetails(prev => ({ ...prev, encryptionLevel: e.target.value }))}
-            className="w-full bg-gray-800 text-white rounded"
-          >
-            <option value="Standard">Standard</option>
-            <option value="High">High</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Data Points with Add Button */}
-      <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <h4 className="text-white">Data Points</h4>
-          <button 
-            onClick={() => setDataQubeDetails(prev => ({
-              ...prev,
-              dataPoints: [...prev.dataPoints, { name: '', value: '', source: '' }]
-            }))}
-            className="bg-blue-600 text-white p-1 rounded hover:bg-blue-700"
-          >
-            +
-          </button>
-        </div>
-        {dataQubeDetails.dataPoints.map((point, index) => (
-          <div key={index} className="grid grid-cols-3 gap-2">
-            <input 
-              placeholder="Data Point Name"
-              className="bg-gray-800 text-white p-2 rounded"
-            />
-            <input 
-              placeholder="Data Point Value"
-              className="bg-gray-800 text-white p-2 rounded"
-            />
-            <input 
-              placeholder="Source"
-              className="bg-gray-800 text-white p-2 rounded"
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderContentQubeForm = () => (
-    <div className="space-y-4">
-      {/* First Row: Content Type and Usage Rights */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="bg-gray-700 p-2 rounded">
-          <span className="text-gray-400 block text-xs">Content Type</span>
-          <select 
-            value={contentQubeDetails.contentType}
-            onChange={(e) => setContentQubeDetails(prev => ({ ...prev, contentType: e.target.value }))}
-            className="w-full bg-gray-800 text-white rounded"
-          >
-            <option>Document</option>
-            <option>Image</option>
-            <option>Video</option>
-          </select>
-        </div>
-        <div className="bg-gray-700 p-2 rounded">
-          <span className="text-gray-400 block text-xs">Usage Rights</span>
-          <select 
-            value={contentQubeDetails.usageRights}
-            onChange={(e) => setContentQubeDetails(prev => ({ ...prev, usageRights: e.target.value }))}
-            className="w-full bg-gray-800 text-white rounded"
-          >
-            <option>Private</option>
-            <option>Shared</option>
-            <option>Public</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Second Row: Browse/Upload and Access Level */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="bg-gray-700 p-2 rounded">
-          <span className="text-gray-400 block text-xs">Upload Content</span>
-          <input 
-            type="file"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                setContentQubeDetails(prev => ({
+  // Render method for specific Qube type details
+  const renderQubeTypeDetails = () => {
+    switch (activeTokenType) {
+      case 'DataQube':
+        return (
+          <VStack spacing={4} width="full">
+            <FormControl>
+              <FormLabel color="gray.300">Encryption Level</FormLabel>
+              <Select
+                value={dataQubeDetails.encryptionLevel}
+                bg="gray.700"
+                borderColor="gray.600"
+                color="gray.100"
+                _placeholder={{ color: 'gray.500' }}
+                onChange={(e) => setDataQubeDetails(prev => ({
                   ...prev,
-                  uploadedFile: file,
-                  filePreview: URL.createObjectURL(file)
-                }));
-              }
-            }}
-            className="w-full bg-gray-800 text-white rounded"
-          />
-        </div>
-        <div className="bg-gray-700 p-2 rounded">
-          <span className="text-gray-400 block text-xs">Access Level</span>
-          <select 
-            value={contentQubeDetails.accessLevel}
-            onChange={(e) => setContentQubeDetails(prev => ({ ...prev, accessLevel: e.target.value }))}
-            className="w-full bg-gray-800 text-white rounded"
-          >
-            <option>Read</option>
-            <option>Write</option>
-            <option>Execute</option>
-          </select>
-        </div>
-      </div>
+                  encryptionLevel: e.target.value
+                }))}
+              >
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </Select>
+            </FormControl>
 
-      {/* File Preview */}
-      {contentQubeDetails.filePreview && (
-        <div className="mt-4 bg-gray-700 p-2 rounded">
-          <span className="text-gray-400 block text-xs mb-2">File Preview</span>
-          <img 
-            src={contentQubeDetails.filePreview} 
-            alt="Uploaded Content" 
-            className="max-w-full h-auto rounded"
-          />
-        </div>
-      )}
-    </div>
-  );
+            <FormControl>
+              <FormLabel color="gray.300">Data Points</FormLabel>
+              {dataQubeDetails.dataPoints.map((point, index) => (
+                <HStack key={index} mb={2}>
+                  <Input 
+                    placeholder="Name"
+                    value={point.name}
+                    bg="gray.700"
+                    borderColor="gray.600"
+                    color="gray.100"
+                    _placeholder={{ color: 'gray.500' }}
+                    onChange={(e) => {
+                      const newDataPoints = [...dataQubeDetails.dataPoints];
+                      newDataPoints[index].name = e.target.value;
+                      setDataQubeDetails(prev => ({ ...prev, dataPoints: newDataPoints }));
+                    }}
+                  />
+                  <Input 
+                    placeholder="Value"
+                    value={point.value}
+                    bg="gray.700"
+                    borderColor="gray.600"
+                    color="gray.100"
+                    _placeholder={{ color: 'gray.500' }}
+                    onChange={(e) => {
+                      const newDataPoints = [...dataQubeDetails.dataPoints];
+                      newDataPoints[index].value = e.target.value;
+                      setDataQubeDetails(prev => ({ ...prev, dataPoints: newDataPoints }));
+                    }}
+                  />
+                  <Select
+                    value={point.source}
+                    bg="gray.700"
+                    borderColor="gray.600"
+                    color="gray.100"
+                    _placeholder={{ color: 'gray.500' }}
+                    onChange={(e) => {
+                      const newDataPoints = [...dataQubeDetails.dataPoints];
+                      newDataPoints[index].source = e.target.value;
+                      setDataQubeDetails(prev => ({ ...prev, dataPoints: newDataPoints }));
+                    }}
+                  >
+                    <option value="System">System</option>
+                    <option value="Manual">Manual</option>
+                    <option value="External">External</option>
+                  </Select>
+                </HStack>
+              ))}
+              <Button 
+                onClick={() => setDataQubeDetails(prev => ({
+                  ...prev,
+                  dataPoints: [...prev.dataPoints, { name: '', value: '', source: 'Manual' }]
+                }))}
+              >
+                Add Data Point
+              </Button>
+            </FormControl>
+          </VStack>
+        );
+      case 'ContentQube':
+        return (
+          <VStack spacing={4} width="full">
+            <FormControl>
+              <FormLabel color="gray.300">Content Type</FormLabel>
+              <Select
+                value={contentQubeDetails.contentType}
+                bg="gray.700"
+                borderColor="gray.600"
+                color="gray.100"
+                _placeholder={{ color: 'gray.500' }}
+                onChange={(e) => setContentQubeDetails(prev => ({
+                  ...prev,
+                  contentType: e.target.value
+                }))}
+              >
+                <option value="text">Text</option>
+                <option value="image">Image</option>
+                <option value="video">Video</option>
+                <option value="audio">Audio</option>
+              </Select>
+            </FormControl>
 
-  const renderAgentQubeForm = () => (
-    <div className="space-y-4">
-      {/* First Row: iQube Type and Encryption Level */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="bg-gray-700 p-2 rounded">
-          <span className="text-gray-400 block text-xs">iQube Type</span>
-          <select 
-            value={agentQubeDetails.iQubeType}
-            onChange={(e) => setAgentQubeDetails(prev => ({ ...prev, iQubeType: e.target.value }))}
-            className="w-full bg-gray-800 text-white rounded"
-          >
-            <option>AgentQube</option>
-          </select>
-        </div>
-        <div className="bg-gray-700 p-2 rounded">
-          <span className="text-gray-400 block text-xs">Encryption Level</span>
-          <select 
-            value={agentQubeDetails.encryptionLevel}
-            onChange={(e) => setAgentQubeDetails(prev => ({ ...prev, encryptionLevel: e.target.value }))}
-            className="w-full bg-gray-800 text-white rounded"
-          >
-            <option>High</option>
-            <option>Standard</option>
-          </select>
-        </div>
-      </div>
+            <FormControl>
+              <FormLabel color="gray.300">Usage Rights</FormLabel>
+              <Input 
+                placeholder="Enter usage rights"
+                value={contentQubeDetails.usageRights}
+                bg="gray.700"
+                borderColor="gray.600"
+                color="gray.100"
+                _placeholder={{ color: 'gray.500' }}
+                onChange={(e) => setContentQubeDetails(prev => ({
+                  ...prev,
+                  usageRights: e.target.value
+                }))}
+              />
+            </FormControl>
 
-      {/* API Key Row */}
-      <div className="bg-gray-700 p-2 rounded">
-        <span className="text-gray-400 block text-xs">API Key</span>
-        <input 
-          type="text"
-          value={agentQubeDetails.apiKey}
-          onChange={(e) => setAgentQubeDetails(prev => ({ ...prev, apiKey: e.target.value }))}
-          placeholder="Generate or Enter API Key"
-          className="w-full bg-gray-800 text-white p-2 rounded"
-        />
-      </div>
+            <FormControl>
+              <FormLabel color="gray.300">Access Level</FormLabel>
+              <Select
+                value={contentQubeDetails.accessLevel}
+                bg="gray.700"
+                borderColor="gray.600"
+                color="gray.100"
+                _placeholder={{ color: 'gray.500' }}
+                onChange={(e) => setContentQubeDetails(prev => ({
+                  ...prev,
+                  accessLevel: e.target.value
+                }))}
+              >
+                <option value="Private">Private</option>
+                <option value="Public">Public</option>
+                <option value="Restricted">Restricted</option>
+              </Select>
+            </FormControl>
+          </VStack>
+        );
+      case 'AgentQube':
+        return (
+          <VStack spacing={4} width="full">
+            <FormControl>
+              <FormLabel color="gray.300">Domain</FormLabel>
+              <Input 
+                placeholder="Enter domain"
+                value={agentQubeDetails.domain}
+                bg="gray.700"
+                borderColor="gray.600"
+                color="gray.100"
+                _placeholder={{ color: 'gray.500' }}
+                onChange={(e) => setAgentQubeDetails(prev => ({
+                  ...prev,
+                  domain: e.target.value
+                }))}
+              />
+            </FormControl>
 
-      {/* Remaining Rows */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="bg-gray-700 p-2 rounded">
-          <span className="text-gray-400 block text-xs">Name</span>
-          <input 
-            type="text"
-            value={agentQubeDetails.name}
-            onChange={(e) => setAgentQubeDetails(prev => ({ ...prev, name: e.target.value }))}
-            className="w-full bg-gray-800 text-white rounded p-2"
-          />
-        </div>
-        <div className="bg-gray-700 p-2 rounded">
-          <span className="text-gray-400 block text-xs">Domain</span>
-          <input 
-            type="text"
-            value={agentQubeDetails.domain}
-            onChange={(e) => setAgentQubeDetails(prev => ({ ...prev, domain: e.target.value }))}
-            className="w-full bg-gray-800 text-white rounded p-2"
-          />
-        </div>
-      </div>
+            <FormControl>
+              <FormLabel color="gray.300">Capabilities</FormLabel>
+              <Textarea 
+                placeholder="Enter agent capabilities"
+                value={agentQubeDetails.capabilities}
+                bg="gray.700"
+                borderColor="gray.600"
+                color="gray.100"
+                _placeholder={{ color: 'gray.500' }}
+                onChange={(e) => setAgentQubeDetails(prev => ({
+                  ...prev,
+                  capabilities: e.target.value
+                }))}
+              />
+            </FormControl>
 
-      <div className="grid grid-cols-2 gap-2">
-        <div className="bg-gray-700 p-2 rounded">
-          <span className="text-gray-400 block text-xs">Capabilities</span>
-          <input 
-            type="text"
-            value={agentQubeDetails.capabilities}
-            onChange={(e) => setAgentQubeDetails(prev => ({ ...prev, capabilities: e.target.value }))}
-            className="w-full bg-gray-800 text-white rounded p-2"
-          />
-        </div>
-        <div className="bg-gray-700 p-2 rounded">
-          <span className="text-gray-400 block text-xs">Specialization</span>
-          <input 
-            type="text"
-            value={agentQubeDetails.specialization}
-            onChange={(e) => setAgentQubeDetails(prev => ({ ...prev, specialization: e.target.value }))}
-            className="w-full bg-gray-800 text-white rounded p-2"
-          />
-        </div>
-      </div>
+            <FormControl>
+              <FormLabel color="gray.300">Specialization</FormLabel>
+              <Input 
+                placeholder="Enter specialization"
+                value={agentQubeDetails.specialization}
+                bg="gray.700"
+                borderColor="gray.600"
+                color="gray.100"
+                _placeholder={{ color: 'gray.500' }}
+                onChange={(e) => setAgentQubeDetails(prev => ({
+                  ...prev,
+                  specialization: e.target.value
+                }))}
+              />
+            </FormControl>
 
-      <div className="bg-gray-700 p-2 rounded">
-        <span className="text-gray-400 block text-xs">Integrations</span>
-        <input 
-          type="text"
-          value={agentQubeDetails.integrations}
-          onChange={(e) => setAgentQubeDetails(prev => ({ ...prev, integrations: e.target.value }))}
-          className="w-full bg-gray-800 text-white rounded p-2"
-        />
-      </div>
-    </div>
-  );
-
-  const renderActiveTokenForm = () => {
-    switch(activeTokenType) {
-      case 'DataQube': return renderDataQubeForm();
-      case 'ContentQube': return renderContentQubeForm();
-      case 'AgentQube': return renderAgentQubeForm();
-      default: return null;
+            <FormControl>
+              <FormLabel color="gray.300">Encryption Level</FormLabel>
+              <Select
+                value={agentQubeDetails.encryptionLevel}
+                bg="gray.700"
+                borderColor="gray.600"
+                color="gray.100"
+                _placeholder={{ color: 'gray.500' }}
+                onChange={(e) => setAgentQubeDetails(prev => ({
+                  ...prev,
+                  encryptionLevel: e.target.value
+                }))}
+              >
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </Select>
+            </FormControl>
+          </VStack>
+        );
+      default:
+        return null;
     }
   };
 
   return (
-    <Box p={4} borderWidth="1px" borderRadius="lg">
-      <VStack spacing={4} align="stretch">
-        <Button
-          colorScheme="blue"
+    <Box 
+      p={5} 
+      width="full" 
+      maxWidth="800px" 
+      margin="auto" 
+      bg="gray.900"  
+      color="gray.100"  
+      borderRadius="lg"
+      boxShadow="xl"
+    >
+      <VStack spacing={6} width="full">
+        <Heading color="gray.100">Create iQube</Heading>
+
+        {/* Qube Type Selection */}
+        <HStack width="full" justifyContent="center">
+          {(['DataQube', 'ContentQube', 'AgentQube'] as const).map((type) => (
+            <Button
+              key={type}
+              variant={activeTokenType === type ? 'solid' : 'outline'}
+              colorScheme={activeTokenType === type ? 'teal' : 'gray'}
+              bg={activeTokenType === type ? 'teal.600' : 'gray.700'}
+              color={activeTokenType === type ? 'white' : 'gray.300'}
+              _hover={{
+                bg: activeTokenType === type ? 'teal.700' : 'gray.600',
+                color: activeTokenType === type ? 'white' : 'gray.200'
+              }}
+              onClick={() => setActiveTokenType(type)}
+            >
+              {type}
+            </Button>
+          ))}
+        </HStack>
+
+        {/* Base Qube Details */}
+        <Box 
+          width="full" 
+          bg="gray.800" 
+          p={4} 
+          borderRadius="md"
+          borderWidth="1px"
+          borderColor="gray.700"
+        >
+          <Text fontSize="lg" fontWeight="bold" mb={4} color="gray.200">Base iQube Details</Text>
+          {renderMetaQubeBaseDetails()}
+        </Box>
+
+        {/* Specific Qube Type Details */}
+        <Box 
+          width="full" 
+          bg="gray.800" 
+          p={4} 
+          borderRadius="md"
+          borderWidth="1px"
+          borderColor="gray.700"
+        >
+          <Text fontSize="lg" fontWeight="bold" mb={4} color="gray.200">{activeTokenType} Details</Text>
+          {renderQubeTypeDetails()}
+        </Box>
+
+        {/* Mint Button */}
+        <Button 
+          colorScheme="teal" 
+          size="lg" 
+          width="full" 
+          bg="teal.600"
+          color="white"
+          _hover={{
+            bg: 'teal.700'
+          }}
           onClick={mintQube}
           isDisabled={!web3 || !account}
         >
-          Mint Test DataQube
+          Mint {activeTokenType}
         </Button>
-        
-        {/* Display current DataQube details */}
-        <Box p={4} bg="gray.50" borderRadius="md">
-          <Text fontWeight="bold">Current DataQube Details:</Text>
-          <Text>Name: {baseQubeDetails.name}</Text>
-          <Text>Creator: {baseQubeDetails.creator}</Text>
-          <Text>Type: {dataQubeDetails.iQubeType}</Text>
-          <Text>Encryption: {dataQubeDetails.encryptionLevel}</Text>
-        </Box>
-        
-        {/* Connection Status */}
-        <Box p={4} bg={web3 && account ? "green.50" : "red.50"} borderRadius="md">
-          <Text>Wallet Status: {web3 && account ? 'Connected' : 'Not Connected'}</Text>
-          <Text>Network: Polygon Amoy Testnet</Text>
-        </Box>
       </VStack>
     </Box>
   );

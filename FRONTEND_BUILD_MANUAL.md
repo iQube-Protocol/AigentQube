@@ -379,231 +379,6 @@ npm start
 - Latest stable React and TypeScript versions
 - Visual Studio Code with ESLint and Prettier extensions
 
-## Agent Evolution and iQube Integration
-
-### iQube Sharing Mechanism
-
-#### Feature Overview
-The Agent Evolution Panel now supports dynamic iQube integration with the following key capabilities:
-
-1. **iQube Token Input**
-   - Users can enter an iQube Token ID directly in the interface
-   - Input field validates and fetches iQube details in real-time
-
-2. **Automatic Domain Specialization**
-   - When an iQube is shared, the system automatically suggests a specialized agent domain
-   - Preserves manual domain selection capabilities
-
-3. **State Transformation**
-   - Transitions from "Generic AI" to "Personalized AI" state
-   - Updates agent context with iQube-specific details
-
-#### Technical Implementation
-
-##### Frontend Components
-- `AgentEvolutionPanel.tsx`: 
-  - Added `iQubeTokenId` state management
-  - Implemented `fetchIQubeDetails` method
-  - Created error handling for iQube sharing
-  - Extended context change mechanism
-
-- `App.tsx`:
-  - Added `context` state management
-  - Implemented `handleContextChange` method
-  - Passed `agentId` to AgentEvolutionPanel
-
-##### Backend Integration Points
-- Endpoint: `http://localhost:8000/iqube/{tokenId}`
-  - Retrieves iQube details
-  - Returns `{ tokenId, name, domain }`
-
-- Endpoint: `http://localhost:8000/agent/share-iqube`
-  - Shares iQube with specific agent
-  - Requires `agent_id` and `iqube_token_id`
-
-#### State Management Flow
-```typescript
-interface IQubeDetails {
-  tokenId: string;
-  name: string;
-  domain: string;
-}
-
-interface AgentContext {
-  baseState: 'Generic AI' | 'Personalized AI';
-  specializedState: string;
-  iQubeDetails?: IQubeDetails;
-}
-```
-
-#### Key Interactions
-1. User enters iQube Token ID
-2. System validates and fetches iQube details
-3. Suggested domain is automatically selected
-4. Agent base state transitions to "Personalized AI"
-5. iQube details are integrated into agent context
-
-#### Error Handling
-- Validates iQube Token ID
-- Provides user-friendly error messages
-- Logs detailed errors for debugging
-
-#### Performance Considerations
-- Async operations with loading states
-- Minimal payload transfer
-- Graceful error management
-
-### Best Practices
-- Always validate external token inputs
-- Provide clear user feedback
-- Maintain flexible domain selection
-- Ensure secure token handling
-
-### Recommended Development Workflow
-1. Clean install dependencies
-2. Verify import paths
-3. Check TypeScript configuration
-4. Run with verbose logging
-5. Test wallet connection
-6. Implement comprehensive error handling
-
-## Version Compatibility
-- **React**: ^18.2.0
-- **TypeScript**: ^4.9.5
-- **Web3.js**: ^4.3.0
-- **Tailwind CSS**: ^3.4.0
-
-**Last Updated**: 2025-01-04
-**Build Stability**: Stable
-
-## Recommended Next Steps
-1. Implement comprehensive error handling
-2. Add unit and integration tests
-3. Create mock API for development
-4. Enhance Web3 wallet connection logic
-
-## Contribution Guidelines
-- Follow TypeScript strict mode
-- Use meaningful variable names
-- Write comprehensive comments
-- Maintain consistent code formatting
-
-## Tailwind CSS and PostCSS Configuration Troubleshooting
-
-### Common Build Errors and Solutions
-
-#### Error: Module Build Failure with Tailwind Configuration
-
-##### Symptoms
-- Compilation fails with an error like:
-  ```
-  Error: ENOENT: no such file or directory, open '/var/folders/qq/bsrtwvtx4ngg2wktq57s5xyw0000gn/T/node-jiti/aigentqube-dashboard-tailwind.config.js.e837b8f6.js'
-  ```
-- TypeScript import errors
-- Inability to resolve module paths
-
-##### Root Causes
-1. Incorrect Tailwind configuration path resolution
-2. Stale or corrupted node_modules
-3. Incompatible dependency versions
-4. Incorrect import statements
-
-##### Diagnostic Steps
-1. **Verify Tailwind Configuration**
-   ```javascript
-   // tailwind.config.js
-   const path = require('path');
-
-   module.exports = {
-     content: [
-       // Use absolute path for content files
-       path.join(__dirname, './src/**/*.{js,jsx,ts,tsx}')
-     ],
-     // ... other configurations
-   }
-   ```
-
-2. **Dependency Cleanup**
-   ```bash
-   # Clear npm cache
-   npm cache clean --force
-
-   # Remove node_modules and package-lock.json
-   rm -rf node_modules package-lock.json
-
-   # Reinstall dependencies
-   npm install
-   ```
-
-3. **PostCSS Configuration Check**
-   Ensure `postcss.config.js` includes necessary plugins:
-   ```javascript
-   module.exports = {
-     plugins: {
-       tailwindcss: {},
-       autoprefixer: {
-         overrideBrowserslist: [
-           '>0.2%', 
-           'not dead', 
-           'not op_mini all', 
-           'iOS >= 12', 
-           'Android >= 6'
-         ]
-       }
-     }
-   }
-   ```
-
-4. **TypeScript Import Fixes**
-   - Use explicit imports for React hooks
-   - Add type annotations
-   - Ensure all necessary dependencies are imported
-
-##### Specific Fixes in AigentQube Frontend
-
-###### 1. Tailwind Configuration Update
-- Added `path.join()` for absolute content path resolution
-- Explicitly imported `path` module
-- Verified content array configuration
-
-###### 2. Dependency Management
-- Cleared npm cache
-- Removed and reinstalled `node_modules`
-- Verified plugin installations:
-  ```bash
-  npm install -D @tailwindcss/forms @tailwindcss/typography
-  ```
-
-###### 3. TypeScript Configuration
-- Updated `app.tsx` with correct imports
-- Added type annotations for state and functions
-- Resolved import and type resolution errors
-
-##### Prevention Strategies
-1. Regularly update dependencies
-2. Use consistent import patterns
-3. Maintain clean dependency management
-4. Use TypeScript strict mode
-5. Implement comprehensive error logging
-
-##### Debugging Checklist
-- [ ] Verify Tailwind configuration paths
-- [ ] Check PostCSS plugins
-- [ ] Ensure all dependencies are installed
-- [ ] Validate TypeScript imports and types
-- [ ] Clear build cache if persistent issues occur
-
-### Recommended Tools
-- `npm-check-updates`: For managing dependency updates
-- `typescript-eslint`: For robust TypeScript error checking
-- Browser DevTools: For detailed error tracing
-
-### Performance Optimization
-- Use code splitting
-- Implement lazy loading
-- Minimize bundle size
-- Use production build for deployment
-
 ## Troubleshooting Common Setup Issues
 
 ### Module Resolution Challenges
@@ -856,3 +631,102 @@ interface AgentContext {
 - Develop backend logic for context-aware interactions
 - Create more sophisticated prompt generation mechanisms
 - Enhance multi-agent collaboration features
+
+## Troubleshooting Common Restoration Issues
+
+### Environment Variable Conflicts
+One of the most critical issues when restoring the application is handling environment variable conflicts. If you encounter a blank page after restoration:
+
+1. Check for duplicate environment variables in `.env`:
+   ```plaintext
+   # Common Issue: Duplicate API keys
+   REACT_APP_OPENAI_API_KEY="actual-key-here"
+   REACT_APP_OPENAI_API_KEY=placeholder-value  # Remove this duplicate
+   ```
+
+2. Ensure only one instance of each environment variable exists:
+   - REACT_APP_OPENAI_API_KEY
+   - REACT_APP_METIS_API_KEY
+   - REACT_APP_API_BASE_URL
+
+### Webpack and Build Issues
+If encountering `Module not found` errors or blank pages:
+
+1. Clean existing build artifacts:
+   ```bash
+   rm -rf node_modules package-lock.json
+   npm cache clean -f
+   ```
+
+2. Install dependencies with specific versions:
+   ```bash
+   npm install react@18.2.0 react-dom@18.2.0 typescript@4.9.5 --save-exact
+   npm install @types/react@18.2.45 @types/react-dom@18.2.18 --save-dev --save-exact
+   ```
+
+3. Install necessary webpack polyfills:
+   ```bash
+   npm install --save-dev crypto-browserify stream-browserify assert stream-http https-browserify os-browserify url buffer process
+   ```
+
+### File Casing Issues
+React and webpack can be sensitive to file casing. Ensure consistent casing:
+
+1. Use lowercase for component files:
+   - Rename `App.tsx` to `app.tsx`
+   - Update imports in `index.tsx` accordingly
+
+### Cache Clearing
+If changes aren't reflecting:
+
+1. Clear npm cache:
+   ```bash
+   npm cache clean -f
+   ```
+
+2. Clear React cache:
+   ```bash
+   rm -rf node_modules/.cache
+   ```
+
+3. Clear browser cache:
+   - Firefox: Open DevTools (F12) -> Storage -> Clear Storage
+   - Or perform a hard reload (Command+Shift+R)
+
+### Complete Restoration Process
+Follow these steps in order when restoring the application:
+
+1. Clean environment:
+   ```bash
+   rm -rf node_modules package-lock.json
+   npm cache clean -f
+   ```
+
+2. Verify .env configuration:
+   - Remove duplicate entries
+   - Ensure API keys are properly set
+   - Verify API endpoints
+
+3. Install dependencies:
+   ```bash
+   npm install --legacy-peer-deps
+   ```
+
+4. Start development server:
+   ```bash
+   BROWSER=firefox npm start
+   ```
+
+5. If blank page appears:
+   - Check browser console for errors
+   - Verify environment variables
+   - Clear browser cache
+   - Restart development server
+
+### Prevention Strategies
+To prevent these issues in future restorations:
+
+1. Maintain a clean .env template
+2. Use exact versions in package.json
+3. Document API key requirements
+4. Keep consistent file naming conventions

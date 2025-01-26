@@ -104,44 +104,84 @@ export const registerQube = async (
     }
     const web3 = new Web3(window.ethereum);
 
-    // Validate addresses
+    // Log available Web3 utils for debugging
+    console.log('Available Web3 utils:', Object.keys(web3.utils));
+
+    // Validate input parameters
+    if (!qubeType || !qubeAddress || !qubeHash || !account) {
+      throw new Error('Missing required parameters for Qube registration');
+    }
+
+    // Validate Ethereum addresses
+    if (!web3.utils.isAddress(qubeAddress)) {
+      throw new Error(`Invalid Qube address: ${qubeAddress}`);
+    }
+    if (!web3.utils.isAddress(account)) {
+      throw new Error(`Invalid account address: ${account}`);
+    }
+
+    // Validate Qube type
+    const validQubeTypes = ['DataQube', 'ContentQube', 'AgentQube'];
+    if (!validQubeTypes.includes(qubeType)) {
+      throw new Error(`Invalid Qube type: ${qubeType}. Must be one of ${validQubeTypes.join(', ')}`);
+    }
+
+    // Validate hash
+    if (!qubeHash || qubeHash.length === 0) {
+      throw new Error('Qube hash cannot be empty');
+    }
+
+    // Validate metadata
+    if (!metadata || typeof metadata !== 'object') {
+      throw new Error('Invalid metadata: must be a non-null object');
+    }
+
+    // Validate contract address
+    const contract = new web3.eth.Contract(iQubeRegistryABI as any, iQubeRegistryAddress);
+    if (!contract) {
+      throw new Error('Failed to initialize contract');
+    }
+
+    // Validate and convert addresses to checksum format
     const validatedQubeAddress = web3.utils.toChecksumAddress(qubeAddress);
     const validatedAccount = web3.utils.toChecksumAddress(account);
+
+    // Convert hash to a format suitable for contract methods
+    // First, ensure we have a clean hex string
+    const cleanHash = qubeHash.startsWith('0x') ? qubeHash : `0x${qubeHash}`;
     
-    console.log('Validated addresses:', {
+    // Log the hash conversion steps for debugging
+    console.log('Hash conversion steps:', {
+      originalHash: qubeHash,
+      cleanHash: cleanHash
+    });
+
+    // Pass the hash directly to the contract method
+    // Let Web3.js handle the conversion internally
+    console.log('Validated registration parameters:', {
+      qubeType,
       qubeAddress: validatedQubeAddress,
+      qubeHash: cleanHash,
       account: validatedAccount
     });
 
-    const contract = new web3.eth.Contract(iQubeRegistryABI as any, iQubeRegistryAddress);
-
-    // Convert hash to bytes32 format
-    const hashBytes32 = web3.utils.padLeft(qubeHash, 64);
-    console.log('Hash as bytes32:', hashBytes32);
-
-    console.log('Registering Qube:', {
-      type: qubeType,
-      address: validatedQubeAddress,
-      hash: hashBytes32,
-      metadata
-    });
-
+    // Select appropriate registration method
     let method;
     switch (qubeType) {
       case 'DataQube':
-        method = contract.methods.registerDataQube(validatedQubeAddress, hashBytes32);
+        method = contract.methods.registerDataQube(validatedQubeAddress, cleanHash);
         break;
       case 'ContentQube':
-        method = contract.methods.registerContentQube(validatedQubeAddress, hashBytes32);
+        method = contract.methods.registerContentQube(validatedQubeAddress, cleanHash);
         break;
       case 'AgentQube':
-        method = contract.methods.registerAgentQube(validatedQubeAddress, hashBytes32);
+        method = contract.methods.registerAgentQube(validatedQubeAddress, cleanHash);
         break;
       default:
-        throw new Error(`Invalid Qube type: ${qubeType}`);
+        throw new Error(`Unsupported Qube type: ${qubeType}`);
     }
 
-    // Get gas estimate
+    // Estimate gas
     const gas = await method.estimateGas({ from: validatedAccount });
     console.log('Estimated gas:', gas);
 
@@ -154,7 +194,7 @@ export const registerQube = async (
     console.log('Transaction sent:', tx.transactionHash);
     return tx;
   } catch (error) {
-    console.error('Error registering Qube:', error);
+    console.error('Qube Registration Error:', error);
     throw error;
   }
 };
@@ -209,17 +249,21 @@ export class ContractInteraction {
       // Generate a deterministic address for the Qube
       const generatedQubeAddress = await generateQubeAddress(this.account, params.qubeHash);
       
-      // Convert hash to bytes32
-      const hashBytes32 = this.web3.utils.padLeft(params.qubeHash, 64);
+      // Convert hash to a format suitable for contract methods
+      // Remove '0x' prefix and convert to a numeric representation
+      const cleanHash = params.qubeHash.startsWith('0x') ? params.qubeHash.slice(2) : params.qubeHash;
+      
+      // Convert hash to a numeric value (BigInt)
+      const hashNumeric = this.web3.utils.toBN(`0x${cleanHash}`);
 
       console.log('Registering qube with:', {
         function: registerFunction,
         qubeAddress: generatedQubeAddress,
-        hash: hashBytes32
+        hash: hashNumeric.toString()
       });
 
       // Call the appropriate registration function
-      const method = this.contract.methods[registerFunction](generatedQubeAddress, hashBytes32);
+      const method = this.contract.methods[registerFunction](generatedQubeAddress, hashNumeric);
       const gas = await method.estimateGas({ from: this.account });
       const tx = await method.send({
         from: this.account,
