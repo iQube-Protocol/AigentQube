@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { APIConfig, APIIntegration, APIResponse } from './APIIntegration';
+import { APIIntegration, APIResponse, APIConfig } from './APIIntegrationManager';
 import { ServiceStatus } from '../../types/service';
 
 interface OpenAIMessage {
@@ -11,8 +11,8 @@ export class OpenAIIntegration implements APIIntegration {
   public readonly id: string = 'openai';
   public readonly name: string = 'OpenAI';
   public readonly description: string = 'OpenAI API integration for blockchain and AI interactions';
-  public readonly config: APIConfig;
   public status: ServiceStatus = ServiceStatus.INITIALIZING;
+  public readonly config: APIConfig;
   private client: OpenAI | null = null;
   private conversationHistory: OpenAIMessage[] = [];
   private initializationPromise: Promise<void> | null = null;

@@ -46,8 +46,7 @@ const initializeDependencies = () => {
 
     // Initialize Metis Integration with fallback
     const metisIntegration = new MetisIntegration({
-      apiKey: process.env.REACT_APP_METIS_API_KEY || '',
-      baseURL: process.env.REACT_APP_API_BASE_URL || 'https://metisapi-8501e3beedcf.herokuapp.com'
+      apiKey: process.env.REACT_APP_METIS_API_KEY || ''
     });
 
     // Initialize Specialized Domain Manager
@@ -274,7 +273,7 @@ const App: React.FC = () => {
         setChainId(chainId.toString());
         
         // Check if we need to switch to Amoy network
-        if (chainId !== 80002) {
+        if (Number(chainId) !== 80002) {
           await switchToAmoyNetwork();
         }
         
@@ -315,7 +314,7 @@ const App: React.FC = () => {
           setChainId(chainId.toString());
 
           // Check if we need to switch to Amoy network
-          if (chainId !== 80002) {
+          if (Number(chainId) !== 80002) {
             await switchToAmoyNetwork();
           }
 

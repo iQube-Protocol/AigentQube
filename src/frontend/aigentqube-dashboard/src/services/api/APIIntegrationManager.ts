@@ -2,10 +2,12 @@ import { ServiceStatus } from '../../types/service';
 
 export interface APIConfig {
   apiKey?: string;
-  baseURL?: string;
-  headers?: Record<string, string>;
-  timeout?: number;
-  retryAttempts?: number;
+  endpoint?: string;
+  model?: string; 
+  maxTokens?: number; 
+  timeout?: number; 
+  retryAttempts?: number; 
+  options?: Record<string, any>;
 }
 
 export interface APIResponse {

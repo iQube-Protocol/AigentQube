@@ -6,6 +6,8 @@ export interface APIConfig {
   options?: Record<string, any>;
   model?: string; 
   maxTokens?: number; 
+  timeout?: number; 
+  retryAttempts?: number; 
 }
 
 export interface APIResponse {

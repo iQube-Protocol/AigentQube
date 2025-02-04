@@ -22,33 +22,40 @@ interface InitializationPayload {
   transaction_history: any[];
 }
 
-interface MetisConfig extends APIConfig {
-  apiKey?: string;
-}
-
 export class MetisIntegration implements APIIntegration {
   public readonly id: string = 'metis';
   public readonly name: string = 'Metis AI Service';
   public readonly description: string = 'Crypto Analyst Domain AI Service';
   
-  private _status: ServiceStatus = ServiceStatus.INITIALIZING;
+  public status: ServiceStatus = ServiceStatus.INITIALIZING;
+  public readonly config: APIConfig;
+
   private axiosInstance: AxiosInstance;
   private baseURL: string = 'https://metisapi-8501e3beedcf.herokuapp.com';
-  private apiKey: string = 'Hephaestus-Athena-1976-Bangalore-182003-Ricci';
 
-  constructor(config: MetisConfig = {}) {
+  constructor(config: APIConfig) {
+    const apiKey = config.apiKey || process.env.REACT_APP_METIS_API_KEY;
+
+     // Deep clone configuration to prevent external mutations
+     this.config = { 
+      ...config, 
+      apiKey,
+      timeout: config.timeout || 30000,
+      retryAttempts: config.retryAttempts || 3
+    };
+
     this.axiosInstance = axios.create({
       baseURL: this.baseURL,
       timeout: 30000, // Increased timeout to 30 seconds
       // More lenient error handling
-      validateStatus: function (status) {
-        return status >= 200 && status < 600; // Accept wider range of status codes
+      validateStatus: function (s) {
+        return s >= 200 && s < 600; // Accept wider range of status codes
       }
     });
   }
 
-  get status(): ServiceStatus {
-    return this._status;
+  get get_status(): ServiceStatus {
+    return this.status;
   }
 
   public async initialize(): Promise<void> {
@@ -76,22 +83,22 @@ export class MetisIntegration implements APIIntegration {
       // Perform initialization POST request
       const response = await this.axiosInstance.post('/initialize', payload, {
         headers: {
-          'X-API-Key': this.apiKey,
+          'X-API-Key': this.config.apiKey,
           'Content-Type': 'application/json'
         }
       });
 
       // Check initialization success
       if (response.status === 200) {
-        this._status = ServiceStatus.READY;
+        this.status = ServiceStatus.READY;
         console.log('[Metis API] Successfully initialized');
       } else {
-        this._status = ServiceStatus.PARTIAL;
+        this.status = ServiceStatus.ERROR;
         console.warn('[Metis API] Initialization returned non-200 status:', response.status);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[Metis API] Initialization failed:', error);
-      this._status = ServiceStatus.ERROR;
+      this.status = ServiceStatus.ERROR;
       throw new Error(`Metis API Initialization Error: ${error.message}`);
     }
   }
@@ -163,6 +170,55 @@ export class MetisIntegration implements APIIntegration {
           errorDetails: error
         }
       };
+    }
+  }
+
+  public async validate(): Promise<boolean> {
+    try {
+      // Check if the API key is present
+      if (!this.config.apiKey) {
+        console.error('[Metis API] No API key found');
+        this.status = ServiceStatus.ERROR;
+        return false;
+      }
+  
+      // Perform a lightweight request to validate the API
+      const response = await this.axiosInstance.get('/status', {
+        headers: {
+          'X-API-Key': this.config.apiKey,
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      // Check if the response indicates a healthy service
+      if (response.status === 200 && response.data?.status === 'OK') {
+        this.status = ServiceStatus.READY;
+        console.log('[Metis API] Validation successful');
+        return true;
+      } else {
+        console.warn('[Metis API] Validation failed:', response.data);
+        this.status = ServiceStatus.ERROR;
+        return false;
+      }
+    } catch (error: any) {
+      console.error('[Metis API] Validation Error:', error);
+  
+      // Handle specific error cases
+      if (error.response) {
+        if (error.response.status === 401) {
+          console.error('[Metis API] Invalid API key');
+          this.status = ServiceStatus.ERROR;
+          return false;
+        } else if (error.response.status === 404) {
+          console.error('[Metis API] Endpoint not found');
+          this.status = ServiceStatus.ERROR;
+          return false;
+        }
+      }
+  
+      // Set status to ERROR and return false for any other errors
+      this.status = ServiceStatus.ERROR;
+      return false;
     }
   }
 
