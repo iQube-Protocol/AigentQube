@@ -4,6 +4,8 @@ export interface APIConfig {
   apiKey?: string;
   endpoint?: string;
   options?: Record<string, any>;
+  model?: string; 
+  maxTokens?: number; 
 }
 
 export interface APIResponse {

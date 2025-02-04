@@ -58,10 +58,10 @@ cp .env.example .env
 1. Install MetaMask Browser Extension
 2. Create a new wallet or import existing
 3. Connect to Polygon Amoy Testnet
-   - Network Name: Polygon Amoy Testnet
+   - Network Name: Amoy
    - RPC URL: https://rpc-amoy.polygon.technology/
    - Chain ID: 80002
-   - Currency Symbol: MATIC
+   - Currency Symbol: POL
 
 ## 6. Database Initialization
 

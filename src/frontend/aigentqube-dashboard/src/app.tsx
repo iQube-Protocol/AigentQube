@@ -40,7 +40,7 @@ const initializeDependencies = () => {
     // Initialize OpenAI Integration
     const openAIIntegration = new OpenAIIntegration({
       apiKey: process.env.REACT_APP_OPENAI_API_KEY || '',
-      modelName: 'gpt-4',
+      model: 'gpt-4',
       maxTokens: 2048
     });
 

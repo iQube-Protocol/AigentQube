@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import App from './App';
+import App from './app';
 
 // Mock Web3 and axios
 jest.mock('web3', () => ({
