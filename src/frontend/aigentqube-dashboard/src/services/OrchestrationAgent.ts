@@ -68,6 +68,8 @@ class OrchestrationError extends Error {
       stack: this.stack
     };
   }
+
+
 }
 
 interface LayerStatus {
@@ -464,6 +466,32 @@ export class OrchestrationAgent {
     }
 
     return true;
+  }
+
+  public async validateLayerAlignment(): Promise<boolean> {
+    try {
+      // Validate all layers
+      const contextValid = this.validateLayer(this.contextLayer, 'Context');
+      const serviceValid = this.validateLayer(this.serviceLayer, 'Service');
+      const stateValid = this.validateLayer(this.stateLayer, 'State');
+
+      // Check if all services are properly initialized
+      const servicesValid = await this.apiManager.validateAllIntegrations()
+        .then(validations => Array.from(validations.values()).every(isValid => isValid))
+        .catch(() => false);
+
+      // All layers and services must be valid for alignment
+      const isAligned = contextValid && serviceValid && stateValid && servicesValid;
+
+      if (!isAligned) {
+        this.logger.log('Layer alignment validation failed', 'warn');
+      }
+
+      return isAligned;
+    } catch (error) {
+      this.logger.log(`Layer alignment validation error: ${error}`, 'error');
+      return false;
+    }
   }
 
   public async switchDomain(domain: SpecializedDomain): Promise<void> {

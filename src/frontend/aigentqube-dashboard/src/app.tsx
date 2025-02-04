@@ -633,7 +633,7 @@ const App: React.FC = () => {
   }, [checkAlignment, orchestrationAgent]);
 
   // Subscribe to Orchestration Updates
-  const handleOrchestrationUpdate = useCallback((state) => {
+  const handleOrchestrationUpdate = useCallback((state: OrchestrationAgent) => {
     try {
       console.log('Orchestration State Updated:', state);
       
@@ -663,7 +663,7 @@ const App: React.FC = () => {
         if (errors.some(error => error && !shouldSuppressError(error))) {
           toast({
             title: 'Service Error',
-            description: 'A critical service error has occurred',
+            description: 'sA critical service error has occurred',
             status: 'error',
             duration: 5000,
             isClosable: true,
