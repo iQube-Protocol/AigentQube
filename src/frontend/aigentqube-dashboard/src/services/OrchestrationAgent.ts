@@ -904,6 +904,8 @@ export class OrchestrationAgent {
     }
   }
 
+  
+
   public getContextInsights(): ContextInsight[] {
     return this.domainContext?.insights || [];
   }

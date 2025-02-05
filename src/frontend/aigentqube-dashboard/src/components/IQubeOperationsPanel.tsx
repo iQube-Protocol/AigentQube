@@ -9,6 +9,7 @@ import {
   HStack,
   Badge
 } from '@chakra-ui/react';
+import { OrchestrationAgent } from '../services/OrchestrationAgent';
 
 interface IQubeOperationsPanelProps {
   orchestrationAgent: OrchestrationAgent | null;

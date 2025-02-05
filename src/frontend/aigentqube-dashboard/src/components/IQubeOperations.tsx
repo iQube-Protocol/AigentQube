@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import { ethers } from 'ethers';
+import { ABI } from '../utils/ABI'
 import { 
   Modal, 
   ModalOverlay, 
@@ -14,6 +15,10 @@ import {
 } from '@chakra-ui/react';
 import QubeViewer from './QubeViewer';
 import { registerQube } from '../utils/contractInteraction';
+import PolygonNFTInterface from '../utils/MetaContract'
+
+const CONTRACT_ADDRESS = '0x632E1d32e34F0A690635BBcbec0D066daa448ede'
+
 
 interface IQubeOperationsProps {
   context?: any;
@@ -42,17 +47,34 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
   onMintiQube,
   signer
 }) => {
-  const [iQubeTokenId, setIQubeTokenId] = useState('');
+  const [iQubeTokenId, setIQubeTokenId] = useState<string>('');
   const [iQubeDetails, setIQubeDetails] = useState<IQubeDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [metaQubeData, setMetaQubeData] = useState<any>(null);
   const [blakQubeDecrypted, setBlakQubeDecrypted] = useState<any>(null);
   const [iQubeActivated, setIQubeActivated] = useState<{
     tokenId: string;
     name: string;
     userProfile?: string;
   } | null>(null);
+
+  const [metaQubeData, setMetaQubeData] = useState<any>(null)
+  const [blakQubeData, setBlakQubeData] = useState<any>(null)
+  const [metadata, setMetadata] = useState<string>('')
+  const [decryptedLink, setDecryptedLink] = useState<string>('')
+  const [nftInterface, setNftInterface] = useState<PolygonNFTInterface | null>(
+    null,
+  )
+  const [encryptedBlakQubeData, setEncryptedBlakQubeData] = useState<any>(null)
+  const [account, setAccount] = useState<string>('')
+
+
+
+
+
+
+
+
 
   // Modal for Qube Registry
   const { isOpen: isRegistryOpen, onOpen: onOpenRegistry, onClose: onCloseRegistry } = useDisclosure();
@@ -150,6 +172,53 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     return timerId;
   }, []);
 
+
+  const formatDisplayValue = (value: any, isBlakQube: boolean = false): string => {
+    // Helper to detect encrypted content
+    const looksEncrypted = (val: any): boolean => {
+      if (typeof val !== 'string') return false;
+      return val.length > 50 && /^[A-Za-z0-9+/=]{50,}$/.test(val);
+    };
+
+    // For BlakQube data, handle differently
+    if (isBlakQube) {
+      if (typeof value === 'string') {
+        // Always truncate long strings, whether encrypted or decrypted
+        return value.length > 40 ? `${value.substring(0, 40)}...` : value;
+      }
+      if (Array.isArray(value)) {
+        return value.join(', ');
+      }
+    }
+
+    // Handle different value types
+    if (value === null || value === undefined) {
+      return '-';
+    }
+
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      // Check if it's an encryption object
+      if (value.iv || value.cipher || value.ciphertext || value.tag) {
+        const ciphertext = value.ciphertext || value.cipher || '';
+        return ciphertext.length > 40 ? `${ciphertext.substring(0, 40)}...` : ciphertext;
+      }
+      // For other objects, show type
+      return '{Object}';
+    }
+    
+    if (typeof value === 'string') {
+      // Always truncate long strings
+      return value.length > 40 ? `${value.substring(0, 40)}...` : value;
+    }
+    
+    if (Array.isArray(value)) {
+      if (value.length === 0) return '[]';
+      return value.join(', ');
+    }
+
+    return String(value);
+  }
+
   const fetchIQubeDetails = useCallback(async () => {
     if (!iQubeTokenId) {
       showError('Please enter a valid iQube Token ID');
@@ -227,25 +296,111 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       setMetaQubeData(null);
       setBlakQubeDecrypted(null);
     }
-  }, [iQubeTokenId]);
+    const initNFTInterface = async () => {
+      try {
+        if (typeof window.ethereum === 'undefined') {
+          throw new Error('MetaMask is not installed or not detected')
+        }
 
-  const viewMetaQube = useCallback(async () => {
-    if (!iQubeTokenId) {
-      showError('Please enter a valid iQube Token ID first');
-      return;
+        const _interface = new PolygonNFTInterface(CONTRACT_ADDRESS, ABI)
+        
+        try {
+          await window.ethereum.request({ method: 'eth_requestAccounts' })
+        } catch (requestError) {
+          throw new Error('Failed to request MetaMask accounts: ' + requestError)
+        }
+
+        const accounts = await _interface.connectToMetaMask()
+        
+        if (!accounts || accounts.length === 0) {
+          throw new Error('No MetaMask accounts found')
+        }
+
+        setNftInterface(_interface)
+        setAccount(accounts[0])
+        console.log('NFT Interface initialized successfully')
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error initializing NFT interface'
+        setError(errorMessage)
+        console.error('Detailed Initialization Error:', error)
+      }
     }
 
+    initNFTInterface()
+
+  }, []);
+
+  const viewMetaQube = async () => {
+    console.log('retrieving meta data')
+    setDecryptedLink('')
+    setMetadata('')
+    setMetaQubeData(null)
+    setBlakQubeData(null)
+    console.log(iQubeTokenId)
+
+
+    if (!iQubeTokenId || !nftInterface) {
+      setError('Missing token ID or NFT interface')
+      return
+    }
+
+    setIsLoading(true)
+    setError('')
+
     try {
-      // Attempt to fetch from server
-      const response = await axios.get(`http://localhost:8000/metaqube/${iQubeTokenId}`);
-      setMetaQubeData(response.data);
+      const metadataURI = await nftInterface.getBlakQube(iQubeTokenId)
+      let fullPath = metadataURI.replace(
+        'ipfs://',
+        `${process.env.REACT_APP_GATEWAY_URL}/ipfs/`,
+      )
+      console.log('Fetching metadata from:', fullPath)
+
+      const response = await fetch(fullPath)
+      const data = await response.json()
+
+      // Extract MetaQube and BlakQube data from attributes
+      const metaQubeAttrs = data.attributes.find((attr: any) => attr.trait_type === 'metaQube')?.value || {}
+      const blakQubeAttrs = data.attributes.find((attr: any) => attr.trait_type === 'blakQube')?.value || {}
+      
+      const {
+        blakQubeKey,
+        blakQubeLocation,
+        blakQubeIdentifier,
+        ...cleanMetaQubeData
+      } = metaQubeAttrs
+
+      // Format MetaQube values
+      const formattedMetaQubeData = Object.entries(cleanMetaQubeData).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [key]: formatDisplayValue(value, false)
+        }),
+        {}
+      )
+
+      // Format BlakQube values
+      const formattedBlakQubeData = Object.entries(blakQubeAttrs).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [key]: formatDisplayValue(value, true)
+        }),
+        {}
+      )
+
+      setMetaQubeData(formattedMetaQubeData)
+      setEncryptedBlakQubeData(formattedBlakQubeData)
+      setBlakQubeData(null)
+      setMetadata(fullPath)
+
+      console.log(formattedMetaQubeData)
+      console.log(formattedBlakQubeData)
+
+
     } catch (err) {
-      // Use mock data when server is not responding
-      console.warn('Using mock MetaQube data due to server connection issue');
-      
-      // Set the mock data
-      setMetaQubeData(mockMetaQubeData);
-      
+      console.error('Error retrieving metadata:', error)
+      setError('Failed to retrieve metadata. Please check console for details.')
+
+      setMetaQubeData(mockMetaQubeData);  
       // Activate the iQube with mock data
       setIQubeActivated({
         tokenId: mockMetaQubeData.id,
@@ -267,7 +422,9 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         }
       });
     }
-  }, [iQubeTokenId, showError, mockMetaQubeData, onContextChange]);
+  }//, [iQubeTokenId, showError, mockMetaQubeData, onContextChange]);
+
+
 
   const decryptBlakQube = useCallback(async () => {
     if (!iQubeTokenId) {
@@ -546,7 +703,14 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           <input 
             type="text" 
             value={iQubeTokenId}
-            onChange={(e) => setIQubeTokenId(e.target.value)}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              setIQubeTokenId(newValue);
+              if (!newValue) {
+                setMetaQubeData(null);
+                setBlakQubeData(null);
+              }
+            }}
             placeholder="Enter iQube Token ID"
             className="w-full py-2 px-3 bg-gray-700 text-white rounded transition-all duration-300 ease-in-out hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
