@@ -711,8 +711,10 @@ const IQubeNFTMinter: React.FC = () => {
       const metadataURI = await nftInterface.getBlakQube(tokenId)
       let fullPath = metadataURI.replace(
         'ipfs://',
-        `${process.env.VITE_GATEWAY_URL}/ipfs/`,
+        `${process.env.REACT_APP_GATEWAY_URL}/ipfs/`,
       )
+      console.log('Fetching metadata from:', fullPath)
+
 
       // Fetch and parse metadata
       const response = await fetch(fullPath)
@@ -775,7 +777,7 @@ const IQubeNFTMinter: React.FC = () => {
       const metadataResponse = await fetch(
         metadataURI.replace(
           'ipfs://',
-          `${import.meta.env.VITE_GATEWAY_URL}/ipfs/`,
+          `${process.env.REACT_APP_GATEWAY_URL}/ipfs/`,
         ),
       )
 
@@ -819,7 +821,7 @@ const IQubeNFTMinter: React.FC = () => {
 
         // Make the decryption request to the server
         const response = await axios.post(
-          `${process.env.VITE_SERVER_URL}/decrypt-member-data`,
+          `${process.env.REACT_APP_SERVER_URL}/decrypt-member-data`,
           {
             key: encryptionKey,
             encryptedData: blakQubeAttribute.value,

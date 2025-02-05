@@ -153,13 +153,13 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
 
       // Encrypt the content
       const encryptedFile = await axios.post(
-        `${process.env.VITE_SERVER_URL}/encrypt-file`, 
+        `${process.env.REACT_APP_SERVER_URL}/encrypt-file`, 
         { file: fileUpload.IpfsHash }
       );
 
       // Encrypt BlakQube data
       const encryptedBlakQube = await axios.post(
-        `${process.env.VITE_SERVER_URL}/encrypt-data`,
+        `${process.env.REACT_APP_SERVER_URL}/encrypt-data`,
         {
           ...contentQubeData.blakQube,
           blobFile: null,
