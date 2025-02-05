@@ -1,8 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './index.css';
 import App from './app';
 import { ChakraProvider } from '@chakra-ui/react';
+import IQubeNFTMinter from './iQube/NFTMinter';
+
 
 // Debug environment variables
 console.log('Environment variables loaded:', {
@@ -26,10 +29,26 @@ window.addEventListener('unhandledrejection', (event) => {
   event.preventDefault(); // Prevent the error from being logged to the console
 });
 
-root.render(
+// Create router configuration
+const router = createBrowserRouter([
+  {
+    path: '/minter',
+    element: <IQubeNFTMinter />,
+  },
+  {
+    path: '/',
+    element: <App />,
+    children: [
+      // Add nested routes here if needed
+    ],
+  },
+]);
+
+// Mount the app
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ChakraProvider>
-      <App />
+      <RouterProvider router={router} />
     </ChakraProvider>
   </React.StrictMode>
 );

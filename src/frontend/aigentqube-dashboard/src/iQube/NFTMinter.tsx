@@ -4,9 +4,9 @@ import { pinata } from '../utils/pinata-config'
 import PolygonNFTInterface from '../utils/MetaContract'
 import axios from 'axios'
 import { CircleUser, FileLock2, Send } from 'lucide-react'
-import Web3CrossChain from './With3rdWeb/CrossChain'
+import Web3CrossChain from './CrossChain'
 import ContentQube from './ContentQube'
-import AgentQube from './AgentQube'
+//import AgentQube from './AgentQube'
 
 const CONTRACT_ADDRESS = '0x632E1d32e34F0A690635BBcbec0D066daa448ede'
 
@@ -819,7 +819,7 @@ const IQubeNFTMinter: React.FC = () => {
 
         // Make the decryption request to the server
         const response = await axios.post(
-          `${import.meta.env.VITE_SERVER_URL}/decrypt-member-data`,
+          `${process.env.VITE_SERVER_URL}/decrypt-member-data`,
           {
             key: encryptionKey,
             encryptedData: blakQubeAttribute.value,
