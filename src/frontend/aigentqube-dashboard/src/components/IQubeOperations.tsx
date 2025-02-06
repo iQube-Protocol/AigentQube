@@ -510,6 +510,10 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     }
   }, [signer, showError, onContextChange]);
 
+  function goToMintDashboard () : void {
+    window.location.href = window.location.href + "minter";
+  }
+
   const mintIQube = async (
     qubeAddress: string,
     qubeHash: string,
@@ -745,14 +749,17 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
           {/* Mint (Encrypt) Button */}
           <button 
-            onClick={handleMintToken}
-            disabled={!iQubeTokenId}
-            className={`
-              w-full py-2 rounded transition-all duration-300 ease-in-out
-              ${iQubeTokenId
-                ? 'bg-gray-700 text-white hover:bg-purple-600' 
-                : 'bg-gray-700 text-gray-400 cursor-not-allowed'}
-            `}
+            //simple function written below the handleMintToken that takes you to path + / + minter
+            onClick={goToMintDashboard} 
+
+            // onClick={handleMintToken}            
+            //disabled={!iQubeTokenId}
+            // className={`
+            //   w-full py-2 rounded transition-all duration-300 ease-in-out
+            //   ${iQubeTokenId
+            //     ? 'bg-gray-700 text-white hover:bg-purple-600' 
+            //     : 'bg-gray-700 text-gray-400 cursor-not-allowed'}
+            // `}
           >
             Mint (Encrypt)
           </button>

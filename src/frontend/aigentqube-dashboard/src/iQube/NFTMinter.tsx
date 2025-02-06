@@ -912,6 +912,14 @@ const IQubeNFTMinter: React.FC = () => {
     knytCharactersOwned: 'KNYT Characters Owned'
   };
 
+  // function goToAIDashboard () : void {
+  //   window.location.href = window.location.href.slice(0,6);
+  // }
+
+  function goToAIDashboard () : void {
+    window.location.href = window.location.href.slice(0,-7);
+  }
+
   return (
     <div className="">
       {error && (
@@ -1780,6 +1788,17 @@ const IQubeNFTMinter: React.FC = () => {
                 <h5 className={`text-[blue] text-[12px]`}>Qube Transfer</h5>
               </div>
             </div>
+
+            <div className="bg-white border rounded-[10px] p-[30px] w-full">
+            <div className="bg-white border rounded-[10px] p-[20px] flex flex-col justify-between">
+              <button onClick={goToAIDashboard}>
+                Back to AI dashboard
+              </button>
+            </div>
+            </div>
+              
+            
+
             {uploadType === 'crosschain' && <Web3CrossChain />}
             <div className="bg-white border rounded-[10px] p-[30px] w-full">
               <div className="flex items-center mb-[10px]">
@@ -1788,7 +1807,6 @@ const IQubeNFTMinter: React.FC = () => {
                 </svg>
                 <h3 className="font-bold text-[18px]">TokenQube</h3>
               </div>
-
               {/* Four-button Grid Layout */}
               <div className="grid grid-cols-2 gap-4">
                 {/* Token ID Input */}
@@ -1822,7 +1840,7 @@ const IQubeNFTMinter: React.FC = () => {
                     {isLoading ? 'Minting...' : 'Mint iQube'}
                   </button>
                 </div>
-
+                
                 {/* Get Metadata Button */}
                 <div className="bg-white border rounded-[10px] p-[20px] flex flex-col justify-between">
                   <button
@@ -2029,6 +2047,7 @@ const IQubeNFTMinter: React.FC = () => {
                 )}
               </div>
             )}
+
           </div>
         </div>
       </div>
