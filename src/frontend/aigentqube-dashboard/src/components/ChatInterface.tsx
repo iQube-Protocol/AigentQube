@@ -17,6 +17,7 @@ import {
 } from '@chakra-ui/react';
 import { OrchestrationAgent } from '../services/OrchestrationAgent';
 import { SpecializedDomain, DOMAIN_METADATA } from '../types/domains';
+import { OrganizeImportsMode } from 'typescript';
 
 interface ChatInterfaceProps {
   context?: any;
@@ -435,6 +436,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
 
     console.log('Submitted message:', inputValue); // Log the submitted message
+    console.log("Orchestration agent initalized?", orchestrationAgent.isInitialized())
+    console.log("Current Domain", orchestrationAgent.getCurrentDomain())
     
     const userMessage = createMessage(inputValue, 'user');
     
@@ -475,8 +478,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         }
       }
 
+
+
       // Perform query using Metis service
-      const response = await orchestrationAgent.queryDomain(currentDomain, inputValue);
+      const response = await orchestrationAgent.queryDomain(inputValue);
 
       if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to get response');

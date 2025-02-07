@@ -16,6 +16,11 @@ export class SpecializedDomainManager {
     this.services = new Map();
   }
 
+  public async initialize(): Promise<void> {
+    console.log('Initializing SpecializedDomainManager...');
+    // Perform any setup if needed
+  }
+
   public async registerService(domain: string, service: DomainService): Promise<void> {
     try {
       console.log(`Registering service for domain: ${domain}`);

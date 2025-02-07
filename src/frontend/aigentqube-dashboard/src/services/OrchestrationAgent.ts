@@ -101,10 +101,10 @@ export class OrchestrationAgent {
   private serviceLayer: LayerStatus;
   private stateLayer: LayerStatus;
   private subscribers: ((state: OrchestrationState) => void)[];
-  private apiManager: APIIntegrationManager;
-  private nlpProcessor?: OpenAIIntegration;
-  private metisService?: MetisIntegration;
-  private domainManager?: SpecializedDomainManager;
+  //private apiManager: APIIntegrationManager;
+  //private nlpProcessor?: OpenAIIntegration;
+  //private metisService?: MetisIntegration;
+  //private domainManager?: SpecializedDomainManager;
   private initialized: boolean = false;
   private initializationPromise: Promise<void> | null = null;
   private currentDomain: string = 'Default';
