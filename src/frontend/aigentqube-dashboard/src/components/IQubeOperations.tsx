@@ -16,9 +16,13 @@ import {
 import QubeViewer from './QubeViewer';
 import { registerQube } from '../utils/contractInteraction';
 import PolygonNFTInterface from '../utils/MetaContract'
+import ContentQube from '../iQube/ContentQube'
 
 const CONTRACT_ADDRESS = '0x632E1d32e34F0A690635BBcbec0D066daa448ede'
 
+interface DecryptedInformation {
+  [key: string]: string | number | string[]
+}
 
 interface IQubeOperationsProps {
   context?: any;
@@ -229,7 +233,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     setError(null);
 
     try {
-      // Attempt to fetch from server
+      // Attempt to fetch iQube from server
       const response = await axios.get(`http://localhost:8000/iqube/${iQubeTokenId}`, {
         timeout: 10000,
         headers: {
@@ -330,7 +334,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
   }, []);
 
-  const viewMetaQube = async () => {
+  const viewMetaQube =  useCallback(async () => {
     console.log('retrieving meta data')
     setDecryptedLink('')
     setMetadata('')
@@ -354,9 +358,11 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         `${process.env.REACT_APP_GATEWAY_URL}/ipfs/`,
       )
       console.log('Fetching metadata from:', fullPath)
-
+      
+      // Fetch and parse metadata
       const response = await fetch(fullPath)
       const data = await response.json()
+
 
       // Extract MetaQube and BlakQube data from attributes
       const metaQubeAttrs = data.attributes.find((attr: any) => attr.trait_type === 'metaQube')?.value || {}
@@ -388,12 +394,40 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       )
 
       setMetaQubeData(formattedMetaQubeData)
-      setEncryptedBlakQubeData(formattedBlakQubeData)
-      setBlakQubeData(null)
+      setEncryptedBlakQubeData(formattedBlakQubeData)// Store encrypted data separately
+      setBlakQubeData(null) // Clear any previous decrypted data
       setMetadata(fullPath)
 
       console.log(formattedMetaQubeData)
       console.log(formattedBlakQubeData)
+
+      console.log(encryptedBlakQubeData)
+
+      console.log(iQubeTokenId)
+      console.log(formattedMetaQubeData['iQubeCreator'])
+    
+      // Activate the iQube with data
+      setIQubeActivated({
+        tokenId: iQubeTokenId,
+        name: formattedMetaQubeData['iQubeCreator'],
+        userProfile: 'User Profile'
+      });
+
+      console.log(iQubeTokenId)
+
+      // Update context if onContextChange is provided
+      onContextChange?.({
+        iQubeDetails: {
+          tokenId: iQubeTokenId,
+          name: formattedMetaQubeData?.['iQubeCreator'] || '',  // Safe access with fallback
+          domain: 'User Profile'
+        },
+        iQubeActivated: {
+          tokenId: iQubeTokenId,
+          name: formattedMetaQubeData?.['iQubeCreator'] || '',  // Safe access with fallback
+          userProfile: 'User Profile'
+        }
+      });
 
 
     } catch (err) {
@@ -422,7 +456,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         }
       });
     }
-  }//, [iQubeTokenId, showError, mockMetaQubeData, onContextChange]);
+  }, [iQubeTokenId, showError, mockMetaQubeData, onContextChange]);
 
 
 
@@ -605,36 +639,44 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
   const renderEncryptedBlakQubeData = () => {
     // Flatten the encrypted BlackQube data into key-value pairs for grid display
     const dataToRender = [
-      // Public Keys
-      { label: "Public Key", value: mockEncryptedBlakQubeData.public_keys[0], editable: false },
+      // Name
+      { label: "First Name", value: encryptedBlakQubeData.firstName, editable: false },
+      { label: "Last Name", value: encryptedBlakQubeData.lastName, editable: false },
       
       // User Profile
-      { label: "Name", value: mockEncryptedBlakQubeData.user_profile.Name, editable: true },
-      { label: "Profession", value: mockEncryptedBlakQubeData.user_profile.Profession, editable: true },
+      { label: "FIO handle", value: encryptedBlakQubeData.fioHandle, editable: false },
+      { label: "Email", value: encryptedBlakQubeData.email, editable: false },
+      { label: "Phone Number", value: encryptedBlakQubeData.phoneNumber, editable: false },
+      { label: "Address", value: encryptedBlakQubeData.address, editable: false },
+      { label: "Age Range", value: encryptedBlakQubeData.ageRange, editable: false },
+      { label: "Address", value: encryptedBlakQubeData.address, editable: false },
+
+      { label: "Metaiye Shares", value: encryptedBlakQubeData.metaiyeShares, editable: false },
+      { label: "KNYT Coin Owned", value: encryptedBlakQubeData.kyntCoinOwned, editable: false },
+      { label: "OM Member Since", value: encryptedBlakQubeData.omMemberSince, editable: false },
+      { label: "OM Tier Status", value: encryptedBlakQubeData.omTierStatus, editable: false },
+      { label: "EVM Public Key", value: encryptedBlakQubeData.evmPublicKey, editable: false },
+      { label: "Third Web Public Key", value: encryptedBlakQubeData.thirdWebPublicKey, editable: false },
+      { label: "MetaMask Public Key", value: encryptedBlakQubeData.metaMaskPublicKey, editable: false },
+
+      { label: "Other Wallet Public Keys", value: encryptedBlakQubeData.otherWalletPublicKeys, editable: false },
+      { label: "Meta Keep ID", value: encryptedBlakQubeData.metaKeepId, editable: false },
+      { label: "Twitter Handle", value: encryptedBlakQubeData.twitterHandle, editable: false },
+      { label: "Instagram Handle", value: encryptedBlakQubeData.instagramHandle, editable: false },
+      { label: "Facebook ID", value: encryptedBlakQubeData.facebookId, editable: false },
+      { label: "TikTok Handle", value: encryptedBlakQubeData.tikTokHandle, editable: false },
+
+      { label: "LinkedIn ID", value: encryptedBlakQubeData.linkedInId, editable: false },
+      { label: "Discord Handle", value: encryptedBlakQubeData.discordHandle, editable: false },
+      { label: "Telegram Handle", value: encryptedBlakQubeData.telegramHandle, editable: false },
+      { label: "Motion KNYT Books Owned", value: encryptedBlakQubeData.motionKNYTBooksOwned, editable: false },
+      { label: "Still KNYT Books Owned", value: encryptedBlakQubeData.stillKNYTBooksOwned, editable: false },
+      { label: "Print KNYT Books Owned", value: encryptedBlakQubeData.printKNYTBooksOwned, editable: false },
+      { label: "KNYT Posters Owned", value: encryptedBlakQubeData.knytPostersOwned, editable: false },
       
-      { label: "Email", value: mockEncryptedBlakQubeData.user_profile.Email, editable: true },
-      { label: "Organization", value: mockEncryptedBlakQubeData.user_profile.Organization, editable: true },
-      { label: "City", value: mockEncryptedBlakQubeData.user_profile.City, editable: true },
+      { label: "KNYT Cards Owned", value: encryptedBlakQubeData.knytCardsOwned, editable: false },
+      { label: "KNYT Characters Owned", value: encryptedBlakQubeData.knytCharactersOwned, editable: false }
       
-      // Interests
-      { label: "Interests", value: mockEncryptedBlakQubeData.user_profile.Interests.join(", "), editable: true },
-      
-      // Holdings
-      ...mockEncryptedBlakQubeData.Holdings.map(holding => ({
-        label: `${holding.currency} Holdings`, 
-        value: holding.holding,
-        editable: true
-      })),
-      
-      // Transaction History (if available)
-      ...(mockEncryptedBlakQubeData.transaction_history.length > 0 
-        ? mockEncryptedBlakQubeData.transaction_history.map((tx, index) => [
-          { label: `Tx ID (${index + 1})`, value: tx.transaction_id, editable: false },
-          { label: "Amount", value: tx.amt, editable: false },
-          { label: "Block", value: tx.block_id, editable: false }
-        ]).flat()
-        : []
-      )
     ];
 
     return (
@@ -689,7 +731,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         
         {/* Use iQube Button */}
         <button 
-          onClick={fetchIQubeDetails}
+          onClick={viewMetaQube}
           disabled={!iQubeTokenId || isLoading}
           className={`
             w-full py-2 rounded transition-all duration-300 ease-in-out
@@ -754,12 +796,11 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
             // onClick={handleMintToken}            
             //disabled={!iQubeTokenId}
-            // className={`
-            //   w-full py-2 rounded transition-all duration-300 ease-in-out
+            className={`
+              w-full py-2 rounded transition-all duration-300 ease-in-out bg-gray-700 text-white hover:bg-purple-600 `}
             //   ${iQubeTokenId
             //     ? 'bg-gray-700 text-white hover:bg-purple-600' 
             //     : 'bg-gray-700 text-gray-400 cursor-not-allowed'}
-            // `}
           >
             Mint (Encrypt)
           </button>
@@ -786,19 +827,19 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
             <div className="grid grid-cols-4 gap-2 text-white">
               <div>
                 <span className="text-gray-400 block text-xs">iQube ID</span>
-                {mockMetaQubeData.id}
+                {iQubeActivated.tokenId}
               </div>
               <div>
                 <span className="text-gray-400 block text-xs">Creator</span>
-                {mockMetaQubeData.creator}
+                {metaQubeData ? metaQubeData.iQubeCreator : 'N/A'}
               </div>
               <div>
                 <span className="text-gray-400 block text-xs">iQube Type</span>
-                {mockMetaQubeData.type}
+                {metaQubeData ? metaQubeData.iQubeContentType : 'N/A'}
               </div>
               <div>
                 <span className="text-gray-400 block text-xs">Owner Type</span>
-                {mockMetaQubeData.ownerType}
+                {metaQubeData ? metaQubeData.ownerType: 'N/A'}
               </div>
             </div>
 
@@ -806,26 +847,28 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
             <div className="grid grid-cols-4 gap-2 text-white">
               <div>
                 <span className="text-gray-400 block text-xs">Sensitivity</span>
-                <ScoreBar score={mockMetaQubeData.scores.sensitivity} />
+                <ScoreBar score={metaQubeData ? metaQubeData.sensitivityScore/10: 0} />
               </div>
               <div>
                 <span className="text-gray-400 block text-xs">Verifiability</span>
-                <ScoreBar score={mockMetaQubeData.scores.verifiability} />
+                <ScoreBar score={metaQubeData ? metaQubeData.verifiabilityScore/10: 0} />
               </div>
               <div>
                 <span className="text-gray-400 block text-xs">Accuracy</span>
-                <ScoreBar score={mockMetaQubeData.scores.accuracy} />
+                <ScoreBar score={metaQubeData ? metaQubeData.accuracyScore/10: 0} />
               </div>
               <div>
                 <span className="text-gray-400 block text-xs">Risk</span>
-                <ScoreBar score={mockMetaQubeData.scores.risk} />
+                <ScoreBar score={metaQubeData ? metaQubeData.riskScore/10: 0} />
               </div>
             </div>
           </div>
         )}
 
         {/* BlackQube Encrypted Data Display (Mint iQube or View iQube) */}
-        {blakQubeDecrypted && mockEncryptedBlakQubeData === blakQubeDecrypted && (
+        {encryptedBlakQubeData && 
+        //mockEncryptedBlakQubeData === blakQubeDecrypted && 
+        (
           <div className="mt-4 bg-gray-700 rounded p-4 space-y-2">
             <h3 className="text-white text-lg mb-2">Encrypted Payload</h3>
             {renderEncryptedBlakQubeData()}
