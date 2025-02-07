@@ -597,7 +597,7 @@ export class OrchestrationAgent {
     try {
       // Create and register the Metis service for the domain
       const metisService: DomainService = {
-        id: `metis-${domain}`,
+        id: `metis`,
         name: 'Metis AI Service',
         description: 'Metis AI specialized domain service',
         api: new MetisIntegration({
@@ -712,6 +712,8 @@ export class OrchestrationAgent {
         if (!service) {
           throw new Error('No active service found for specialized domain');
         }
+        console.log("Service", service)
+        console.log("Current Domain", this.currentDomain)
         return await this.apiManager.executeAPI(service.id, { 
           input, 
           domain: domainContext,

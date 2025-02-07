@@ -478,8 +478,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         }
       }
 
-
-
       // Perform query using Metis service
       const response = await orchestrationAgent.queryDomain(inputValue);
 
