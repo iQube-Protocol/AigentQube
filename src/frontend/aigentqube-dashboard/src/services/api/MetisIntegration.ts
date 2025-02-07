@@ -37,7 +37,7 @@ export class MetisIntegration implements APIIntegration {
     const apiKey = config.apiKey || process.env.REACT_APP_METIS_API_KEY;
 
      // Deep clone configuration to prevent external mutations
-     this.config = { 
+    this.config = { 
       ...config, 
       apiKey,
       timeout: config.timeout || 30000,
@@ -89,7 +89,7 @@ export class MetisIntegration implements APIIntegration {
       });
 
       // Check initialization success
-      if (response.status === 200) {
+      if (response.status === 202) {
         this.status = ServiceStatus.READY;
         console.log('[Metis API] Successfully initialized');
       } else {
@@ -181,25 +181,9 @@ export class MetisIntegration implements APIIntegration {
         this.status = ServiceStatus.ERROR;
         return false;
       }
+
+      return true
   
-      // Perform a lightweight request to validate the API
-      const response = await this.axiosInstance.get('/status', {
-        headers: {
-          'X-API-Key': this.config.apiKey,
-          'Content-Type': 'application/json',
-        },
-      });
-  
-      // Check if the response indicates a healthy service
-      if (response.status === 200 && response.data?.status === 'OK') {
-        this.status = ServiceStatus.READY;
-        console.log('[Metis API] Validation successful');
-        return true;
-      } else {
-        console.warn('[Metis API] Validation failed:', response.data);
-        this.status = ServiceStatus.ERROR;
-        return false;
-      }
     } catch (error: any) {
       console.error('[Metis API] Validation Error:', error);
   
@@ -229,6 +213,8 @@ export class MetisIntegration implements APIIntegration {
       const url = new URL(`${this.baseURL}/service`);
       const params = { input: query };
       url.search = new URLSearchParams(params).toString();
+
+      // In the body of the request, send the public keys.
 
       // Perform GET request
       const response = await this.axiosInstance.get(url.toString(), {

@@ -433,6 +433,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
       return;
     }
+
+    console.log('Submitted message:', inputValue); // Log the submitted message
     
     const userMessage = createMessage(inputValue, 'user');
     

@@ -604,7 +604,6 @@ export class OrchestrationAgent {
           apiKey: config.apiKey,
           timeout: 30000,
           retryAttempts: 3,
-          baseUrl: 'https://metisapi-8501e3beedcf.herokuapp.com'
         }),
         isActive: true
       };
@@ -617,8 +616,8 @@ export class OrchestrationAgent {
 
       // Set as current domain
       this.currentDomain = domain;
-
       console.log(`Successfully initialized domain: ${domain}`);
+
     } catch (error: any) {
       console.error(`Failed to initialize domain ${domain}:`, error);
       throw new Error(`Failed to initialize domain ${domain}: ${error.message}`);
