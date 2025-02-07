@@ -45,7 +45,7 @@ const router = createBrowserRouter([
 ]);
 
 // Mount the app
-ReactDOM.createRoot(document.getElementById('root')!).render(
+root.render(
   <React.StrictMode>
     <ChakraProvider>
       <RouterProvider router={router} />
