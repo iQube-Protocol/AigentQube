@@ -1,4 +1,4 @@
-import React, { ReactNode, useState, useEffect } from 'react';
+import React, { ReactNode, useState, useEffect, useCallback } from 'react';
 import Web3 from 'web3';
 import { ethers } from 'ethers';
 import AgentEvolutionPanel from './AgentEvolutionPanel';
@@ -8,6 +8,7 @@ import WalletConnector from './WalletConnector';
 import IQubeOperations from './IQubeOperations';
 import IQubeCreatingPanel from './iQubeCreatingPanel';
 import axios from 'axios';
+import { VStack, Box, Text, Flex } from '@chakra-ui/react';
 
 // Configure axios base URL and default headers
 axios.defaults.baseURL = 'http://localhost:8000';
@@ -173,8 +174,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   // Provide a default no-op function if onContextChange is not provided
   const handleContextChange = onContextChange || ((context: any) => {});
 
+  useEffect(() => {
+    console.log('IQubeOperations Props:', {
+      signer: signer ? 'Present' : 'Undefined',
+      context: context,
+      agentId: agentId,
+      isAgentReady: isAgentReady
+    });
+  }, [signer, context, agentId, isAgentReady]);
+
   return (
-    <div className="aigentqube-dashboard min-h-screen bg-gradient-to-br from-gray-900 to-blue-900 text-white">
+    <Flex direction="column" width="full">
       <header className="flex justify-between items-center p-4 border-b border-gray-700">
         <h1 className="text-2xl font-bold">AigentQube: Dynamic Context Intelligence</h1>
         <div className="flex items-center space-x-4">
@@ -194,20 +204,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             agentId={agentId || undefined}
             orchestrationAgent={orchestrationAgent}
             isAgentReady={isAgentReady}
-          />
-          
-          <IQubeOperations 
-            onViewMetaQube={(iQubeId: string) => console.log(`View MetaQube: ${iQubeId}`)}
-            onDecryptBlakQube={(iQubeId: string) => console.log(`Decrypt BlakQube: ${iQubeId}`)}
-            onShareiQube={(iQubeId: string) => console.log(`Share iQube: ${iQubeId}`)}
-            onMintiQube={(iQubeId: string) => console.log(`Mint iQube: ${iQubeId}`)}
-            signer={signer || undefined}
-            context={context}
-            onContextChange={handleContextChange}
-            agentId={agentId || undefined}
-            orchestrationAgent={orchestrationAgent}
-            isAgentReady={isAgentReady}
-          />
+          >
+            <IQubeOperations 
+              onViewMetaQube={(iQubeId: string) => console.log(`View MetaQube: ${iQubeId}`)}
+              onDecryptBlakQube={(iQubeId: string) => console.log(`Decrypt BlakQube: ${iQubeId}`)}
+              onShareiQube={(iQubeId: string) => console.log(`Share iQube: ${iQubeId}`)}
+              onMintiQube={(iQubeId: string) => console.log(`Mint iQube: ${iQubeId}`)}
+              signer={signer || undefined}
+              context={context}
+              onContextChange={handleContextChange}
+              agentId={agentId || undefined}
+              orchestrationAgent={orchestrationAgent}
+              isAgentReady={isAgentReady}
+            />
+          </AgentEvolutionPanel>
 
           {web3 && account && signer && (
             <IQubeCreatingPanel 
@@ -257,7 +267,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </div>
         </div>
       </main>
-    </div>
+    </Flex>
   );
 };
 

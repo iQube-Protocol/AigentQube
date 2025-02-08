@@ -9,6 +9,7 @@ interface AgentEvolutionPanelProps {
   onContextChange: (context: any) => void;
   agentId?: string;
   orchestrationAgent: OrchestrationAgentInterface | null;
+  children?: React.ReactNode;
 }
 
 interface IQubeDetails {
@@ -21,7 +22,8 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
   context, 
   onContextChange, 
   agentId,
-  orchestrationAgent 
+  orchestrationAgent,
+  children
 }) => {
   const [baseState, setBaseState] = useState('Generic AI');
   const [specializedState, setSpecializedState] = useState<string | null>(null);
@@ -215,89 +217,97 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
   };
 
   return (
-    <div className="agent-evolution-panel bg-gray-800 rounded-lg p-6 space-y-4">
-      <h2 className="text-xl font-semibold mb-4">Agent Evolution</h2>
-      
-      {/* Base State Section */}
-      <div className="base-state-section mt-4 p-3 bg-gray-800 rounded">
-        <h3 className="text-lg font-semibold mb-2">Base State</h3>
-        <button 
-          onClick={handleResetBaseState}
-          className={`
-            w-full py-2 rounded transition-all duration-300 ease-in-out
-            ${!specializedState 
-              ? 'bg-blue-600 text-white hover:bg-blue-700' 
-              : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}
-          `}
-          disabled={!specializedState}
-        >
-          Generic AI
-        </button>
-      </div>
-
-      {/* Specialized Domains Section */}
-      <div className="specialized-domains-section mt-4">
-        <h3 className="text-lg font-semibold mb-2">Specialized Domains</h3>
-        <div className="grid grid-cols-2 gap-2">
-          {agentDomains.map((domain) => (
-            <button
-              key={domain.name}
-              onClick={() => handleDomainChange(domain.name as SpecializedDomain)}
-              className={`
-                p-3 rounded flex items-center justify-center space-x-2 transition-all duration-300 ease-in-out
-                ${specializedState === domain.name
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-700 hover:bg-gray-600'}
-              `}
-            >
-              <span>{domain.icon}</span>
-              <span>{domain.name}</span>
-            </button>
-          ))}
+    <Box width="full">
+      <div className="agent-evolution-panel bg-gray-800 rounded-lg p-6 space-y-4">
+        <h2 className="text-xl font-semibold mb-4">Agent Evolution</h2>
+        
+        {/* Base State Section */}
+        <div className="base-state-section mt-4 p-3 bg-gray-800 rounded">
+          <h3 className="text-lg font-semibold mb-2">Base State</h3>
+          <button 
+            onClick={handleResetBaseState}
+            className={`
+              w-full py-2 rounded transition-all duration-300 ease-in-out
+              ${!specializedState 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}
+            `}
+            disabled={!specializedState}
+          >
+            Generic AI
+          </button>
         </div>
-      </div>
 
-      {/* Status Display */}
-      {specializedState && (
-        <div className="status-display mt-4">
-          <div className="bg-green-800 rounded p-3">
-            <div className="flex items-center space-x-2">
-              <span>🧠</span>
-              <span>
-                {specializedState} 
-                {iQubeDetails ? ` (iQube: ${iQubeDetails.name})` : ''} Active
-              </span>
-            </div>
-            <div className="text-sm text-gray-300 mt-2">
-              Use chat interface to engage specialist agents.
-            </div>
+        {/* Specialized Domains Section */}
+        <div className="specialized-domains-section mt-4">
+          <h3 className="text-lg font-semibold mb-2">Specialized Domains</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {agentDomains.map((domain) => (
+              <button
+                key={domain.name}
+                onClick={() => handleDomainChange(domain.name as SpecializedDomain)}
+                className={`
+                  p-3 rounded flex items-center justify-center space-x-2 transition-all duration-300 ease-in-out
+                  ${specializedState === domain.name
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-gray-700 hover:bg-gray-600'}
+                `}
+              >
+                <span>{domain.icon}</span>
+                <span>{domain.name}</span>
+              </button>
+            ))}
           </div>
         </div>
-      )}
 
-      {/* Debug Info (Optional) */}
-      {process.env.NODE_ENV === 'development' && (
-        <>
-          {metaQubeData && (
-            <div className="debug-data mt-4 bg-blue-900 p-3 rounded">
-              <h3 className="font-bold mb-2">MetaQube Data</h3>
-              <pre className="text-xs overflow-auto">
-                {JSON.stringify(metaQubeData, null, 2)}
-              </pre>
+        {/* Status Display */}
+        {specializedState && (
+          <div className="status-display mt-4">
+            <div className="bg-green-800 rounded p-3">
+              <div className="flex items-center space-x-2">
+                <span>🧠</span>
+                <span>
+                  {specializedState} 
+                  {iQubeDetails ? ` (iQube: ${iQubeDetails.name})` : ''} Active
+                </span>
+              </div>
+              <div className="text-sm text-gray-300 mt-2">
+                Use chat interface to engage specialist agents.
+              </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {blakQubeDecrypted && (
-            <div className="debug-data mt-4 bg-purple-900 p-3 rounded">
-              <h3 className="font-bold mb-2">BlakQube Data</h3>
-              <pre className="text-xs overflow-auto">
-                {JSON.stringify(blakQubeDecrypted, null, 2)}
-              </pre>
-            </div>
-          )}
-        </>
+        {/* Debug Info (Optional) */}
+        {process.env.NODE_ENV === 'development' && (
+          <>
+            {metaQubeData && (
+              <div className="debug-data mt-4 bg-blue-900 p-3 rounded">
+                <h3 className="font-bold mb-2">MetaQube Data</h3>
+                <pre className="text-xs overflow-auto">
+                  {JSON.stringify(metaQubeData, null, 2)}
+                </pre>
+              </div>
+            )}
+
+            {blakQubeDecrypted && (
+              <div className="debug-data mt-4 bg-purple-900 p-3 rounded">
+                <h3 className="font-bold mb-2">BlakQube Data</h3>
+                <pre className="text-xs overflow-auto">
+                  {JSON.stringify(blakQubeDecrypted, null, 2)}
+                </pre>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {children && (
+        <Box width="full" mt={4}>
+          {children}
+        </Box>
       )}
-    </div>
+    </Box>
   );
 };
 
