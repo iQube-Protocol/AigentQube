@@ -18,7 +18,7 @@ interface MetadataFields {
   iQubeIdentifier: string
   iQubeCreator: string
   ownerType: 'Person' | 'Organisation' | 'Thing'
-  iQubeContentType: 'mp3' | 'mp4' | 'pdf' | 'txt' | 'Code' | 'Other'
+  iQubeContentType: 'Data' | 'Content' | 'Workflow' | 'Agent' | 'Other'
   ownerIdentifiability: 'Anonymous' | 'Semi-Anonymous' | 'Identifiable' | 'Semi-Identifiable'
   transactionDate: string
   sensitivityScore: number
@@ -30,35 +30,14 @@ interface MetadataFields {
 interface UserProfileMetaDataFields {
   metaQube: MetadataFields
   blakQube: {
-    firstName: string
-    lastName: string
-    fioHandle: string
-    email: string
-    phoneNumber: string
-    ageRange: string
-    address: string
-    metaiyeShares: number
-    kyntCoinOwned: number
-    omMemberSince: number
-    omTierStatus: string
+    profession: string
+    web3Interests: string
+    localCity: string
+    publicEmail: string
     evmPublicKey: string
-    thirdWebPublicKey: string
-    metaMaskPublicKey: string
-    otherWalletPublicKeys: string[]
-    metaKeepId: string
-    twitterHandle: string
-    instagramHandle: string
-    facebookId: string
-    tikTokHandle: string
-    linkedInId: string
-    discordHandle: string
-    telegramHandle: string
-    motionKNYTBooksOwned: string[]
-    stillKNYTBooksOwned: string[]
-    printKNYTBooksOwned: string[]
-    knytPostersOwned: string[]
-    knytCardsOwned: string[]
-    knytCharactersOwned: string[]
+    bitcoinPublicKey: string
+    tokensOfInterest: string[]
+    walletsOfInterest: string[]
   }
 }
 
@@ -156,10 +135,10 @@ const IQubeNFTMinter: React.FC = () => {
   const [error, setError] = useState<string>('')
   const [decryptedLink, setDecryptedLink] = useState<string>('')
   const [metadataFields, setMetadataFields] = useState<MetadataFields>({
-    iQubeIdentifier: 'OM KNYT Qube Alpha',
-    iQubeCreator: 'Metaiye Media DiD',
+    iQubeIdentifier: 'DataQube Alpha 1',
+    iQubeCreator: 'Aigent Z',
     ownerType: 'Person',
-    iQubeContentType: 'txt',
+    iQubeContentType: 'Data',
     ownerIdentifiability: 'Identifiable',
     transactionDate: new Date().toISOString(),
     sensitivityScore: 5,
@@ -169,10 +148,10 @@ const IQubeNFTMinter: React.FC = () => {
   })
   const [memberProfile, setMemberProfile] = useState<UserProfileMetaDataFields>({
     metaQube: {
-      iQubeIdentifier: 'OM KNYT Qube Alpha',
-      iQubeCreator: 'Metaiye Media DiD',
+      iQubeIdentifier: 'DataQube Alpha 1',
+      iQubeCreator: 'Aigent Z',
       ownerType: 'Person',
-      iQubeContentType: 'txt',
+      iQubeContentType: 'Data',
       ownerIdentifiability: 'Identifiable',
       transactionDate: new Date().toISOString(),
       sensitivityScore: 5,
@@ -181,35 +160,14 @@ const IQubeNFTMinter: React.FC = () => {
       riskScore: 4,
     },
     blakQube: {
-      firstName: 'Dele',
-      lastName: 'Atanda',
-      fioHandle: 'Qrypto@KNYT',
-      email: 'info@metame.com',
-      phoneNumber: '787 888 8888',
-      ageRange: '35-45',
-      address: '23 My home',
-      metaiyeShares: 439,
-      kyntCoinOwned: 3000,
-      omMemberSince: 2019,
-      omTierStatus: 'ZeroKnyt',
-      evmPublicKey: 'arkagent.eth',
-      thirdWebPublicKey: 'oX34355464656465',
-      metaMaskPublicKey: 'qrypto@knyt',
-      otherWalletPublicKeys: ['qrypto@knyt', 'arkagent.eth'],
-      metaKeepId: 'info@metame.com',
-      twitterHandle: 'www.x.com/Arkagent',
-      instagramHandle: 'www.instagram.com/arkagent',
-      facebookId: 'www.facebook.com/deleatanda',
-      tikTokHandle: 'www.titktok.com/arkagent',
-      linkedInId: 'www.linlind.com/in/dedleatanda',
-      discordHandle: 'QryptoKnyt',
-      telegramHandle: 'QryptoKnyt',
-      motionKNYTBooksOwned: ['#0E', '#1R', '#2L', '#3E', '#5E', '#6L', '#8R', '#9R'],
-      stillKNYTBooksOwned: ['#0', '#1', '#2', '#3', '#4', '#5', '#6', '#7', '#8', '#9', '#10', '#11'],
-      printKNYTBooksOwned: ['#0E', '#1R', '#2L', '#3E', '#5E', '#6L', '#8R'],
-      knytPostersOwned: ['#0', '#1', '#2', '#3', '#4', '#5', '#6', '#7', '#8', '#9'],
-      knytCardsOwned: ['#0', '#1', '#2', '#3'],
-      knytCharactersOwned: ['Emmissary#18', 'Deji#2'],
+      profession: 'Consultant',
+      web3Interests: 'Builder',
+      localCity: 'New York',
+      publicEmail: 'info@metame.com',
+      evmPublicKey: '',
+      bitcoinPublicKey: 'oX34355464656465',
+      tokensOfInterest: ['AVA', 'POL', 'BTC','MOR'],
+      walletsOfInterest: ['0x0417409BEFbbE9474a7623b2e704389', '0x0417409BEFb7623b2e7043896566313', '0x041723b2e704389653138b'],
     },
   })
 
@@ -372,12 +330,49 @@ const IQubeNFTMinter: React.FC = () => {
     initNFTInterface()
   }, [])
 
+  const validatePinataJWT = (token: string) => {
+    console.log('[JWT Validation] Starting validation');
+    
+    if (!token) {
+        console.error('[JWT Validation] Token is empty or undefined');
+        throw new Error('Pinata JWT token is missing');
+    }
+
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+        console.error('[JWT Validation] Invalid token format', {
+            tokenLength: parts.length,
+            tokenParts: parts
+        });
+        throw new Error('Invalid JWT token: Incorrect number of segments');
+    }
+
+    try {
+        // Attempt to decode the payload
+        const payload = JSON.parse(atob(parts[1]));
+        console.log('[JWT Validation] Payload decoded successfully', {
+            exp: payload.exp,
+            iat: payload.iat
+        });
+    } catch (error) {
+        console.error('[JWT Validation] Payload decoding failed', error);
+        throw new Error('Invalid JWT token: Cannot decode payload');
+    }
+
+    console.log('[JWT Validation] Token is valid');
+    return true;
+  };
+
   const handleMemberProfileMint = async (e: FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError('')
 
     try {
+      // Validate JWT before using it
+      const pinataJWT = process.env.REACT_APP_PINATA_JWT;
+      validatePinataJWT(pinataJWT || '');
+
       // encrypt blakQube information
       let _memberProfile = { ...memberProfile }
 
@@ -875,41 +870,20 @@ const IQubeNFTMinter: React.FC = () => {
   }
 
   const labelMapping: { [key: string]: string } = {
-    firstName: 'First Name',
-    lastName: 'Last Name',
-    fioHandle: 'FIO Handle',
-    email: 'Email',
-    phoneNumber: 'Phone Number',
-    ageRange: 'Age Range',
-    address: 'Address',
-    metaiyeShares: 'Metaiye Shares',
-    kyntCoinOwned: 'KNYT Coin Owned',
-    omMemberSince: 'OM Member Since',
-    omTierStatus: 'OM Tier Status',
+    profession: 'Profession',
+    web3Interests: 'Web 3 Interests',
+    localCity: 'Local City',
+    publicEmail: 'Public Email',
     evmPublicKey: 'EVM Public Key',
-    thirdWebPublicKey: 'Third Web Public Key',
-    metaMaskPublicKey: 'MetaMask Public Key',
-    otherWalletPublicKeys: 'Other Wallet Public Keys',
-    metaKeepId: 'Meta Keep ID',
-    twitterHandle: 'Twitter Handle',
-    instagramHandle: 'Instagram Handle',
-    facebookId: 'Facebook ID',
-    tikTokHandle: 'TikTok Handle',
-    linkedInId: 'LinkedIn ID',
-    discordHandle: 'Discord Handle',
-    telegramHandle: 'Telegram Handle',
-    motionKNYTBooksOwned: 'Motion KNYT Books Owned',
-    stillKNYTBooksOwned: 'Still KNYT Books Owned',
-    printKNYTBooksOwned: 'Print KNYT Books Owned',
-    knytPostersOwned: 'KNYT Posters Owned',
-    knytCardsOwned: 'KNYT Cards Owned',
-    knytCharactersOwned: 'KNYT Characters Owned'
+    bitcoinPublicKey: 'Bitcoin Public Key',
+    tokensOfInterest: 'Tokens of Interest',
+    walletsOfInterest: 'Wallets of Interest',
   };
 
   const tabNames = {
     mint: 'Mint',
     transfer: 'Transfer',
-    knytCharactersOwned: 'KNYT Characters Owned'
+    walletsOfInterest: 'Wallets of Interest'
   };
 
   return (
@@ -1078,10 +1052,10 @@ const IQubeNFTMinter: React.FC = () => {
                         className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
                         required
                       >
-                        <option value="mp3">MP3</option>
-                        <option value="mp4">MP4</option>
-                        <option value="pdf">PDF</option>
-                        <option value="txt">TXT</option>
+                        <option value="Data">Data</option>
+                        <option value="Content">Content</option>
+                        <option value="Workflow">Workflow</option>
+                        <option value="Agent">Agent</option>
                         <option value="Code">Code</option>
                         <option value="Other">Other</option>
                       </select>
@@ -1391,10 +1365,10 @@ const IQubeNFTMinter: React.FC = () => {
                         className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
                         required
                       >
-                        <option value="mp3">MP3</option>
-                        <option value="mp4">MP4</option>
-                        <option value="pdf">PDF</option>
-                        <option value="txt">TXT</option>
+                        <option value="Data">Data</option>
+                        <option value="Content">Content</option>
+                        <option value="Workflow">Workfloow</option>
+                        <option value="Agent">Agent</option>
                         <option value="Code">Code</option>
                         <option value="Other">Other</option>
                       </select>
