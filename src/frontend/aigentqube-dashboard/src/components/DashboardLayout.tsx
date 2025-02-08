@@ -8,6 +8,8 @@ import WalletConnector from './WalletConnector';
 import IQubeOperations from './IQubeOperations';
 import IQubeCreatingPanel from './iQubeCreatingPanel';
 import axios from 'axios';
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 
 // Configure axios base URL and default headers
 axios.defaults.baseURL = 'http://localhost:8000';
@@ -173,11 +175,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   // Provide a default no-op function if onContextChange is not provided
   const handleContextChange = onContextChange || ((context: any) => {});
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   return (
     <div className="aigentqube-dashboard min-h-screen bg-gradient-to-br from-gray-900 to-blue-900 text-white">
-      <header className="flex justify-between items-center p-4 border-b border-gray-700">
-        <h1 className="text-2xl font-bold">AigentQube: Dynamic Context Intelligence</h1>
-        <div className="flex items-center space-x-4">
+      <header className="flex justify-center items-center p-4 border-b border-gray-700">
+        <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="absolute top-4 left-4 bg-blue-500 text-white p-2 rounded transition-all duration-300"
+          >
+          {isSidebarOpen ? "Close Menu" : <span className="text-lg">☰</span>}
+          </button>
+        
+          <h1 className="text-2xl font-bold text-center">AigentQube: Dynamic Context Intelligence</h1>        
+          <div className="absolute flex top-4 right-4 items-center space-x-4">
           <WalletConnector 
             onConnect={handleWalletConnect} 
             connectedAddress={walletAddress}
@@ -187,37 +198,41 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       </header>
 
       <main className="grid grid-cols-12 gap-4 p-4">
-        <div className="col-span-4 space-y-4">
-          <AgentEvolutionPanel 
-            context={context} 
-            onContextChange={handleContextChange} 
-            agentId={agentId || undefined}
-            orchestrationAgent={orchestrationAgent}
-            isAgentReady={isAgentReady}
-          />
-          
-          <IQubeOperations 
-            onViewMetaQube={(iQubeId: string) => console.log(`View MetaQube: ${iQubeId}`)}
-            onDecryptBlakQube={(iQubeId: string) => console.log(`Decrypt BlakQube: ${iQubeId}`)}
-            onShareiQube={(iQubeId: string) => console.log(`Share iQube: ${iQubeId}`)}
-            onMintiQube={(iQubeId: string) => console.log(`Mint iQube: ${iQubeId}`)}
-            signer={signer || undefined}
-            context={context}
-            onContextChange={handleContextChange}
-            agentId={agentId || undefined}
-            orchestrationAgent={orchestrationAgent}
-            isAgentReady={isAgentReady}
-          />
 
-          {web3 && account && signer && (
-            <IQubeCreatingPanel 
-              web3={web3} 
-              account={account} 
-            />
+        <div
+          className={`transition-all duration-300 relative bg-gray-800 p-4 rounded-lg ${
+            isSidebarOpen ? "col-span-4" : "hidden"
+          }`}
+          >
+
+          {/* Sidebar Content */}
+          {isSidebarOpen && (
+            <div className="mt-12">
+              <AgentEvolutionPanel
+                  context={context}
+                  onContextChange={handleContextChange}
+                  agentId={agentId || undefined}
+                  orchestrationAgent={orchestrationAgent}
+                  isAgentReady={isAgentReady}
+                />
+
+                <IQubeOperations
+                  onViewMetaQube={(iQubeId: string) => console.log(`View MetaQube: ${iQubeId}`)}
+                  onDecryptBlakQube={(iQubeId: string) => console.log(`Decrypt BlakQube: ${iQubeId}`)}
+                  onShareiQube={(iQubeId: string) => console.log(`Share iQube: ${iQubeId}`)}
+                  onMintiQube={(iQubeId: string) => console.log(`Mint iQube: ${iQubeId}`)}
+                  signer={signer || undefined}
+                  context={context}
+                  onContextChange={handleContextChange}
+                  agentId={agentId || undefined}
+                  orchestrationAgent={orchestrationAgent}
+                  isAgentReady={isAgentReady}
+                />
+            </div>
           )}
         </div>
         
-        <div className="col-span-8">
+        <div className={`transition-all duration-300 ${isSidebarOpen ? "col-span-8" : "col-span-12"}`}>
           <ContextTransformationPanel 
             context={context} 
             orchestrationAgent={orchestrationAgent}
@@ -225,7 +240,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           />
 
           {/* Wallet and Register Buttons Section */}
-          <div className="flex justify-center items-center mt-4 p-4 bg-gray-800 rounded-lg space-x-4">
+          {/* <div className="flex justify-center items-center mt-4 p-4 bg-gray-800 rounded-lg space-x-4">
             <button 
               onClick={initWeb3}
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors duration-300"
@@ -254,7 +269,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 </button>
               </>
             )}
-          </div>
+          </div> */}
+
+
         </div>
       </main>
     </div>

@@ -9,7 +9,7 @@ Metis API provides advanced domain-specific AI services with robust network hand
 - Dynamic API key management
 - Specialized domain context support
 
-## Configuration
+## Configurationclass="col-span-4 space-y-4"class="col-span-4 space-y-4"
 - Base URL: Configurable via environment variable `REACT_APP_API_BASE_URL`
 - Default Endpoint: `https://metisapi-8501e3beedcf.herokuapp.com`
 
