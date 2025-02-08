@@ -1,6 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { 
+  createBrowserRouter, 
+  RouterProvider, 
+  createRoutesFromElements,
+  Route
+} from 'react-router-dom';
 import './index.css';
 import App from './app';
 import { ChakraProvider } from '@chakra-ui/react';
@@ -24,20 +29,28 @@ window.addEventListener('unhandledrejection', (event) => {
   event.preventDefault();
 });
 
-// Create router configuration
-const router = createBrowserRouter([
-  {
-    path: '/minter',
-    element: <IQubeNFTMinter />,
-  },
-  {
-    path: '/',
-    element: <App />,
-    children: [
-      // Add nested routes here if needed
-    ],
-  },
-]);
+// Create router configuration with separate routes
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <>
+      <Route path="/" element={<App />} />
+      <Route 
+        path="/minter" 
+        element={
+          <ChakraProvider>
+            <IQubeNFTMinter />
+          </ChakraProvider>
+        } 
+        errorElement={
+          <div>
+            <h1>Error Loading Minter Page</h1>
+            <p>Unable to load the NFT Minter page. Please check the console for more details.</p>
+          </div>
+        }
+      />
+    </>
+  )
+);
 
 // Single root creation and render
 const root = ReactDOM.createRoot(
@@ -47,7 +60,15 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <ChakraProvider>
-      <RouterProvider router={router} />
+      <RouterProvider 
+        router={router} 
+        fallbackElement={
+          <div>
+            <h1>Loading...</h1>
+            <p>Application is initializing...</p>
+          </div>
+        }
+      />
     </ChakraProvider>
   </React.StrictMode>
 );

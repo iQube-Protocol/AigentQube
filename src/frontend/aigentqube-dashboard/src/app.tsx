@@ -754,24 +754,24 @@ function App() {
   });
 
   return (
-    <ErrorBoundary 
-      fallback={
-        <Box 
-          height="100vh" 
-          display="flex" 
-          justifyContent="center" 
-          alignItems="center" 
-          bg="red.50"
-        >
-          <Text color="red.600">
-            An unexpected error occurred. Please refresh the page.
-          </Text>
-        </Box>
-      }
-    >
-      <ChakraProvider theme={theme}>
-        <Web3ReactProvider getLibrary={getLibrary}>
-          <div className="App min-h-screen bg-gray-900 text-white">
+    <div className="aigentqube-dashboard min-h-screen bg-gradient-to-br from-gray-900 to-blue-900 text-white">
+      <ErrorBoundary 
+        fallback={
+          <Box 
+            height="100vh" 
+            display="flex" 
+            justifyContent="center" 
+            alignItems="center" 
+            bg="red.50"
+          >
+            <Text color="red.600">
+              An unexpected error occurred. Please refresh the page.
+            </Text>
+          </Box>
+        }
+      >
+        <ChakraProvider theme={theme}>
+          <Web3ReactProvider getLibrary={getLibrary}>
             <DashboardLayout
               context={context}
               onContextChange={handleContextChange}
@@ -861,10 +861,10 @@ function App() {
                 </ChakraVStack>
               </Grid>
             </DashboardLayout>
-          </div>
-        </Web3ReactProvider>
-      </ChakraProvider>
-    </ErrorBoundary>
+          </Web3ReactProvider>
+        </ChakraProvider>
+      </ErrorBoundary>
+    </div>
   );
 }
 
