@@ -158,43 +158,12 @@ const ContextTransformationPanel: React.FC<ContextTransformationPanelProps> = ({
         Context Transformation
       </h2>
       
-      {/* Context Insights */}
-      <div className="mb-6">
-        <h3 className="text-lg font-medium text-gray-300 mb-3">
-          Current Context Insights
-        </h3>
-        <div className="grid grid-cols-3 gap-4">
-          {orchestrationAgent?.getContextInsights().slice(0, 3).map((insight, index) => (
-            <div
-              key={index}
-              className="bg-gray-700 p-4 rounded-lg border border-gray-600"
-            >
-              <div className="text-sm font-medium text-gray-400 mb-1">
-                {insight.label}
-              </div>
-              <div className="text-lg font-semibold text-white">
-                {insight.value}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {insight.category}
-              </div>
-            </div>
-          ))}
-          {(!orchestrationAgent || orchestrationAgent.getContextInsights().length === 0) && (
-            <div className="col-span-3">
-              <div className="bg-gray-700 p-4 rounded-lg border border-gray-600 text-center">
-                <span className="text-gray-400">
-                  No context insights available. Connect an iQube to see insights.
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      
 
       {/* Chat Interface */}
       <div className="mb-6">
         {orchestrationAgent ? (
+          <div className="flex-grow">
           <ChatInterface 
             orchestrationAgent={orchestrationAgent}
             context={{
@@ -206,9 +175,10 @@ const ContextTransformationPanel: React.FC<ContextTransformationPanelProps> = ({
             }}
             onPromptInsert={onPromptInsert}
           />
+        </div>
         ) : (
           <Box 
-            height="600px"
+            height="700px"
             bg="gray.700" 
             borderRadius="lg"
             display="flex"

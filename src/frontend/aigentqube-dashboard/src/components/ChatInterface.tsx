@@ -543,7 +543,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     <Box 
       className="chat-interface"
       bg="gray.800"
-      height="600px"
+      height="700px"
       display="flex"
       flexDirection="column"
       position="relative"
