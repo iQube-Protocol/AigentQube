@@ -1181,7 +1181,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
               : 'bg-gray-700 text-gray-400 cursor-not-allowed'}
           `}
         >
-          {isLoading ? 'Using iQube...' : 'Use iQube'}
+          {isLoading ? 'Activating iQube...' : 'Activate iQube'}
         </button>
 
         {/* iQube Details Grid */}

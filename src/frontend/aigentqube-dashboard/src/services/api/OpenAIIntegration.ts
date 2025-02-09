@@ -17,6 +17,7 @@ export class OpenAIIntegration implements APIIntegration {
   private conversationHistory: OpenAIMessage[] = [];
   private initializationPromise: Promise<void> | null = null;
 
+
   // Enhanced configuration
   private readonly MAX_RETRIES = 3;
   private readonly RETRY_DELAY = 1000; // 1 second
@@ -113,6 +114,7 @@ Focus on:
   }
 
   private resetConversationHistory(domain: keyof typeof this.SYSTEM_PROMPTS = 'default'): void {
+
     this.conversationHistory = [{
       role: 'system',
       content: this.SYSTEM_PROMPTS[domain]
@@ -240,9 +242,14 @@ Focus on:
     console.log('[OpenAI] Execute method called with params:', JSON.stringify(params, null, 2));
     
     try {
+
+
+
       // Validate input with detailed logging
       const message = params.message || params.input;
       console.log('[OpenAI] Message received:', message);
+
+      console.log('[OpenAI] PARAMS received:', params)
       
       if (!message) {
         console.warn('[OpenAI] No message or input provided');
@@ -264,12 +271,20 @@ Focus on:
       });
 
       // Determine domain
+      console.log("THESE ARE THE PARAMS", params)
       const domain = params.domain || 'default';
       console.log('[OpenAI] Using domain:', domain);
 
+      const iqubes = params.iqubes || 'No connected iQubes';
+      console.log('[OpenAI] These are the connected iqubes:', iqubes);
+
+      const iqubesMap = params.iqubes instanceof Map ? params.iqubes : new Map();
+      const iqubesArray = Array.from(iqubesMap.values());
+
+
       // Process message with detailed error handling
       try {
-        const response = await this.processMessage(message, domain);
+        const response = await this.processMessage(message, domain, iqubesArray);
         console.log('[OpenAI] Response generated successfully');
 
         return {
@@ -309,8 +324,9 @@ Focus on:
     }
   }
 
-  private async processMessage(message: string, domain: string = 'default'): Promise<string> {
+  private async processMessage(message: string, domain: string = 'default', iqubesArray: any[] = []): Promise<string> {
     console.log(`[OpenAI] Processing message for domain: ${domain}`);
+    console.log(`[OpenAI - send message] Active iQubes received:`, iqubesArray);
     
     // Detailed initialization check
     console.log('[OpenAI] Pre-processing service status:', {
@@ -347,13 +363,34 @@ Focus on:
 
       console.log(`[OpenAI] Using system prompt key: ${systemPromptKey}`);
 
-      // Ensure conversation history starts with a system prompt
-      if (this.conversationHistory.length === 0 || 
-          this.conversationHistory[0].role !== 'system') {
+      // Format the iQube data as a string
+      const iqubeDataString = iqubesArray.length > 0 
+      ? iqubesArray.map(iq => 
+          `ID: ${iq.id}\n` + 
+          Object.entries(iq)
+            .map(([key, value]) => `  ${key}: ${value}`)
+            .join('\n')
+        ).join('\n\n')
+      : 'No connected iQubes';
+
+      console.log(iqubeDataString)
+
+      // Construct system prompt with iQube details
+      const systemPromptContent = `${this.SYSTEM_PROMPTS[systemPromptKey]}\n\nActive iQubes:\n${iqubeDataString}`;
+
+      const existingSystemPrompt = this.conversationHistory.find(msg => msg.role === 'system');
+
+      if (existingSystemPrompt) {
+        // Update the existing system prompt content
+        existingSystemPrompt.content = systemPromptContent;
+        console.log('[OpenAI] Updated system prompt with iQube data:', existingSystemPrompt.content);
+      } else {
+        // Insert a new system prompt if none exists
         this.conversationHistory.unshift({
-          role: 'system', 
-          content: this.SYSTEM_PROMPTS[systemPromptKey]
+          role: 'system',
+          content: systemPromptContent
         });
+        console.log('[OpenAI] Added new system prompt with iQube data:', systemPromptContent);
       }
 
       console.log('[OpenAI] Conversation history before request:', 

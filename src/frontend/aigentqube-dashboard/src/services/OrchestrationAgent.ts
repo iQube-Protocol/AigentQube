@@ -763,18 +763,22 @@ export class OrchestrationAgent {
         }
         console.log("Service", service)
         console.log("Current Domain", this.currentDomain)
+        console.log("Current iqubes", this.iQubes)
         return await this.apiManager.executeAPI(service.id, { 
           input, 
           domain: domainContext,
-          context: { domain: this.currentDomain }
+          context: { domain: this.currentDomain }, 
+          iqubes: this.iQubes
         });
       }
 
+      console.log("Current iqubes", this.iQubes)
       // Default NLP processor execution
       return await this.apiManager.executeAPI(this.nlpProcessor.id, {
         input,
         domain: domainContext,
-        context: { domain: this.currentDomain }
+        context: { domain: this.currentDomain },
+        iqubes: this.iQubes
       });
     } catch (error) {
       this.logger.log(`Domain query error: ${error}`, 'error');

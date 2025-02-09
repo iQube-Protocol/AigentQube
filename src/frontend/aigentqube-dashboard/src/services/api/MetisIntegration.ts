@@ -109,6 +109,8 @@ export class MetisIntegration implements APIIntegration {
       const input = params.message || params.input || params.query;
       const domain = params.domain || 'crypto_analyst';
 
+      
+
       // Validate input
       if (!input) {
         return {
