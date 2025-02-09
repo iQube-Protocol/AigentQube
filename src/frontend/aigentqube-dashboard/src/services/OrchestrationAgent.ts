@@ -172,6 +172,7 @@ export class OrchestrationAgent {
       error: null
     };
   }
+  
 
   public async initialize(): Promise<void> {
     try {
@@ -569,6 +570,16 @@ export class OrchestrationAgent {
 
   public clearErrorLogs(): void {
     this.logger.clearLogs();
+  }
+
+  public setCurrentDomain(domain: string): void {
+    if (!domain || typeof domain !== 'string') {
+      console.warn('[Metis] Invalid domain provided, keeping the current domain:', this.currentDomain);
+      return;
+    }
+  
+    this.currentDomain = domain;
+    console.log('[Metis] Current domain updated to:', this.currentDomain);
   }
 
   public getIQubeData(): IQubeData | null {

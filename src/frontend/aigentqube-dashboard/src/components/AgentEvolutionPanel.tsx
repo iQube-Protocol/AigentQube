@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import { SpecializedDomain, DOMAIN_METADATA } from '../types/domains';
-import { OrchestrationAgentInterface } from '../types/orchestration';
+import { OrchestrationAgent } from '../services/OrchestrationAgent';
 import { Box } from '@chakra-ui/react';
 
 interface AgentEvolutionPanelProps {
   context: any;
   onContextChange: (context: any) => void;
   agentId?: string;
-  orchestrationAgent: OrchestrationAgentInterface | null;
+  orchestrationAgent: OrchestrationAgent | null;
 }
 
 interface IQubeDetails {
@@ -172,39 +172,8 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
     }
   }, [iQubeTokenId, agentId, onContextChange, agentDomains]);
 
-  const viewMetaQube = useCallback(async () => {
-    if (!iQubeTokenId) {
-      setError('Please enter a valid iQube Token ID first');
-      return;
-    }
-
-    try {
-      const response = await axios.get(`http://localhost:8000/metaqube/${iQubeTokenId}`);
-      setMetaQubeData(response.data);
-    } catch (err) {
-      setError('Failed to retrieve MetaQube data');
-      console.error(err);
-    }
-  }, [iQubeTokenId]);
-
-  const decryptBlakQube = useCallback(async () => {
-    if (!iQubeTokenId) {
-      setError('Please enter a valid iQube Token ID first');
-      return;
-    }
-
-    try {
-      const response = await axios.post(`http://localhost:8000/blakqube/decrypt`, {
-        token_id: iQubeTokenId
-      });
-      setBlakQubeDecrypted(response.data);
-    } catch (err) {
-      setError('Failed to decrypt BlakQube');
-      console.error(err);
-    }
-  }, [iQubeTokenId]);
-
   const handleResetBaseState = () => {
+    orchestrationAgent.setCurrentDomain("Default")
     setSpecializedState('');
     setBaseState('Generic AI');
     onContextChange({

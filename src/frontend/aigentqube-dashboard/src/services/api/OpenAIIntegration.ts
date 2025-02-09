@@ -380,17 +380,17 @@ Focus on:
 
       const existingSystemPrompt = this.conversationHistory.find(msg => msg.role === 'system');
 
-      if (existingSystemPrompt) {
-        // Update the existing system prompt content
-        existingSystemPrompt.content = systemPromptContent;
-        console.log('[OpenAI] Updated system prompt with iQube data:', existingSystemPrompt.content);
-      } else {
-        // Insert a new system prompt if none exists
+      if (
+        this.conversationHistory.length === 0 || 
+        this.conversationHistory[0].role !== 'system'
+      ) {
         this.conversationHistory.unshift({
           role: 'system',
           content: systemPromptContent
         });
-        console.log('[OpenAI] Added new system prompt with iQube data:', systemPromptContent);
+      } else {
+        // If a system message exists, update its content instead of adding a new one
+        this.conversationHistory[0].content = systemPromptContent;
       }
 
       console.log('[OpenAI] Conversation history before request:', 
