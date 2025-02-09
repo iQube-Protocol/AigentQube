@@ -376,7 +376,7 @@ Focus on:
       console.log(iqubeDataString)
 
       // Construct system prompt with iQube details
-      const systemPromptContent = `${this.SYSTEM_PROMPTS[systemPromptKey]}\n\nActive iQubes:\n${iqubeDataString}`;
+      const systemPromptContent = `${this.SYSTEM_PROMPTS[systemPromptKey]}\n\Here is your direct access to user's connected iQubes:\n${iqubeDataString}`;
 
       const existingSystemPrompt = this.conversationHistory.find(msg => msg.role === 'system');
 
