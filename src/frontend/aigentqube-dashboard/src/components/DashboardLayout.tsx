@@ -200,27 +200,29 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <main className="grid grid-cols-12 gap-4 p-4">
 
         <div
-          className={`transition-all duration-300 relative bg-gray-800 p-4 rounded-lg ${
+          className={`transition-all duration-300 relative bg-gray-800 h-full min-h-screen p-4 rounded-lg ${
             isSidebarOpen ? "col-span-4 space-y-4" : "hidden"
           }`}
           >
 
           {/* Sidebar Content */}
           {isSidebarOpen && (
-            <div className="mt-12">
-              <AgentEvolutionPanel
-                  context={context}
-                  onContextChange={handleContextChange}
-                  agentId={agentId || undefined}
-                  orchestrationAgent={orchestrationAgent}
-                  isAgentReady={isAgentReady}
-              />
+            <div className="pt-4">
+              <div className="bg-gray-700 border border-gray-600">
+                <AgentEvolutionPanel
+                    context={context}
+                    onContextChange={handleContextChange}
+                    agentId={agentId || undefined}
+                    orchestrationAgent={orchestrationAgent}
+                    isAgentReady={isAgentReady}
+                />
+              </div>
 
               {/* Context Insights */}
-              <div className="mb-6">
-                <h3 className="text-lg font-medium text-gray-300 mb-3">
+              <div className="pt-4">
+                <h2 className="text-lg font-medium text-gray-300 mb-3">
                   Current Context Insights
-                </h3>
+                </h2>
                 <div className="grid grid-cols-3 gap-4">
                   {orchestrationAgent?.getContextInsights().slice(0, 3).map((insight, index) => (
                     <div
@@ -249,7 +251,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   )}
                 </div>
               </div>
-
+              
                 <IQubeOperations
                   onViewMetaQube={(iQubeId: string) => console.log(`View MetaQube: ${iQubeId}`)}
                   onDecryptBlakQube={(iQubeId: string) => console.log(`Decrypt BlakQube: ${iQubeId}`)}
