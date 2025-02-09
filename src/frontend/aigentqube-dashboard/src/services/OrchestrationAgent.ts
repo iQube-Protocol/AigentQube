@@ -110,6 +110,7 @@ export class OrchestrationAgent {
   private currentDomain: string = 'Default';
   private domainContext: DomainContext | null;
   private iQubeData: IQubeData | null;
+  private iQubes: Map<string, any>;
 
   constructor(
     private apiManager: APIIntegrationManager,
@@ -117,6 +118,8 @@ export class OrchestrationAgent {
     private metisService?: MetisIntegration,
     private domainManager?: SpecializedDomainManager
   ) {
+    this.iQubes = new Map(); 
+
     // Ensure a valid APIIntegrationManager is always set
     if (!apiManager) {
       this.apiManager = new APIIntegrationManager();
@@ -571,6 +574,52 @@ export class OrchestrationAgent {
   public getIQubeData(): IQubeData | null {
     return this.iQubeData;
   }
+
+   // Add an iQube to the orchestration agent
+  public addIQube(id: string, iQubeData: Record<string, any>) {
+    if (!id || !iQubeData) {
+      throw new Error('Invalid input: both id and iQube data must be provided');
+    }
+    console.log(this.iQubes.size)
+
+    if (this.iQubes.has(id)){
+      return
+    }
+    if (this.iQubes.size > 2){
+      throw new Error(`Please remove one of the 3 iQubes to add another.`);
+    }
+  
+    // Create an iQube object with the provided data and the id
+    const iQube = { id, ...iQubeData };
+  
+    this.iQubes.set(id, iQube);
+    console.log(`Added iQube with ID: ${id}`);
+  }
+
+  public getIQubeById(id: string) {
+    if (!this.iQubes.has(id)) {
+      throw new Error(`No iQube found with ID: ${id}`);
+    }
+    return this.iQubes.get(id);
+  }
+
+  removeIQubeById(id: string) {
+    if (!this.iQubes.has(id)) {
+      throw new Error(`No iQube found with ID: ${id}`);
+    }
+    this.iQubes.delete(id);
+    console.log(`Removed iQube with ID: ${id}`);
+  }
+
+  clearAllIQubes() {
+    this.iQubes.clear();
+    console.log('All iQubes have been cleared');
+  }
+
+    // Getter function to access the iQubes map
+    public getIQubes(): Map<string, any> {
+      return this.iQubes;
+    }
 
   public getCurrentDomain(): string {
     return this.currentDomain;

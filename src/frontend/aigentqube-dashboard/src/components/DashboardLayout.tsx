@@ -9,6 +9,7 @@ import IQubeOperations from './IQubeOperations';
 import IQubeCreatingPanel from './iQubeCreatingPanel';
 import axios from 'axios';
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import {OrchestrationAgent} from "../services/OrchestrationAgent"
 
 
 // Configure axios base URL and default headers
@@ -216,40 +217,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     orchestrationAgent={orchestrationAgent}
                     isAgentReady={isAgentReady}
                 />
-              </div>
-
-              {/* Context Insights */}
-              <div className="pt-4">
-                <h2 className="text-lg font-medium text-gray-300 mb-3">
-                  Current Context Insights
-                </h2>
-                <div className="grid grid-cols-3 gap-4">
-                  {orchestrationAgent?.getContextInsights().slice(0, 3).map((insight, index) => (
-                    <div
-                      key={index}
-                      className="bg-gray-700 p-4 rounded-lg border border-gray-600"
-                    >
-                      <div className="text-sm font-medium text-gray-400 mb-1">
-                        {insight.label}
-                      </div>
-                      <div className="text-lg font-semibold text-white">
-                        {insight.value}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {insight.category}
-                      </div>
-                    </div>
-                  ))}
-                  {(!orchestrationAgent || orchestrationAgent.getContextInsights().length === 0) && (
-                    <div className="col-span-3">
-                      <div className="bg-gray-700 p-4 rounded-lg border border-gray-600 text-center">
-                        <span className="text-gray-400">
-                          No context insights available. Connect an iQube to see insights.
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
               
                 <IQubeOperations

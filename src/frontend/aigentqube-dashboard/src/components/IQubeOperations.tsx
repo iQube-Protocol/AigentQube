@@ -17,6 +17,8 @@ import QubeViewer from './QubeViewer';
 import { registerQube } from '../utils/contractInteraction';
 import PolygonNFTInterface from '../utils/MetaContract'
 import ContentQube from '../iQube/ContentQube'
+import { OrchestrationAgent } from '../services/OrchestrationAgent';
+
 
 const CONTRACT_ADDRESS = '0x632E1d32e34F0A690635BBcbec0D066daa448ede'
 
@@ -32,6 +34,7 @@ interface IQubeOperationsProps {
   onDecryptBlakQube?: (iQubeId: string) => void;
   onShareiQube?: (iQubeId: string) => void;
   onMintiQube?: (iQubeId: string) => void;
+  orchestrationAgent: OrchestrationAgent;
   signer?: ethers.Signer;
 }
 
@@ -49,6 +52,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
   onDecryptBlakQube,
   onShareiQube,
   onMintiQube,
+  orchestrationAgent,
   signer
 }) => {
   const [iQubeTokenId, setIQubeTokenId] = useState<string>('');
@@ -62,6 +66,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     userProfile?: string;
   } | null>(null);
 
+  const [iQubes, setIQubes] = useState([]);
   const [metaQubeData, setMetaQubeData] = useState<any>(null)
   const [blakQubeData, setBlakQubeData] = useState<any>(null)
   const [metadata, setMetadata] = useState<string>('')
@@ -72,15 +77,6 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
   const [encryptedBlakQubeData, setEncryptedBlakQubeData] = useState<any>(null)
   const [account, setAccount] = useState<string>('')
   const [isDecrypted, setIsDecrypted] = useState(false);
-
-
-
-
-
-
-
-
-
 
   // Modal for Qube Registry
   const { isOpen: isRegistryOpen, onOpen: onOpenRegistry, onClose: onCloseRegistry } = useDisclosure();
@@ -460,7 +456,10 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           userProfile: 'User Profile'
         }
       });
+    }finally {
+      setIsLoading(false)
     }
+
   }, [iQubeTokenId, showError, mockMetaQubeData, onContextChange]);
 
   const handleMemberDataDecryption = async () => {
@@ -489,6 +488,53 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       const metadata = await metadataResponse.json()
       console.log('Metadata retrieved:', metadata)
 
+      const metaQubeAttrs = metadata.attributes.find((attr: any) => attr.trait_type === 'metaQube')?.value || {}
+      const {
+        blakQubeKey,
+        blakQubeLocation,
+        blakQubeIdentifier,
+        ...cleanMetaQubeData
+      } = metaQubeAttrs
+
+      // Format MetaQube values
+      const formattedMetaQubeData = Object.entries(cleanMetaQubeData).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [key]: formatDisplayValue(value, false)
+        }),
+        {}
+      )
+
+      setMetaQubeData(formattedMetaQubeData)
+      console.log(formattedMetaQubeData)
+
+
+      // Activate the iQube with data
+      setIQubeActivated({
+        tokenId: iQubeTokenId,
+        name: formattedMetaQubeData['iQubeCreator'],
+        userProfile: 'User Profile'
+      });
+
+      console.log(iQubeTokenId)
+
+      // Update context if onContextChange is provided
+      onContextChange?.({
+        iQubeDetails: {
+          tokenId: iQubeTokenId,
+          name: formattedMetaQubeData?.['iQubeCreator'] || '',  // Safe access with fallback
+          domain: 'User Profile'
+        },
+        iQubeActivated: {
+          tokenId: iQubeTokenId,
+          name: formattedMetaQubeData?.['iQubeCreator'] || '',  // Safe access with fallback
+          userProfile: 'User Profile'
+        }
+      });
+
+      setBlakQubeData(null) // Clear any previous decrypted data
+
+
       // Find the blakQube attribute
       const blakQubeAttribute = metadata.attributes?.find(
         (attr: any) => attr.trait_type === 'blakQube'
@@ -497,6 +543,16 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       if (!blakQubeAttribute) {
         throw new Error('No blakQube data found in metadata')
       }
+
+      // Format BlakQube values
+      const formattedBlakQubeData = Object.entries(blakQubeAttribute).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [key]: formatDisplayValue(value, true)
+        }),
+        {}
+      )
+      setEncryptedBlakQubeData(formattedBlakQubeData)
 
       try {
         console.log('Attempting to decrypt with tokenId:', iQubeTokenId)
@@ -556,7 +612,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       } catch (decryptError: any) {
         console.error('Full decryption error:', decryptError)
         // If it's our custom error message, throw it as is
-        if (decryptError.message?.includes('You cannot decrypt this blakQube')) {
+        if (decryptError.message?.includes('You cannot decrypt this blakQube')) {  
           throw decryptError
         }
         // For other errors, throw the original error
@@ -703,59 +759,14 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
   useEffect(() => {
     if (blakQubeData !== null) {
       renderBlakQubeData(); // Call render function after data has been updated
+    } else if (encryptedBlakQubeData !== null) {
+      //renderEncryptedBlakQubeData(); // Render encrypted data if blakQubeData is null
+    } else {
+      // Optionally, handle the case where both are null
+      console.log("No data available");
     }
-  }, [blakQubeData]); // Dependency array ensures this runs when blakQubeData is updated
+  }, [blakQubeData, encryptedBlakQubeData]); 
   
-
-  // const renderBlakQubeData = () => {
-  //   // Flatten the BlackQube data into key-value pairs for grid display
-
-  //   console.log("in render", blakQubeData)
-
-  //   const dataToRender = [
-  //     // Public Keys
-  //     { label: "Public Key", value: mockBlakQubeData.public_keys[0] },
-      
-  //     // User Profile
-  //     { label: "Name", value: mockBlakQubeData.user_profile.Name },
-  //     { label: "Profession", value: mockBlakQubeData.user_profile.Profession },
-      
-  //     { label: "Email", value: mockBlakQubeData.user_profile.Email },
-  //     { label: "Organization", value: mockBlakQubeData.user_profile.Organization },
-  //     { label: "City", value: mockBlakQubeData.user_profile.City },
-      
-  //     // Interests
-  //     { label: "Interests", value: mockBlakQubeData.user_profile.Interests.join(", ") },
-      
-  //     // Holdings
-  //     ...mockBlakQubeData.Holdings.map(holding => ({
-  //       label: `${holding.currency} Holdings`, 
-  //       value: holding.holding.toString()
-  //     })),
-      
-  //     // Transaction History (if available)
-  //     ...(mockBlakQubeData.transaction_history.length > 0 
-  //       ? mockBlakQubeData.transaction_history.map((tx, index) => [
-  //         { label: `Tx ID (${index + 1})`, value: tx.transaction_id },
-  //         { label: "Amount", value: `${tx.amt} ${tx.fee ? `(Fee: ${tx.fee})` : ''}` },
-  //         { label: "Block", value: tx.block_id.toString() }
-  //       ]).flat()
-  //       : []
-  //     )
-  //   ];
-
-  //   return (
-  //     <div className="grid grid-cols-3 gap-2 text-white">
-  //       {dataToRender.map((item, index) => (
-  //         <div key={index} className="bg-gray-700 p-2 rounded">
-  //           <span className="text-gray-400 block text-xs">{item.label}</span>
-  //           <div className="truncate">{item.value}</div>
-  //         </div>
-  //       ))}
-  //     </div>
-  //   );
-  // };
-
   const renderBlakQubeData = () => {
     // Flatten the encrypted BlackQube data into key-value pairs for grid display
     const dataToRender = [
@@ -909,14 +920,259 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     );
   };
 
+  const activateiQube = async () => {
+    setIsLoading(true)
+    setError('')
+    try {
+      if (!nftInterface || !account) {
+        throw new Error('NFT interface not initialized or wallet not connected')
+      }
+      if (!orchestrationAgent) {
+        console.warn('No OrchestrationAgent provided');
+        setError('OrchestrationAgent not initialized');
+        return;
+      }
+      console.log("Current domain", orchestrationAgent.getCurrentDomain());
+
+
+      // Get the metadata URI using getBlakQube
+      const metadataURI = await nftInterface.getBlakQube(iQubeTokenId)
+      console.log('Fetching metadata from:', metadataURI)
+
+      const metadataResponse = await fetch(
+        metadataURI.replace(
+          'ipfs://',
+          `${process.env.REACT_APP_GATEWAY_URL}/ipfs/`,
+        ),
+      )
+
+      if (!metadataResponse.ok) {
+        throw new Error(`Failed to fetch metadata: ${metadataResponse.statusText}`)
+      }
+
+      const metadata = await metadataResponse.json()
+      console.log('Metadata retrieved:', metadata)
+
+      const metaQubeAttrs = metadata.attributes.find((attr: any) => attr.trait_type === 'metaQube')?.value || {}
+      const {
+        blakQubeKey,
+        blakQubeLocation,
+        blakQubeIdentifier,
+        ...cleanMetaQubeData
+      } = metaQubeAttrs
+
+      // Format MetaQube values
+      const formattedMetaQubeData = Object.entries(cleanMetaQubeData).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [key]: formatDisplayValue(value, false)
+        }),
+        {}
+      )
+
+      setMetaQubeData(formattedMetaQubeData)
+      setBlakQubeData(null) // Clear any previous decrypted data
+
+      console.log(formattedMetaQubeData)
+
+
+      // Activate the iQube with data
+      setIQubeActivated({
+        tokenId: iQubeTokenId,
+        name: formattedMetaQubeData['iQubeCreator'],
+        userProfile: 'User Profile'
+      });
+
+      console.log(iQubeTokenId)
+
+      // Update context if onContextChange is provided
+      onContextChange?.({
+        iQubeDetails: {
+          tokenId: iQubeTokenId,
+          name: formattedMetaQubeData?.['iQubeCreator'] || '',  // Safe access with fallback
+          domain: 'User Profile'
+        },
+        iQubeActivated: {
+          tokenId: iQubeTokenId,
+          name: formattedMetaQubeData?.['iQubeCreator'] || '',  // Safe access with fallback
+          userProfile: 'User Profile'
+        }
+      });
+
+      // Find the blakQube attribute
+      const blakQubeAttribute = metadata.attributes?.find(
+        (attr: any) => attr.trait_type === 'blakQube'
+      )
+
+      if (!blakQubeAttribute) {
+        throw new Error('No blakQube data found in metadata')
+      }
+
+      try {
+        console.log('Attempting to decrypt with tokenId:', iQubeTokenId)
+        console.log('BlakQube value:', blakQubeAttribute.value)
+        
+        // Get the encryption key first
+        let encryptionKey
+        try {
+          encryptionKey = await nftInterface.getEncryptionKey(iQubeTokenId)
+        } catch (keyError: any) {
+          // Check specifically for Web3 JSON-RPC error
+          if (keyError.message?.includes('Internal JSON-RPC error')) {
+            renderEncryptedBlakQubeData()
+            throw new Error('You do not own this iQube.')
+          }
+          throw keyError
+        }
+
+        console.log('Encryption key retrieved:', encryptionKey)
+
+        if (!encryptionKey) {
+          throw new Error('Failed to retrieve encryption key')
+        }
+
+        // Make the decryption request to the server
+        const response = await axios.post(
+          `${process.env.REACT_APP_SERVER_URL}/decrypt-member-data`,
+          {
+            key: encryptionKey,
+            encryptedData: blakQubeAttribute.value,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        )
+
+        console.log('Server response:', response.data)
+
+        if (response.data && response.data.decryptedData) {
+          console.log('Decryption successful:', response.data.decryptedData)
+          const blakQubeAttrs = response.data.decryptedData
+          setBlakQubeData(blakQubeAttrs)
+          setIsDecrypted(true);
+
+          console.log('Checking OrchestrationAgent initialization status');
+          const isInitialized = orchestrationAgent.isInitialized();
+          console.log('OrchestrationAgent initialization status:', isInitialized);
+
+          const iQube = {
+            ...formattedMetaQubeData,
+            ...blakQubeAttrs
+          };
+
+          orchestrationAgent.addIQube(iQubeTokenId, iQube)
+          console.log("from agent:", orchestrationAgent.getIQubeById(iQubeTokenId))
+
+          // If not initialized, attempt to initialize
+          if (!isInitialized) {
+            console.log('Attempting to initialize OrchestrationAgent');
+            try {
+              await orchestrationAgent.initialize();
+              console.log('OrchestrationAgent initialized successfully');
+            } catch (initError) {
+              console.error('Failed to initialize OrchestrationAgent:', initError);
+              const errorMessage = `Initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`;
+              throw new Error(errorMessage);
+            }
+          }
+
+
+
+        } else {
+          throw new Error('Server response missing decrypted data')
+        }
+      } catch (decryptError: any) {
+        console.error('Full decryption error:', decryptError)
+        // If it's our custom error message, throw it as is
+        if (decryptError.message?.includes('You cannot decrypt this blakQube')) {
+          throw decryptError
+        }
+        // For other errors, throw the original error
+        throw decryptError
+      }
+    } catch (error: any) {
+      console.error('Decryption error:', error)
+      setError(error.message || 'Failed to decrypt data')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleRemoveIQube = (iQubeId: string) => {
+    try {
+      // Call the removeIQubeById function from the orchestrationAgent
+      orchestrationAgent.removeIQubeById(iQubeId);
+      
+      // Optional: You can trigger a state update or re-fetch to update the UI after removal
+      // For example, if you're managing state with React useState:
+      // setIQubes(orchestrationAgent.getIQubes().values());
+      setIQubes(Array.from(orchestrationAgent.getIQubes().values()));
+
+  
+      console.log(`iQube with ID ${iQubeId} removed successfully.`);
+    } catch (error) {
+      console.error(`Error removing iQube: ${error}`);
+    }
+  };
+
   return (
     <>
+      {/* Activate iQubes */}
+      <div className="pt-4">
+        <h2 className="text-lg font-medium text-gray-300 mb-3">
+          Active iQubes (Will be injected into the Agent's context layer - Limit to 3 for pilot)
+        </h2>
+        <div className="grid grid-cols-3 gap-4">
+          {/* Check if orchestrationAgent is initialized and has iQubes */}
+          {orchestrationAgent?.getIQubes().size > 0 ? (
+            Array.from(orchestrationAgent.getIQubes().values()) // Use the getter method to get the iQubes map values
+              .slice(0, 5) // Optional: Limit to the first 5 iQubes
+              .map((iQube, index) => (
+                <div
+                  key={iQube.id} // Use the iQube id as a unique key
+                  className="bg-gray-700 p-4 rounded-lg border border-gray-600 relative"
+                >
+                  {/* Remove Button (X) */}
+                  <button
+                    onClick={() => handleRemoveIQube(iQube.id)} // Call handler to remove iQube
+                    className="absolute top-2 right-2 text-white text-xl bg-gray-600 p-1 rounded-full hover:bg-gray-500 focus:outline-none"
+                  >
+                    &times; {/* The "X" symbol */}
+                  </button>
+
+                  {/* iQube Information */}
+                  <div className="text-sm font-medium text-gray-400 mb-1">
+                    {"ID " + iQube.id || 'No label'} {/* Adjust based on available iQube properties */}
+                  </div>
+                  <div className="text-lg font-semibold text-white">
+                    {iQube.iQubeCreator || 'No value'} {/* Adjust based on available iQube properties */}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {iQube.evmPublicKey || 'No category'} {/* Adjust based on available iQube properties */}
+                  </div>
+                </div>
+              ))
+          ) : (
+            <div className="col-span-3">
+              <div className="bg-gray-700 p-4 rounded-lg border border-gray-600 text-center">
+                <span className="text-gray-400">
+                  No iQubes available. Connect an iQube and press Use iQube to activate.
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+
       <div className="iqube-operations bg-gray-800 rounded-lg p-6 space-y-4">
         <h2 className="text-xl font-semibold mb-4">iQube Operations</h2>
         
         {/* Use iQube Button */}
         <button 
-          onClick={viewMetaQube}
+          onClick={activateiQube}
           disabled={!iQubeTokenId || isLoading}
           className={`
             w-full py-2 rounded transition-all duration-300 ease-in-out
