@@ -71,6 +71,8 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
   )
   const [encryptedBlakQubeData, setEncryptedBlakQubeData] = useState<any>(null)
   const [account, setAccount] = useState<string>('')
+  const [isDecrypted, setIsDecrypted] = useState(false);
+
 
 
 
@@ -367,6 +369,8 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       // Extract MetaQube and BlakQube data from attributes
       const metaQubeAttrs = data.attributes.find((attr: any) => attr.trait_type === 'metaQube')?.value || {}
       const blakQubeAttrs = data.attributes.find((attr: any) => attr.trait_type === 'blakQube')?.value || {}
+
+      console.log("Black Qube data", blakQubeAttrs)
       
       const {
         blakQubeKey,
@@ -396,6 +400,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       setMetaQubeData(formattedMetaQubeData)
       setEncryptedBlakQubeData(formattedBlakQubeData)// Store encrypted data separately
       setBlakQubeData(null) // Clear any previous decrypted data
+      setIsDecrypted(true);
       setMetadata(fullPath)
 
       console.log(formattedMetaQubeData)
@@ -458,7 +463,112 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     }
   }, [iQubeTokenId, showError, mockMetaQubeData, onContextChange]);
 
+  const handleMemberDataDecryption = async () => {
+    setIsLoading(true)
+    setError('')
+    try {
+      if (!nftInterface || !account) {
+        throw new Error('NFT interface not initialized or wallet not connected')
+      }
 
+      // Get the metadata URI using getBlakQube
+      const metadataURI = await nftInterface.getBlakQube(iQubeTokenId)
+      console.log('Fetching metadata from:', metadataURI)
+
+      const metadataResponse = await fetch(
+        metadataURI.replace(
+          'ipfs://',
+          `${process.env.REACT_APP_GATEWAY_URL}/ipfs/`,
+        ),
+      )
+
+      if (!metadataResponse.ok) {
+        throw new Error(`Failed to fetch metadata: ${metadataResponse.statusText}`)
+      }
+
+      const metadata = await metadataResponse.json()
+      console.log('Metadata retrieved:', metadata)
+
+      // Find the blakQube attribute
+      const blakQubeAttribute = metadata.attributes?.find(
+        (attr: any) => attr.trait_type === 'blakQube'
+      )
+
+      if (!blakQubeAttribute) {
+        throw new Error('No blakQube data found in metadata')
+      }
+
+      try {
+        console.log('Attempting to decrypt with tokenId:', iQubeTokenId)
+        console.log('BlakQube value:', blakQubeAttribute.value)
+        
+        // Get the encryption key first
+        let encryptionKey
+        try {
+          encryptionKey = await nftInterface.getEncryptionKey(iQubeTokenId)
+        } catch (keyError: any) {
+          // Check specifically for Web3 JSON-RPC error
+          if (keyError.message?.includes('Internal JSON-RPC error')) {
+            throw new Error('You cannot decrypt this blakQube as you do not own its token')
+          }
+          throw keyError
+        }
+
+        console.log('Encryption key retrieved:', encryptionKey)
+
+        if (!encryptionKey) {
+          throw new Error('Failed to retrieve encryption key')
+        }
+
+        // Make the decryption request to the server
+        const response = await axios.post(
+          `${process.env.REACT_APP_SERVER_URL}/decrypt-member-data`,
+          {
+            key: encryptionKey,
+            encryptedData: blakQubeAttribute.value,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        )
+
+        console.log('Server response:', response.data)
+
+        if (response.data && response.data.decryptedData) {
+          console.log('Decryption successful:', response.data.decryptedData)
+          const blakQubeAttrs = response.data.decryptedData
+        
+          // Update the state with the decrypted data
+          setBlakQubeData(blakQubeAttrs)
+        
+          // Log the updated state data (this will be null during the initial render and then show the data after update)
+          console.log("Updated blackqube data", blakQubeAttrs)
+        
+          // For checking the state after it has been updated
+          console.log("variable data", blakQubeAttrs)  // Note: This is the immediate value, `blakQubeData` will be updated later
+          setIsDecrypted(true);
+        
+        } else {
+          throw new Error('Server response missing decrypted data')
+        }
+      } catch (decryptError: any) {
+        console.error('Full decryption error:', decryptError)
+        // If it's our custom error message, throw it as is
+        if (decryptError.message?.includes('You cannot decrypt this blakQube')) {
+          throw decryptError
+        }
+        // For other errors, throw the original error
+        throw decryptError
+      }
+    } catch (error: any) {
+      console.error('Decryption error:', error)
+      setError(error.message || 'Failed to decrypt data')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const decryptBlakQube = useCallback(async () => {
     if (!iQubeTokenId) {
@@ -590,46 +700,121 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (blakQubeData !== null) {
+      renderBlakQubeData(); // Call render function after data has been updated
+    }
+  }, [blakQubeData]); // Dependency array ensures this runs when blakQubeData is updated
+  
+
+  // const renderBlakQubeData = () => {
+  //   // Flatten the BlackQube data into key-value pairs for grid display
+
+  //   console.log("in render", blakQubeData)
+
+  //   const dataToRender = [
+  //     // Public Keys
+  //     { label: "Public Key", value: mockBlakQubeData.public_keys[0] },
+      
+  //     // User Profile
+  //     { label: "Name", value: mockBlakQubeData.user_profile.Name },
+  //     { label: "Profession", value: mockBlakQubeData.user_profile.Profession },
+      
+  //     { label: "Email", value: mockBlakQubeData.user_profile.Email },
+  //     { label: "Organization", value: mockBlakQubeData.user_profile.Organization },
+  //     { label: "City", value: mockBlakQubeData.user_profile.City },
+      
+  //     // Interests
+  //     { label: "Interests", value: mockBlakQubeData.user_profile.Interests.join(", ") },
+      
+  //     // Holdings
+  //     ...mockBlakQubeData.Holdings.map(holding => ({
+  //       label: `${holding.currency} Holdings`, 
+  //       value: holding.holding.toString()
+  //     })),
+      
+  //     // Transaction History (if available)
+  //     ...(mockBlakQubeData.transaction_history.length > 0 
+  //       ? mockBlakQubeData.transaction_history.map((tx, index) => [
+  //         { label: `Tx ID (${index + 1})`, value: tx.transaction_id },
+  //         { label: "Amount", value: `${tx.amt} ${tx.fee ? `(Fee: ${tx.fee})` : ''}` },
+  //         { label: "Block", value: tx.block_id.toString() }
+  //       ]).flat()
+  //       : []
+  //     )
+  //   ];
+
+  //   return (
+  //     <div className="grid grid-cols-3 gap-2 text-white">
+  //       {dataToRender.map((item, index) => (
+  //         <div key={index} className="bg-gray-700 p-2 rounded">
+  //           <span className="text-gray-400 block text-xs">{item.label}</span>
+  //           <div className="truncate">{item.value}</div>
+  //         </div>
+  //       ))}
+  //     </div>
+  //   );
+  // };
+
   const renderBlakQubeData = () => {
-    // Flatten the BlackQube data into key-value pairs for grid display
+    // Flatten the encrypted BlackQube data into key-value pairs for grid display
     const dataToRender = [
-      // Public Keys
-      { label: "Public Key", value: mockBlakQubeData.public_keys[0] },
+      // Name
+      { label: "First Name", value: blakQubeData.firstName, editable: false },
+      { label: "Last Name", value: blakQubeData.lastName, editable: false },
       
       // User Profile
-      { label: "Name", value: mockBlakQubeData.user_profile.Name },
-      { label: "Profession", value: mockBlakQubeData.user_profile.Profession },
+      { label: "FIO handle", value: blakQubeData.fioHandle, editable: false },
+      { label: "Email", value: blakQubeData.email, editable: false },
+      { label: "Phone Number", value: blakQubeData.phoneNumber, editable: false },
+      { label: "Address", value: blakQubeData.address, editable: false },
+      { label: "Age Range", value: blakQubeData.ageRange, editable: false },
+      { label: "Address", value: blakQubeData.address, editable: false },
+
+      { label: "Metaiye Shares", value: blakQubeData.metaiyeShares, editable: false },
+      { label: "KNYT Coin Owned", value: blakQubeData.kyntCoinOwned, editable: false },
+      { label: "OM Member Since", value: blakQubeData.omMemberSince, editable: false },
+      { label: "OM Tier Status", value: blakQubeData.omTierStatus, editable: false },
+      { label: "EVM Public Key", value: blakQubeData.evmPublicKey, editable: false },
+      { label: "Third Web Public Key", value: blakQubeData.thirdWebPublicKey, editable: false },
+      { label: "MetaMask Public Key", value: blakQubeData.metaMaskPublicKey, editable: false },
+
+      { label: "Other Wallet Public Keys", value: blakQubeData.otherWalletPublicKeys, editable: false },
+      { label: "Meta Keep ID", value: blakQubeData.metaKeepId, editable: false },
+      { label: "Twitter Handle", value: blakQubeData.twitterHandle, editable: false },
+      { label: "Instagram Handle", value: blakQubeData.instagramHandle, editable: false },
+      { label: "Facebook ID", value: blakQubeData.facebookId, editable: false },
+      { label: "TikTok Handle", value: blakQubeData.tikTokHandle, editable: false },
+
+      { label: "LinkedIn ID", value: blakQubeData.linkedInId, editable: false },
+      { label: "Discord Handle", value: blakQubeData.discordHandle, editable: false },
+      { label: "Telegram Handle", value: blakQubeData.telegramHandle, editable: false },
+      { label: "Motion KNYT Books Owned", value: blakQubeData.motionKNYTBooksOwned, editable: false },
+      { label: "Still KNYT Books Owned", value: blakQubeData.stillKNYTBooksOwned, editable: false },
+      { label: "Print KNYT Books Owned", value: blakQubeData.printKNYTBooksOwned, editable: false },
+      { label: "KNYT Posters Owned", value: blakQubeData.knytPostersOwned, editable: false },
       
-      { label: "Email", value: mockBlakQubeData.user_profile.Email },
-      { label: "Organization", value: mockBlakQubeData.user_profile.Organization },
-      { label: "City", value: mockBlakQubeData.user_profile.City },
+      { label: "KNYT Cards Owned", value: blakQubeData.knytCardsOwned, editable: false },
+      { label: "KNYT Characters Owned", value: blakQubeData.knytCharactersOwned, editable: false }
       
-      // Interests
-      { label: "Interests", value: mockBlakQubeData.user_profile.Interests.join(", ") },
-      
-      // Holdings
-      ...mockBlakQubeData.Holdings.map(holding => ({
-        label: `${holding.currency} Holdings`, 
-        value: holding.holding.toString()
-      })),
-      
-      // Transaction History (if available)
-      ...(mockBlakQubeData.transaction_history.length > 0 
-        ? mockBlakQubeData.transaction_history.map((tx, index) => [
-          { label: `Tx ID (${index + 1})`, value: tx.transaction_id },
-          { label: "Amount", value: `${tx.amt} ${tx.fee ? `(Fee: ${tx.fee})` : ''}` },
-          { label: "Block", value: tx.block_id.toString() }
-        ]).flat()
-        : []
-      )
     ];
 
     return (
       <div className="grid grid-cols-3 gap-2 text-white">
         {dataToRender.map((item, index) => (
-          <div key={index} className="bg-gray-700 p-2 rounded">
+          <div key={index} className="bg-gray-700 p-2 rounded relative">
             <span className="text-gray-400 block text-xs">{item.label}</span>
-            <div className="truncate">{item.value}</div>
+            <div className="truncate">
+              {item.value}
+            </div>
+            {item.editable && (
+              <button 
+                className="absolute top-1 right-1 text-xs bg-blue-600 text-white rounded px-1 hover:bg-blue-700"
+                onClick={() => {/* TODO: Implement edit functionality */}}
+              >
+                Edit
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -757,7 +942,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
                 setBlakQubeData(null);
               }
             }}
-            placeholder="Enter iQube Token ID"
+            placeholder="Enter Token ID"
             className="w-full py-2 px-3 bg-gray-700 text-white rounded transition-all duration-300 ease-in-out hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
@@ -772,12 +957,12 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
                 : 'bg-gray-700 text-gray-400 cursor-not-allowed'}
             `}
           >
-            View iQube
+            View
           </button>
 
           {/* Decrypt iQube Button */}
           <button 
-            onClick={decryptBlakQube}
+            onClick={handleMemberDataDecryption}
             disabled={!iQubeTokenId}
             className={`
               w-full py-2 rounded transition-all duration-300 ease-in-out
@@ -786,7 +971,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
                 : 'bg-gray-700 text-gray-400 cursor-not-allowed'}
             `}
           >
-            Decrypt iQube
+            Decrypt
           </button>
 
           {/* Mint (Encrypt) Button */}
@@ -802,7 +987,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
             //     ? 'bg-gray-700 text-white hover:bg-purple-600' 
             //     : 'bg-gray-700 text-gray-400 cursor-not-allowed'}
           >
-            Mint (Encrypt)
+            Mint
           </button>
         </div>
 
@@ -865,34 +1050,41 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           </div>
         )}
 
-        {/* BlackQube Encrypted Data Display (Mint iQube or View iQube) */}
-        {encryptedBlakQubeData && 
-        //mockEncryptedBlakQubeData === blakQubeDecrypted && 
-        (
-          <div className="mt-4 bg-gray-700 rounded p-4 space-y-2">
-            <h3 className="text-white text-lg mb-2">Encrypted Payload</h3>
-            {renderEncryptedBlakQubeData()}
-          </div>
-        )}
-
         {/* BlackQube Decrypted Data Display (Decrypt iQube) */}
-        {blakQubeDecrypted && mockBlakQubeData === blakQubeDecrypted && (
+        {blakQubeData && isDecrypted && (
           <div className="mt-4 bg-gray-700 rounded p-4 space-y-2">
             <h3 className="text-white text-lg mb-2">Decrypted Payload</h3>
             {renderBlakQubeData()}
           </div>
         )}
 
+        {/* BlackQube Encrypted Data Display (Mint iQube or View iQube) */}
+        {/* {blakQubeData && mockEncryptedBlakQubeData === blakQubeData && 
+        (
+          <div className="mt-4 bg-gray-700 rounded p-4 space-y-2">
+            <h3 className="text-white text-lg mb-2">Encrypted Payload</h3>
+            {renderEncryptedBlakQubeData()}
+          </div>
+        )} */}
+
+        {/* BlackQube Decrypted Data Display (Decrypt iQube) */}
+        {/* {blakQubeData && mockBlakQubeData === blakQubeData && (
+          <div className="mt-4 bg-gray-700 rounded p-4 space-y-2">
+            <h3 className="text-white text-lg mb-2">Decrypted Payload</h3>
+            {renderBlakQubeData()}
+          </div>
+        )} */}
+
         {/* Optional: Hint about decryption */}
-        {blakQubeDecrypted && mockEncryptedBlakQubeData === blakQubeDecrypted && (
+        {/* {blakQubeData && mockEncryptedBlakQubeData === blakQubeData && (
           <div className="mt-2 bg-gray-600 rounded p-2 text-center text-white text-sm">
             Click "Decrypt iQube" to view full payload details
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Add View Registry Button */}
-      <Button 
+      {/* <Button 
         onClick={onOpenRegistry} 
         variant="outline" 
         colorScheme="blue" 
@@ -900,7 +1092,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         className="mt-4"
       >
         View Registry
-      </Button>
+      </Button> */}
 
       {/* Qube Registry Modal */}
       <Modal isOpen={isRegistryOpen} onClose={onCloseRegistry} size="6xl">
