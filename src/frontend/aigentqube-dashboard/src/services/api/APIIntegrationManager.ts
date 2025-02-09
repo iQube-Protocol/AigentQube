@@ -85,6 +85,7 @@ export class APIIntegrationManager {
   }
 
   public async executeAPI(integrationId: string, params: any): Promise<APIResponse> {
+    
     console.log(`[APIIntegrationManager] Attempting to execute API: ${integrationId}`);
     console.log(`[APIIntegrationManager] Current registered integrations:`, 
       Array.from(this.integrations.keys()));

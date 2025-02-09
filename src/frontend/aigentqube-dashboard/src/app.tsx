@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Web3 from 'web3';
-import axios from 'axios';
 import { Web3ReactProvider } from '@web3-react/core';
 import { Web3Provider } from '@ethersproject/providers';
 import DashboardLayout from './components/DashboardLayout';
@@ -9,9 +8,6 @@ import ContextTransformationPanel from './components/ContextTransformationPanel'
 import IQubeCreatingPanel from './components/iQubeCreatingPanel';
 import { BlockchainWalletStatus } from './components/BlockchainComponents';
 import { OrchestrationAgent } from './services/OrchestrationAgent';
-import { ContextDomain } from './types/context';
-import { ServiceStatus } from './types/service';
-import { StateUpdate } from './types/state';
 import { 
   ChakraProvider, 
   Box, 
@@ -19,7 +15,6 @@ import {
   Grid, 
   Text,
   extendTheme as chakraExtendTheme,
-  Button,
   useToast
 } from '@chakra-ui/react';
 import AgentEvolutionPanel from './components/AgentEvolutionPanel';
@@ -132,7 +127,6 @@ const App: React.FC = () => {
   const [walletError, setWalletError] = useState<string | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
-  const connectionAttemptRef = useRef<number>(0);
   const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastConnectionAttemptRef = useRef<number>(0);
   const DEBOUNCE_DELAY = 1000; // 1 second debounce

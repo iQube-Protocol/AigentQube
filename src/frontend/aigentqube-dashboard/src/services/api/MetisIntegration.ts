@@ -31,7 +31,7 @@ export class MetisIntegration implements APIIntegration {
   public readonly config: APIConfig;
 
   private axiosInstance: AxiosInstance;
-  private baseURL: string = 'https://metisapi-8501e3beedcf.herokuapp.com';
+  private baseURL: string = 'https://metisapi2-8703aaeeb44e.herokuapp.com';
 
   constructor(config: APIConfig) {
     const apiKey = config.apiKey || process.env.REACT_APP_METIS_API_KEY;
@@ -59,60 +59,89 @@ export class MetisIntegration implements APIIntegration {
   }
 
   public async initialize(): Promise<void> {
-    try {
-      // Initialization payload matching the provided structure
-      const payload: InitializationPayload = {
-        public_keys: [
-          "bc1p4hm2mdgfhag5742q37xuh28cnecccuckwrpjuw6fy0ssuz0lmmzsnv7u9h"
-        ],
-        user_profile: {
-          Name: "",
-          Number: "",
-          Email: "",
-          Organization: "",
-          interests: []
-        },
-        holdings: [
-          { currency: "BTC", holding: 0.0008 },
-          { currency: "ETH", holding: 0.02 },
-          { currency: "QSWAP", holding: 8 }
-        ],
-        transaction_history: []
-      };
+    
+    //Below is the legacy code to connect to metis api: now only one call is needed so there is no need to init.
 
-      // Perform initialization POST request
-      const response = await this.axiosInstance.post('/initialize', payload, {
-        headers: {
-          'X-API-Key': this.config.apiKey,
-          'Content-Type': 'application/json'
-        }
-      });
+    console.log('[Metis API] Successfully initialized');
 
-      // Check initialization success
-      if (response.status === 202) {
-        this.status = ServiceStatus.READY;
-        console.log('[Metis API] Successfully initialized');
-      } else {
-        this.status = ServiceStatus.ERROR;
-        console.warn('[Metis API] Initialization returned non-200 status:', response.status);
-      }
-    } catch (error: any) {
-      console.error('[Metis API] Initialization failed:', error);
-      this.status = ServiceStatus.ERROR;
-      throw new Error(`Metis API Initialization Error: ${error.message}`);
-    }
+    // try {
+    //   // Initialization payload matching the provided structure
+    //   const payload: InitializationPayload = {
+    //     public_keys: [
+    //       "bc1p4hm2mdgfhag5742q37xuh28cnecccuckwrpjuw6fy0ssuz0lmmzsnv7u9h"
+    //     ],
+    //     user_profile: {
+    //       Name: "",
+    //       Number: "",
+    //       Email: "",
+    //       Organization: "",
+    //       interests: []
+    //     },
+    //     holdings: [
+    //       { currency: "BTC", holding: 0.0008 },
+    //       { currency: "ETH", holding: 0.02 },
+    //       { currency: "QSWAP", holding: 8 }
+    //     ],
+    //     transaction_history: []
+    //   };
+
+    //   // Perform initialization POST request
+    //   const response = await this.axiosInstance.post('/initialize', payload, {
+    //     headers: {
+    //       'X-API-Key': this.config.apiKey,
+    //       'Content-Type': 'application/json'
+    //     }
+    //   });
+
+    //   // Check initialization success
+    //   if (response.status === 202) {
+    //     this.status = ServiceStatus.READY;
+    //     console.log('[Metis API] Successfully initialized');
+    //   } else {
+    //     this.status = ServiceStatus.ERROR;
+    //     console.warn('[Metis API] Initialization returned non-200 status:', response.status);
+    //   }
+    // } catch (error: any) {
+    //   console.error('[Metis API] Initialization failed:', error);
+    //   this.status = ServiceStatus.ERROR;
+    //   throw new Error(`Metis API Initialization Error: ${error.message}`);
+    // }
   }
 
   public async execute(params: any): Promise<APIResponse> {
     try {
       // Extract input flexibly
-      const input = params.message || params.input || params.query;
+      const metis_input = params.message || params.input || params.query;
       const domain = params.domain || 'crypto_analyst';
 
-      
+      console.log("[Metis API] Current active iqubes", params.iqubes)
+
+      const iqubesMap = params.iqubes instanceof Map ? params.iqubes : new Map();
+      const iqubesArray = Array.from(iqubesMap.values());
+
+      const name = String(iqubesArray[0]?.firstName ) + String(iqubesArray[0]?.lastName );
+      const keys = iqubesArray.flatMap(iqube => [
+        iqube.evmPublicKey
+      ].filter(Boolean));
+
+      const metis_data = {
+        "public_keys": keys,
+        "user_profile": {
+          "Name": name,
+          "Number": iqubesArray[0]?.fioHandle || "",
+          "Email": iqubesArray[0]?.email || "",
+          "Organization": iqubesArray[0]?.iQubeCreator || "",
+          "interests": []
+        },
+        "holdings": []
+      };
+
+      const metis_params = {input: metis_input, user_data: metis_data};
+
+      console.log("Metis API] Params", metis_params)
 
       // Validate input
-      if (!input) {
+      if (!metis_input) {
         return {
           success: false,
           error: 'Invalid input: message, input, or query is required',
@@ -127,10 +156,13 @@ export class MetisIntegration implements APIIntegration {
       try {
         // Make a simple GET request with the input parameter
         const response = await this.axiosInstance.get('/service', {
-          params: { input },
+          params: {
+            input: metis_input,
+            user_data: JSON.stringify(metis_data) // Ensuring it's a string for URL encoding
+          },
           headers: {
+            'X-API-Key': this.config.apiKey, 
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
           }
         });
 
