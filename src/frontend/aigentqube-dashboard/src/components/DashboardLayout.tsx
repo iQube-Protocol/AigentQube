@@ -176,7 +176,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   // Provide a default no-op function if onContextChange is not provided
   const handleContextChange = onContextChange || ((context: any) => {});
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
     <div className="aigentqube-dashboard min-h-screen bg-gradient-to-br from-gray-900 to-blue-900 text-white">
