@@ -403,7 +403,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         id: Date.now(),
         uniqueId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         role: 'system',
-        content: `Switching to ${domain} mode...`,
+        content: `Starting ${domain} mode...`,
         timestamp: new Date()
       }]);
     } catch (error: any) {
