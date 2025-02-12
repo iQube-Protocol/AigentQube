@@ -1122,7 +1122,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       {/* Activate iQubes */}
       <div className="pt-4">
         <h2 className="text-lg font-medium text-gray-300 mb-3">
-          Active iQubes (Will be injected into the Agent's context layer - Limit to 3 for pilot)
+        Active iQubes  |  Connect & Activate up to 3
         </h2>
         <div className="grid grid-cols-3 gap-4">
           {/* Check if orchestrationAgent is initialized and has iQubes */}

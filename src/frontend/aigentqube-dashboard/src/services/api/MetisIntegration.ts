@@ -40,7 +40,7 @@ export class MetisIntegration implements APIIntegration {
     this.config = { 
       ...config, 
       apiKey,
-      timeout: config.timeout || 30000,
+      timeout: config.timeout || 60000,
       retryAttempts: config.retryAttempts || 3
     };
 
