@@ -46,7 +46,7 @@ export class MetisIntegration implements APIIntegration {
 
     this.axiosInstance = axios.create({
       baseURL: this.baseURL,
-      timeout: 30000, // Increased timeout to 30 seconds
+      timeout: 120000, // Increased timeout to 30 seconds
       // More lenient error handling
       validateStatus: function (s) {
         return s >= 200 && s < 600; // Accept wider range of status codes
