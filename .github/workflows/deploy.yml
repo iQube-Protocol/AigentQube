@@ -1,0 +1,34 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up SSH Key
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > deploy_key
+          chmod 600 deploy_key
+
+      - name: Deploy Files to EC2 using rsync
+        run: |
+          rsync -avz --exclude 'node_modules' --exclude '.git' --exclude '.env' \
+          -e "ssh -o StrictHostKeyChecking=no -i deploy_key" \
+          ./src/frontend/aigentqube-dashboard/ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_APP_PATH }}
+
+      - name: Connect to EC2 and Restart App
+        run: |
+          ssh -o StrictHostKeyChecking=no -i deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd ${{ secrets.EC2_APP_PATH }}
+            npm install
+            npm run build
+            sudo systemctl restart myapp.service
+          EOF
