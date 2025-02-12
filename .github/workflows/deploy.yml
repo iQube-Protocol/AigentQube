@@ -17,25 +17,25 @@ jobs:
     # Set up SSH key for authentication
     - name: Set up SSH key
       run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
-        chmod 600 ~/.ssh/deploy_key
-        # Disable host key checking to avoid "unknown host" issues
-        echo "Host *" >> ~/.ssh/config
-        echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+        # mkdir -p ~/.ssh
+        # echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+        # chmod 600 ~/.ssh/deploy_key
+        # # Disable host key checking to avoid "unknown host" issues
+        # echo "Host *" >> ~/.ssh/config
+        # echo "  StrictHostKeyChecking no" >> ~/.ssh/config
 
     # Run rsync to deploy code to the EC2 instance
     - name: Deploy to EC2
       run: |
-        rsync -avz --exclude 'node_modules' --exclude '.git' --exclude '.env' \
-        -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-        ./src/frontend/aigentqube-dashboard/ ubuntu@ec2-3-149-213-181.us-east-2.compute.amazonaws.com:~/app
+        # rsync -avz --exclude 'node_modules' --exclude '.git' --exclude '.env' \
+        # -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+        # ./src/frontend/aigentqube-dashboard/ ubuntu@ec2-3-149-213-181.us-east-2.compute.amazonaws.com:~/app
 
     # SSH into the EC2 instance to build and restart the service
     - name: Build and restart service on EC2
       run: |
-        ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ubuntu@ec2-3-149-213-181.us-east-2.compute.amazonaws.com << 'EOF'
-          cd ~/app
-          npm run build
-          sudo systemctl restart myapp.service
-        EOF
+        # ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ubuntu@ec2-3-149-213-181.us-east-2.compute.amazonaws.com << 'EOF'
+        #   cd ~/app
+        #   npm run build
+        #   sudo systemctl restart myapp.service
+        # EOF
