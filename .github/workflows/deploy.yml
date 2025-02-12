@@ -3,32 +3,39 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main
+      - main # Change this to your desired branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+    # Checkout your repository
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up SSH Key
-        run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" > deploy_key
-          chmod 600 deploy_key
+    # Set up SSH key for authentication
+    - name: Set up SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        # Disable host key checking to avoid "unknown host" issues
+        echo "Host *" >> ~/.ssh/config
+        echo "  StrictHostKeyChecking no" >> ~/.ssh/config
 
-      - name: Deploy Files to EC2 using rsync
-        run: |
-          rsync -avz --exclude 'node_modules' --exclude '.git' --exclude '.env' \
-          -e "ssh -o StrictHostKeyChecking=no -i deploy_key" \
-          ./src/frontend/aigentqube-dashboard/ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_APP_PATH }}
+    # Run rsync to deploy code to the EC2 instance
+    - name: Deploy to EC2
+      run: |
+        rsync -avz --exclude 'node_modules' --exclude '.git' --exclude '.env' \
+        -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+        ./src/frontend/aigentqube-dashboard/ ubuntu@ec2-3-149-213-181.us-east-2.compute.amazonaws.com:~/app
 
-      - name: Connect to EC2 and Restart App
-        run: |
-          ssh -o StrictHostKeyChecking=no -i deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            cd ${{ secrets.EC2_APP_PATH }}
-            npm install
-            npm run build
-            sudo systemctl restart myapp.service
-          EOF
+    # SSH into the EC2 instance to build and restart the service
+    - name: Build and restart service on EC2
+      run: |
+        ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ubuntu@ec2-3-149-213-181.us-east-2.compute.amazonaws.com << 'EOF'
+          cd ~/app
+          npm run build
+          sudo systemctl restart myapp.service
+        EOF
