@@ -105,7 +105,7 @@ Focus on:
     this.config = { 
       ...config, 
       apiKey,
-      timeout: config.timeout || 30000,
+      timeout: config.timeout || 60000,
       retryAttempts: config.retryAttempts || 3
     };
     
@@ -131,11 +131,6 @@ Focus on:
       return this.initializationPromise;
     }
 
-    // If already initialized and ready, return immediately
-    if (this.status === ServiceStatus.READY) {
-      return;
-    }
-
     this.initializationPromise = (async () => {
       try {
         console.log('[OpenAI] Starting initialization...');
@@ -148,9 +143,6 @@ Focus on:
           }
           this.config.apiKey = envApiKey;
         }
-
-        // Detailed API key logging (without exposing full key)
-        console.log(`[OpenAI] API Key Type: ${this.config.apiKey?.startsWith('sk-') ? 'Project-scoped' : 'Standard'}`);
 
         // Create OpenAI client with comprehensive configuration
         this.client = new OpenAI({
@@ -169,6 +161,7 @@ Focus on:
             const isValid = await this.validate();
             if (isValid) {
               this.status = ServiceStatus.READY;
+              console.log('[OpenAI] Validation Attempt: ', validationAttempts);              
               console.log('[OpenAI] Initialization successful');
               return;
             }

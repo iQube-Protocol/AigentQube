@@ -167,8 +167,8 @@ const App: React.FC = () => {
             method: 'wallet_addEthereumChain',
             params: [{
               chainId: '0x13882',
-              chainName: 'Polygon Amoy Testnet',
-              nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+              chainName: 'Amoy',
+              nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
               rpcUrls: ['https://rpc-amoy.polygon.technology'],
               blockExplorerUrls: ['https://www.oklink.com/amoy']
             }]
@@ -216,7 +216,7 @@ const App: React.FC = () => {
         title: 'Connection in Progress',
         description: 'Please check MetaMask to approve the connection request',
         status: 'info',
-        duration: 3000,
+        duration: 30000,
         isClosable: true,
       });
       return;
@@ -244,7 +244,7 @@ const App: React.FC = () => {
           title: 'Connection Timeout',
           description: 'The connection attempt timed out. Please try again.',
           status: 'error',
-          duration: 5000,
+          duration: 50000,
           isClosable: true,
         });
       }
@@ -570,6 +570,10 @@ const App: React.FC = () => {
     }
   }, [toast]);
 
+  useEffect(() => {
+    initializeApplication();
+  }, [initializeApplication]);
+
   // Add useEffect to track agent status changes
   useEffect(() => {
     if (orchestrationAgent) {
@@ -592,9 +596,7 @@ const App: React.FC = () => {
     }
   }, [orchestrationAgent]);
 
-  useEffect(() => {
-    initializeApplication();
-  }, [initializeApplication]);
+
 
   // Monitor Layer Alignment
   const checkAlignment = useCallback(async () => {

@@ -188,7 +188,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           {isSidebarOpen ? "Close Menu" : <span className="text-lg">☰</span>}
           </button>
         
-          <h1 className="text-2xl font-bold text-center">AigentQube: Dynamic Context Intelligence</h1>        
+          <h1 className="text-2xl font-bold text-center">Aigent Z: Dynamic Contextual Intelligence</h1>        
           <div className="absolute flex top-4 right-4 items-center space-x-4">
           <WalletConnector 
             onConnect={handleWalletConnect} 

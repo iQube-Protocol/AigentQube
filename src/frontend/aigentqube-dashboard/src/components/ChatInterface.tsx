@@ -275,7 +275,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     return suppressPatterns.some(pattern => pattern.test(errorMessage));
   };
 
-  // Add initialization effect
+  // Init orchestration agent
   useEffect(() => {
     const initializeApi = async () => {
       if (!orchestrationAgent) {

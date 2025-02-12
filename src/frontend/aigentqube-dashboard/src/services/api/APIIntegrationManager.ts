@@ -41,9 +41,11 @@ export class APIIntegrationManager {
 
   public async registerAPI(api: APIIntegration): Promise<void> {
     try {
-      console.log(`[APIIntegrationManager] Attempting to register API: ${api.name} (ID: ${api.id})`);
-      console.log(`[APIIntegrationManager] Current registered integrations:`, 
+      console.log(`[APIIntegrationManager] Current Registered integrations:`, 
         Array.from(this.integrations.keys()));
+
+      console.log(`[APIIntegrationManager] Attempting to register API: ${api.name} (ID: ${api.id})`);
+      
       
       // Validate API status
       if (api.status === ServiceStatus.ERROR) {
@@ -65,13 +67,6 @@ export class APIIntegrationManager {
 
       // Initialize the integration
       await api.initialize();
-
-      // Validate the integration
-      const isValid = await api.validate();
-      if (!isValid) {
-        console.warn(`[APIIntegrationManager] API integration ${api.name} validation failed`);
-        throw new Error(`API integration ${api.name} validation failed`);
-      }
 
       // Register the API
       this.integrations.set(api.id, api);
