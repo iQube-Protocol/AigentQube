@@ -120,9 +120,9 @@ export class MetisIntegration implements APIIntegration {
       const iqubesArray = Array.from(iqubesMap.values());
 
       const name = String(iqubesArray[0]?.firstName ) + String(iqubesArray[0]?.lastName );
-      const keys = iqubesArray.flatMap(iqube => [
-        iqube.evmPublicKey
-      ].filter(Boolean));
+      const keys = iqubesArray
+        .flatMap(iqube => iqube.evmPublicKey)
+        .filter(key => typeof key === "string" && key.startsWith("0x"));
 
       const metis_data = {
         "public_keys": keys,

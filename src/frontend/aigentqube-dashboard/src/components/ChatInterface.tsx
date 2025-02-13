@@ -399,13 +399,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     try {
       setCurrentDomain(domain);
       
-      setMessages(prev => [...prev, {
-        id: Date.now(),
-        uniqueId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        role: 'system',
-        content: `Starting ${domain} mode...`,
-        timestamp: new Date()
-      }]);
+      // setMessages(prev => [...prev, {
+      //   id: Date.now(),
+      //   uniqueId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      //   role: 'system',
+      //   content: `Starting ${domain} mode...`,
+      //   timestamp: new Date()
+      // }]);
     } catch (error: any) {
       setError(`Failed to switch to ${domain}: ${error.message}`);
       console.error('Error changing domain:', error);

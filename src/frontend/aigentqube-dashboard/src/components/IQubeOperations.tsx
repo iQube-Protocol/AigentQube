@@ -269,8 +269,10 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     // Set decrypted BlakQube data
     setBlakQubeDecrypted(mockBlakQubeData);
 
+    console.log()
     // Update context if onContextChange is provided
     onContextChange?.({
+      
       iQubeDetails: {
         tokenId: mockMetaQubeData.id,
         name: 'Mock iQube',
