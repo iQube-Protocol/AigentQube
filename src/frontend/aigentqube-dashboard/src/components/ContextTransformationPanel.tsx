@@ -167,7 +167,7 @@ const ContextTransformationPanel: React.FC<ContextTransformationPanelProps> = ({
           <ChatInterface 
             orchestrationAgent={orchestrationAgent}
             context={{
-              specializedState: context?.specializedState || 'AigentQube',
+              specializedState: context?.specializedState || 'Aigent Z',
               web3: context?.web3,
               account: context?.account,
               isSignedIn: context?.isSignedIn,
