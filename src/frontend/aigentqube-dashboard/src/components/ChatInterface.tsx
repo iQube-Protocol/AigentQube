@@ -47,30 +47,30 @@ const DOMAIN_PROMPT_RECOMMENDATIONS: Record<SpecializedDomain, PromptRecommendat
   'AigentQube': [
     {
       heading: 'iQube Overview',
-      subHeading: 'Performance Metrics',
-      prompt: 'Provide a comprehensive overview of my iQube\'s current performance metrics and suggest optimization strategies.'
+      subHeading: 'iQube Utilization',
+      prompt: 'Give me insights from my iQubes and suggestions on how I might use them.'
     },
     {
       heading: 'Integration Assistance',
       subHeading: 'Workflow Optimization',
-      prompt: 'Guide me through integrating AigentQube features into my existing workflow for maximum efficiency.'
+      prompt: 'Guide me through how I might integrate Aigent Z into my existing workflow for maximum efficiency.'
     },
     {
       heading: 'Strategic Insights',
       subHeading: 'Future Planning',
-      prompt: 'Develop a comprehensive strategy for future growth and technological advancement.'
+      prompt: 'How might I use Aigent Z and iQubes to enhance my understanding and use of agentic AI?.'
     }
   ],
   'Bitcoin Advisor': [
     {
       heading: 'Network Analysis',
       subHeading: 'Connectivity Insights',
-      prompt: 'Analyze Bitcoin network performance with connection strength at {network}. What improvements are recommended?'
+      prompt: 'Propose a personalized strategy for growing my Bitcoin portfolio based on bitcoin technology advancements and my current portfolio.'
     },
     {
       heading: 'Consensus Participation',
       subHeading: 'Governance Strategy',
-      prompt: 'With current consensus participation at {governance}, what strategies should be implemented to optimize network contribution?'
+      prompt: 'Tell me about Bitcoin Layer 2s.  What are they and what are notable innovations in this space?'
     },
     {
       heading: 'Market Trend Prediction',
@@ -80,26 +80,26 @@ const DOMAIN_PROMPT_RECOMMENDATIONS: Record<SpecializedDomain, PromptRecommendat
   ],
   'Guardian Aigent': [
     {
-      heading: 'Sovereignty Review',
+      heading: 'Risk Review',
       subHeading: 'Data Protection',
-      prompt: 'Current data sovereignty score is {sovereignty}. Analyze potential vulnerabilities and recommend improvements.'
+      prompt: 'Analyze the current value of my portfolio, focusing on TVL, yields, and risk.'
     },
     {
       heading: 'AI Safety Optimization',
       subHeading: 'Security Measures',
-      prompt: 'With an AI safety score of {safety}, what additional safety measures should be implemented?'
+      prompt: 'Have any of my wallets interacted with wallets with suspicious transactions and if so how might I mitigate any risk?'
     },
     {
-      heading: 'Ethical AI Compliance',
+      heading: 'Ethical AI Investment',
       subHeading: 'Regulatory Alignment',
-      prompt: 'Provide a comprehensive review of current AI ethical standards and recommend strategies for regulatory compliance.'
+      prompt: 'Propose an ethical investment strategy for my portfolio based on my interests, risk tolerance, current market conditions, and emerging blockchain technologies.'
     }
   ],
   'Crypto Analyst': [
     {
       heading: 'Token Analysis',
-      subHeading: 'DeFi Performance',
-      prompt: 'Analyze the current state of major DeFi protocols, focusing on TVL, yields, and risk metrics.'
+      subHeading: 'Emrging Regulation',
+      prompt: 'Analyze the maturity of crypto regulation and the strength of the Crypto market in my local region. What changes are on the horizon?'
     },
     {
       heading: 'Cross-Chain Security',
@@ -109,24 +109,24 @@ const DOMAIN_PROMPT_RECOMMENDATIONS: Record<SpecializedDomain, PromptRecommendat
     {
       heading: 'Portfolio Optimization',
       subHeading: 'Digital Asset Strategy',
-      prompt: 'Develop a comprehensive crypto portfolio strategy considering current market conditions, risk tolerance, and emerging blockchain technologies.'
+      prompt: 'Show me how to create a Smart Contracts.'
     }
   ],
   'Agent AI Coach': [
     {
       heading: 'Model Evaluation',
       subHeading: 'Performance Metrics',
-      prompt: 'Evaluate the current AI model performance metrics and suggest optimization strategies.'
+      prompt: 'What is crypto-agentic AI and how does it differ from agentic AI?.'
     },
     {
       heading: 'Training Data Quality',
       subHeading: 'Data Improvement',
-      prompt: 'Analyze training data quality and recommend improvements for better model performance.'
+      prompt: 'Evaluate the current state of the agentic AI market and what strategies are being deployed.'
     },
     {
       heading: 'Learning Techniques',
       subHeading: 'Advanced Development',
-      prompt: 'Explore and recommend advanced machine learning techniques to enhance the current AI model\'s capabilities and learning efficiency.'
+      prompt: 'How might I go about developing my own AI agent?.'
     }
   ]
 };
