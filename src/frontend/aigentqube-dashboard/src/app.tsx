@@ -25,6 +25,7 @@ import { APIIntegrationManager } from './services/api/APIIntegrationManager';
 import { OpenAIIntegration } from './services/api/OpenAIIntegration';
 import { MetisIntegration } from './services/api/MetisIntegration';
 import { SpecializedDomainManager } from './services/SpecializedDomainManager';
+import { NebulaIntegration } from './services/api/NebulaIntegration';
 
 // Dependency Initialization
 const initializeDependencies = () => {
@@ -44,6 +45,10 @@ const initializeDependencies = () => {
       apiKey: process.env.REACT_APP_METIS_API_KEY || ''
     });
 
+    const nebulaIntegration = new NebulaIntegration({
+      apiKey: process.env.REACT_APP_NEBULA_SECRET_KEY || ''
+    })
+
     // Initialize Specialized Domain Manager
     const domainManager = new SpecializedDomainManager();
 
@@ -58,7 +63,8 @@ const initializeDependencies = () => {
     return {
       apiManager, 
       openAIIntegration, 
-      metisIntegration, 
+      metisIntegration,
+      nebulaIntegration, 
       domainManager
     };
   } catch (error) {
@@ -68,6 +74,7 @@ const initializeDependencies = () => {
       apiManager: new APIIntegrationManager(),
       openAIIntegration: null,
       metisIntegration: null,
+      nebulaIntegration: null,
       domainManager: null
     };
   }
@@ -448,6 +455,7 @@ const App: React.FC = () => {
       const requiredEnvVars = [
         'REACT_APP_OPENAI_API_KEY',
         'REACT_APP_METIS_API_KEY',
+        
       ];
 
       const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
@@ -461,7 +469,8 @@ const App: React.FC = () => {
       const { 
         apiManager, 
         openAIIntegration, 
-        metisIntegration, 
+        metisIntegration,
+        nebulaIntegration, 
         domainManager 
       } = initializeDependencies();
 
@@ -470,6 +479,7 @@ const App: React.FC = () => {
         apiManager,
         openAIIntegration || undefined, 
         metisIntegration || undefined, 
+        nebulaIntegration || undefined, 
         domainManager || undefined
       );
 

@@ -7,6 +7,7 @@ import { MetisIntegration } from './api/MetisIntegration';
 import { SpecializedDomainManager, DomainService, DomainConfig } from './SpecializedDomainManager';
 import { SpecializedDomain } from '../types/domains';
 import { IQubeData, ContextInsight, DomainContext } from '../types/context';
+import { NebulaIntegration } from './api/NebulaIntegration';
 
 // Enhanced logging utility
 class Logger {
@@ -116,6 +117,7 @@ export class OrchestrationAgent {
     private apiManager: APIIntegrationManager,
     private nlpProcessor?: OpenAIIntegration,
     private metisService?: MetisIntegration,
+    private nebulaService?: NebulaIntegration,
     private domainManager?: SpecializedDomainManager
   ) {
     this.iQubes = new Map(); 
