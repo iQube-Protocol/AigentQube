@@ -27,8 +27,8 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
   }, [orchestrationAgent]);
 
   const agentDomains = [
-    { name: SpecializedDomain.BLOCKCHAIN_ADVISOR, icon: '💰' },
-    { name: SpecializedDomain.CRYPTO_ANALYST, icon: '₿' },
+    { name: SpecializedDomain.BLOCKCHAIN_ADVISOR, icon: '₿' },
+    { name: SpecializedDomain.CRYPTO_ANALYST, icon: '💰' },
     { name: SpecializedDomain.GUARDIAN_AIGENT, icon: '🛡️' },
     { name: SpecializedDomain.AI_COACH, icon: '🧠' }
   ];

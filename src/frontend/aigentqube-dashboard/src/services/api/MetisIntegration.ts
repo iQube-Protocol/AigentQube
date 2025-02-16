@@ -216,6 +216,8 @@ export class MetisIntegration implements APIIntegration {
         return false;
       }
 
+      console.log("[METIS] Calling validate()")
+
       return true
   
     } catch (error: any) {

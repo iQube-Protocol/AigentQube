@@ -207,7 +207,7 @@ Focus on:
       const response = await this.client.models.list();
       const availableModels = response.data.map(model => model.id);
       
-      console.log('[OpenAI] Available Models:', availableModels);
+      console.log('[OpenAI] Calling validate()');
       
       // Ensure default model is available
       const isDefaultModelAvailable = availableModels.includes(this.DEFAULT_MODEL);
