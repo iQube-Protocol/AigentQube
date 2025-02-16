@@ -173,6 +173,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     }
   };
 
+  function goToMintDashboard () : void {
+    window.location.href = window.location.href + "minter";
+  }
+
   // Provide a default no-op function if onContextChange is not provided
   const handleContextChange = onContextChange || ((context: any) => {});
 
@@ -186,10 +190,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             className="absolute top-4 left-4 bg-blue-500 text-white p-2 rounded transition-all duration-300"
           >
           {isSidebarOpen ? "Close Menu" : <span className="text-lg">☰</span>}
-          </button>
+        </button>
         
-          <h1 className="text-2xl font-bold text-center">Aigent Z: Dynamic Contextual Intelligence</h1>        
-          <div className="absolute flex top-4 right-4 items-center space-x-4">
+        <h1 className="text-2xl font-bold text-center">Aigent Z: Dynamic Contextual Intelligence</h1>  
+        <button
+          onClick={goToMintDashboard}
+          className="absolute flex top-4 right-52 bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded transition-all duration-300"
+        >
+          Create iQube
+        </button>      
+        <div className="absolute flex top-4 right-4 items-center space-x-4">
+
+          
+
           <WalletConnector 
             onConnect={handleWalletConnect} 
             connectedAddress={walletAddress}
