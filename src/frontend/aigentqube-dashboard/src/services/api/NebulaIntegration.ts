@@ -43,7 +43,7 @@ export class NebulaIntegration implements APIIntegration {
       this.sessionId = response.data.result.context.session_id
       console.log('[Nebula API] Session created with ID:', this.sessionId);
       this.status = ServiceStatus.READY;
-      
+
     } catch (error: any) {
       // Log detailed error response from the API
       console.error('[Nebula API] Error initializing session:', error.response || error.message);
@@ -81,25 +81,39 @@ export class NebulaIntegration implements APIIntegration {
           metadata: { timestamp: new Date() },
         };
       }
+      
+      const iqubesMap = params.iqubes instanceof Map ? params.iqubes : new Map();
+      const iqubesArray = Array.from(iqubesMap.values());
+
+      const name = String(iqubesArray[0]?.firstName ) + String(iqubesArray[0]?.lastName );
+      const key = iqubesArray.length > 0 && typeof iqubesArray[0].evmPublicKey === "string" 
+        && iqubesArray[0].evmPublicKey.startsWith("0x") 
+        ? iqubesArray[0].evmPublicKey 
+        : null;
+
 
       const requestBody = {
         message: query,
         stream: false,
         session_id: this.sessionId,
         context: {
-          chainIds: params.chainIds || null,
-          walletAddress: params.walletAddress || null,
+          chainIds: params.chainIds || ["1", "80002"],
+          walletAddress: key || null,
         },
       };
 
-      const response = await this.axiosInstance.post('/execute', requestBody, {
+      console.log(requestBody)
+
+      const response = await this.axiosInstance.post('/chat', requestBody, {
         headers: {
           'x-secret-key': this.config.apiKey,
-          'Content-Type': 'application/json',
         },
       });
 
-      if (!response.data || !response.data.result) {
+      console.log(response)
+
+
+      if (!response.data || !response.data.message) {
         console.error('[Nebula API] Invalid response:', response.data);
         return {
           success: false,
@@ -110,7 +124,7 @@ export class NebulaIntegration implements APIIntegration {
 
       return {
         success: true,
-        data: response.data.result,
+        data: response.data.message,
         metadata: { timestamp: new Date() },
       };
     } catch (error: any) {
