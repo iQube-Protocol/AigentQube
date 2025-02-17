@@ -53,12 +53,12 @@ const initializeDependencies = () => {
     const domainManager = new SpecializedDomainManager();
 
     // Attempt to register services with API Manager
-    try {
-      apiManager.registerAPI(openAIIntegration);
-      apiManager.registerAPI(metisIntegration);
-    } catch (error) {
-      console.warn('Failed to register services with API Manager:', error);
-    }
+    // try {
+    //   apiManager.registerAPI(openAIIntegration);
+    //   apiManager.registerAPI(metisIntegration);
+    // } catch (error) {
+    //   console.warn('Failed to register services with API Manager:', error);
+    // }
 
     return {
       apiManager, 
@@ -455,7 +455,7 @@ const App: React.FC = () => {
       const requiredEnvVars = [
         'REACT_APP_OPENAI_API_KEY',
         'REACT_APP_METIS_API_KEY',
-        
+
       ];
 
       const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);

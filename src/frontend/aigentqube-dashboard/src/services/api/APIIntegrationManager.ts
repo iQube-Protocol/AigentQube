@@ -1,7 +1,6 @@
 import { ServiceStatus } from '../../types/service';
 import { OrchestrationAgent } from '../OrchestrationAgent';
 
-
 export interface APIConfig {
   apiKey?: string;
   endpoint?: string;
@@ -68,6 +67,8 @@ export class APIIntegrationManager {
       // Initialize the integration
       await api.initialize();
 
+      console.log(api.id, api)
+
       // Register the API
       this.integrations.set(api.id, api);
       console.log(`[APIIntegrationManager] API ${api.name} (${api.id}) registered successfully`);
@@ -81,7 +82,7 @@ export class APIIntegrationManager {
 
   public async executeAPI(integrationId: string, params: any): Promise<APIResponse> {
     
-    console.log(`[APIIntegrationManager] Attempting to execute API: ${integrationId}`);
+    console.log(`[APIIntegrationManager] Attempting to execute API (1): ${integrationId}`);
     console.log(`[APIIntegrationManager] Current registered integrations:`, 
       Array.from(this.integrations.keys()));
 
