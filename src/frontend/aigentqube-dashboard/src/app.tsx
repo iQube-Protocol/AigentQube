@@ -331,16 +331,18 @@ const App: React.FC = () => {
         if (connectingToastId) {
           toast.close(connectingToastId);
         }
-
         // Handle the "already processing" error specifically
         if (error.code === -32002) {
-          toast({
-            title: 'Connection Request Pending',
-            description: 'Please open MetaMask and approve the connection request',
-            status: 'warning',
-            duration: 5000,
-            isClosable: true,
-          });
+          if (!toast.isActive('connection-request-pending')) {
+            toast({
+              id: 'connection-request-pending',
+              title: 'Connection Request Pending',
+              description: 'Please open MetaMask and approve the connection request',
+              status: 'warning',
+              duration: 5000,
+              isClosable: true,
+            });
+          }
           return;
         }
 
