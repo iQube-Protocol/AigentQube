@@ -142,6 +142,13 @@ export class OrchestrationAgent {
       if (this.metisService) {
         this.apiManager.registerAPI(this.metisService);
       }
+
+      //Register Nebula
+      if (this.nebulaService){
+        this.apiManager.registerAPI(this.nebulaService)
+      }
+
+
     } catch (error) {
       this.logger.log(`Failed to register services: ${error}`, 'warn');
     }

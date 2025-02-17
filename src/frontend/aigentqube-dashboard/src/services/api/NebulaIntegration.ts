@@ -10,8 +10,8 @@ export class NebulaIntegration implements APIIntegration {
   public readonly config: APIConfig;
 
   private axiosInstance: AxiosInstance;
-  // Replace the baseURL with the actual Nebula API endpoint from the documentation if needed.
-  private baseURL: string = 'https://api.nebula.thirdweb.com';
+  private baseURL: string = 'https://nebula-api.thirdweb.com';
+  private sessionId: string | null = null;
 
   constructor(config: APIConfig) {
     const apiKey = config.apiKey || process.env.REACT_APP_NEBULA_SECRET_KEY;
@@ -29,15 +29,39 @@ export class NebulaIntegration implements APIIntegration {
     });
   }
 
-  // For Nebula, no extra initialization call is required.
+  /**
+   * Initializes the Nebula integration by creating a session ID.
+   */
   public async initialize(): Promise<void> {
-    console.log('[Nebula API] Initialized');
-    this.status = ServiceStatus.READY;
+    try {
+      const response = await this.axiosInstance.post('/session', {}, {
+        headers: {
+          'x-secret-key': this.config.apiKey,
+        },
+      });
+
+      this.sessionId = response.data.result.context.session_id
+      console.log('[Nebula API] Session created with ID:', this.sessionId);
+      this.status = ServiceStatus.READY;
+      
+    } catch (error: any) {
+      // Log detailed error response from the API
+      console.error('[Nebula API] Error initializing session:', error.response || error.message);
+  
+      if (error.response) {
+        // Capture full error response if available
+        console.error('[Nebula API] Full error response:', error.response.data);
+        console.error('[Nebula API] Status code:', error.response.status);
+      }
+  
+      this.status = ServiceStatus.ERROR;
+    }
   }
+  
+  
 
   /**
-   * Executes a query against the Nebula API.
-   * Expects an object with a "query", "input", or "message" property.
+   * Executes a query against the Nebula API, using the session ID if available.
    */
   public async execute(params: any): Promise<APIResponse> {
     try {
@@ -50,10 +74,27 @@ export class NebulaIntegration implements APIIntegration {
         };
       }
 
-      const response = await this.axiosInstance.get('/query', {
-        params: { query },
+      if (!this.sessionId) {
+        return {
+          success: false,
+          error: 'Session ID is missing. Please initialize first.',
+          metadata: { timestamp: new Date() },
+        };
+      }
+
+      const requestBody = {
+        message: query,
+        stream: false,
+        session_id: this.sessionId,
+        context: {
+          chainIds: params.chainIds || null,
+          walletAddress: params.walletAddress || null,
+        },
+      };
+
+      const response = await this.axiosInstance.post('/execute', requestBody, {
         headers: {
-          'X-API-Key': this.config.apiKey,
+          'x-secret-key': this.config.apiKey,
           'Content-Type': 'application/json',
         },
       });
@@ -95,5 +136,4 @@ export class NebulaIntegration implements APIIntegration {
     console.log('[Nebula API] Calling validate()');
     return true;
   }
-
 }
