@@ -1,20 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import axios from 'axios';
 import { SpecializedDomain, DOMAIN_METADATA } from '../types/domains';
 import { OrchestrationAgent } from '../services/OrchestrationAgent';
-import { Box } from '@chakra-ui/react';
 
 interface AgentEvolutionPanelProps {
   context: any;
   onContextChange: (context: any) => void;
   agentId?: string;
   orchestrationAgent: OrchestrationAgent | null;
-}
-
-interface IQubeDetails {
-  tokenId: string;
-  name: string;
-  domain: string;
 }
 
 const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({ 
@@ -25,11 +17,7 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
 }) => {
   const [baseState, setBaseState] = useState('Generic AI');
   const [specializedState, setSpecializedState] = useState<string | null>(null);
-  const [iQubeTokenId, setIQubeTokenId] = useState<string>('');
-  const [iQubeDetails, setIQubeDetails] = useState<IQubeDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [metaQubeData, setMetaQubeData] = useState<any>(null);
-  const [blakQubeDecrypted, setBlakQubeDecrypted] = useState<any>(null);
   
   // Verify orchestrationAgent is ready
   useEffect(() => {
@@ -39,8 +27,8 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
   }, [orchestrationAgent]);
 
   const agentDomains = [
-    { name: SpecializedDomain.BLOCKCHAIN_ADVISOR, icon: '💰' },
-    { name: SpecializedDomain.CRYPTO_ANALYST, icon: '₿' },
+    { name: SpecializedDomain.BLOCKCHAIN_ADVISOR, icon: '₿' },
+    { name: SpecializedDomain.CRYPTO_ANALYST, icon: '💰' },
     { name: SpecializedDomain.GUARDIAN_AIGENT, icon: '🛡️' },
     { name: SpecializedDomain.AI_COACH, icon: '🧠' }
   ];
@@ -69,108 +57,6 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
       setError(`Failed to select ${domain}: ${error.message}`);
     }
   };
-
-  const handleDomainSelection = useCallback(async (domain: string) => {
-    if (!orchestrationAgent) {
-      console.error('Orchestration agent not available');
-      return;
-    }
-
-    try {
-      await handleDomainChange(domain as SpecializedDomain);
-    } catch (error: any) {
-      console.error('Error in domain selection:', error);
-      setError(`Failed to select domain: ${error.message}`);
-    }
-  }, [orchestrationAgent, handleDomainChange]);
-
-  const fetchIQubeDetails = useCallback(async () => {
-    if (!iQubeTokenId) {
-      setError('Please enter a valid iQube Token ID');
-      return;
-    }
-
-    try {
-      console.log(`Fetching iQube details for Token ID: ${iQubeTokenId}`);
-      
-      const response = await axios.get(`http://localhost:8000/iqube/${iQubeTokenId}`, {
-        // Add timeout and error handling
-        timeout: 10000,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('iQube Details Response:', response.data);
-
-      // Validate response
-      if (!response.data) {
-        throw new Error('No data received from server');
-      }
-
-      const details: IQubeDetails = {
-        tokenId: response.data.tokenId || iQubeTokenId,
-        name: response.data.name || 'Unnamed iQube',
-        domain: response.data.domain || ''
-      };
-      
-      setIQubeDetails(details);
-      
-      // Automatically suggest domain based on iQube
-      const suggestedDomain = details.domain || '';
-      if (suggestedDomain && agentDomains.some(d => d.name === suggestedDomain)) {
-        setSpecializedState(suggestedDomain);
-      }
-
-      // Share iQube with agent
-      if (agentId) {
-        try {
-          await axios.post('http://localhost:8000/agent/share-iqube', {
-            agent_id: agentId,
-            iqube_token_id: iQubeTokenId
-          });
-        } catch (shareErr) {
-          console.error('Failed to share iQube:', shareErr);
-          // Non-critical error, so we'll continue
-        }
-      }
-
-      onContextChange({
-        baseState: 'Personalized AI',
-        specializedState: suggestedDomain,
-        iQubeDetails: details
-      });
-    } catch (err) {
-      // More detailed error logging
-      console.error('Full error details:', err);
-      
-      // Check if it's an axios error with response
-      if (axios.isAxiosError(err)) {
-        if (err.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          console.error('Error response data:', err.response.data);
-          console.error('Error response status:', err.response.status);
-          console.error('Error response headers:', err.response.headers);
-          
-          setError(`Server Error: ${err.response.status} - ${err.response.data?.message || 'Unknown error'}`);
-        } else if (err.request) {
-          // The request was made but no response was received
-          console.error('No response received:', err.request);
-          setError('No response from server. Please check your network connection.');
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          console.error('Error setting up request:', err.message);
-          setError(`Request setup error: ${err.message}`);
-        }
-      } else {
-        // Handle non-axios errors
-        console.error('Unexpected error:', err);
-        setError('Failed to fetch iQube details. An unexpected error occurred.');
-      }
-    }
-  }, [iQubeTokenId, agentId, onContextChange, agentDomains]);
 
   const handleResetBaseState = () => {
     orchestrationAgent.setCurrentDomain("Default")
@@ -234,7 +120,6 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
               <span>🧠</span>
               <span>
                 {specializedState} 
-                {iQubeDetails ? ` (iQube: ${iQubeDetails.name})` : ''} Active
               </span>
             </div>
             <div className="text-sm text-gray-300 mt-2">
@@ -244,28 +129,6 @@ const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({
         </div>
       )}
 
-      {/* Debug Info (Optional) */}
-      {process.env.NODE_ENV === 'development' && (
-        <>
-          {metaQubeData && (
-            <div className="debug-data mt-4 bg-blue-900 p-3 rounded">
-              <h3 className="font-bold mb-2">MetaQube Data</h3>
-              <pre className="text-xs overflow-auto">
-                {JSON.stringify(metaQubeData, null, 2)}
-              </pre>
-            </div>
-          )}
-
-          {blakQubeDecrypted && (
-            <div className="debug-data mt-4 bg-purple-900 p-3 rounded">
-              <h3 className="font-bold mb-2">BlakQube Data</h3>
-              <pre className="text-xs overflow-auto">
-                {JSON.stringify(blakQubeDecrypted, null, 2)}
-              </pre>
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 };

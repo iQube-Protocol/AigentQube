@@ -9,12 +9,10 @@ interface UserProfile {
   Organization: string;
   interests: string[];
 }
-
 interface Holding {
   currency: string;
   holding: number;
 }
-
 interface InitializationPayload {
   public_keys: string[];
   user_profile: UserProfile;
@@ -215,6 +213,8 @@ export class MetisIntegration implements APIIntegration {
         this.status = ServiceStatus.ERROR;
         return false;
       }
+
+      console.log("[METIS] Calling validate()")
 
       return true
   

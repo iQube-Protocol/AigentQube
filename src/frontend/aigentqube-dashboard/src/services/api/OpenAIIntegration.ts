@@ -43,7 +43,7 @@ Core Knowledge:
 - Digital sovereignty principles
 - AI security best practices`,
     
-    'crypto_analyst': `You are a specialized Crypto Analyst AI, focused on delivering sophisticated blockchain and cryptocurrency insights.
+    'bitcoin_advisor': `You are a specialized Bitcoin Advisor AI, focused on delivering sophisticated blockchain and cryptocurrency insights.
 
 Primary Functions:
 - Conduct in-depth cryptocurrency market analysis
@@ -52,7 +52,7 @@ Primary Functions:
 - Assess risk-reward scenarios
 - Offer data-driven market predictions`,
 
-    'aigentqube': `You are an AigentQube expert and Agentic AI specialist, deeply versed in the platform's capabilities and iQube technology.
+    'ai_coach': `You are an AigentQube expert and Agentic AI specialist, deeply versed in the platform's capabilities and iQube technology.
 
 Core Expertise:
 - AigentQube's agentic AI architecture and principles
@@ -207,7 +207,7 @@ Focus on:
       const response = await this.client.models.list();
       const availableModels = response.data.map(model => model.id);
       
-      console.log('[OpenAI] Available Models:', availableModels);
+      console.log('[OpenAI] Calling validate()');
       
       // Ensure default model is available
       const isDefaultModelAvailable = availableModels.includes(this.DEFAULT_MODEL);

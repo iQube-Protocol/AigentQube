@@ -25,6 +25,7 @@ import { APIIntegrationManager } from './services/api/APIIntegrationManager';
 import { OpenAIIntegration } from './services/api/OpenAIIntegration';
 import { MetisIntegration } from './services/api/MetisIntegration';
 import { SpecializedDomainManager } from './services/SpecializedDomainManager';
+import { NebulaIntegration } from './services/api/NebulaIntegration';
 
 // Dependency Initialization
 const initializeDependencies = () => {
@@ -44,21 +45,26 @@ const initializeDependencies = () => {
       apiKey: process.env.REACT_APP_METIS_API_KEY || ''
     });
 
+    const nebulaIntegration = new NebulaIntegration({
+      apiKey: process.env.REACT_APP_NEBULA_SECRET_KEY || ''
+    })
+
     // Initialize Specialized Domain Manager
     const domainManager = new SpecializedDomainManager();
 
     // Attempt to register services with API Manager
-    try {
-      apiManager.registerAPI(openAIIntegration);
-      apiManager.registerAPI(metisIntegration);
-    } catch (error) {
-      console.warn('Failed to register services with API Manager:', error);
-    }
+    // try {
+    //   apiManager.registerAPI(openAIIntegration);
+    //   apiManager.registerAPI(metisIntegration);
+    // } catch (error) {
+    //   console.warn('Failed to register services with API Manager:', error);
+    // }
 
     return {
       apiManager, 
       openAIIntegration, 
-      metisIntegration, 
+      metisIntegration,
+      nebulaIntegration, 
       domainManager
     };
   } catch (error) {
@@ -68,6 +74,7 @@ const initializeDependencies = () => {
       apiManager: new APIIntegrationManager(),
       openAIIntegration: null,
       metisIntegration: null,
+      nebulaIntegration: null,
       domainManager: null
     };
   }
@@ -324,16 +331,18 @@ const App: React.FC = () => {
         if (connectingToastId) {
           toast.close(connectingToastId);
         }
-
         // Handle the "already processing" error specifically
         if (error.code === -32002) {
-          toast({
-            title: 'Connection Request Pending',
-            description: 'Please open MetaMask and approve the connection request',
-            status: 'warning',
-            duration: 5000,
-            isClosable: true,
-          });
+          if (!toast.isActive('connection-request-pending')) {
+            toast({
+              id: 'connection-request-pending',
+              title: 'Connection Request Pending',
+              description: 'Please open MetaMask and approve the connection request',
+              status: 'warning',
+              duration: 5000,
+              isClosable: true,
+            });
+          }
           return;
         }
 
@@ -448,6 +457,7 @@ const App: React.FC = () => {
       const requiredEnvVars = [
         'REACT_APP_OPENAI_API_KEY',
         'REACT_APP_METIS_API_KEY',
+
       ];
 
       const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
@@ -461,7 +471,8 @@ const App: React.FC = () => {
       const { 
         apiManager, 
         openAIIntegration, 
-        metisIntegration, 
+        metisIntegration,
+        nebulaIntegration, 
         domainManager 
       } = initializeDependencies();
 
@@ -470,6 +481,7 @@ const App: React.FC = () => {
         apiManager,
         openAIIntegration || undefined, 
         metisIntegration || undefined, 
+        nebulaIntegration || undefined, 
         domainManager || undefined
       );
 

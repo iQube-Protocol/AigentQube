@@ -173,6 +173,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     }
   };
 
+  function goToMintDashboard () : void {
+    window.location.href = window.location.href + "minter";
+  }
+
   // Provide a default no-op function if onContextChange is not provided
   const handleContextChange = onContextChange || ((context: any) => {});
 
@@ -180,16 +184,27 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <div className="aigentqube-dashboard min-h-screen bg-gradient-to-br from-gray-900 to-blue-900 text-white">
-      <header className="flex justify-center items-center p-4 border-b border-gray-700">
-        <button
+      <header className="flex justify-center items-center p-4 border-b border-gray-700 relative">
+        {/* Button Container */}
+        <div className="absolute top-4 left-4 flex items-center space-x-4">
+          <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="absolute top-4 left-4 bg-blue-500 text-white p-2 rounded transition-all duration-300"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded transition-all duration-300"
           >
-          {isSidebarOpen ? "Close Menu" : <span className="text-lg">☰</span>}
+            {isSidebarOpen ? "Close Menu" : <span className="text-lg">☰</span>}
           </button>
-        
-          <h1 className="text-2xl font-bold text-center">Aigent Z: Dynamic Contextual Intelligence</h1>        
-          <div className="absolute flex top-4 right-4 items-center space-x-4">
+          
+          <button
+            onClick={goToMintDashboard}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded transition-all duration-300"
+          >
+            Create iQube
+          </button>  
+        </div>
+
+        <h1 className="text-2xl font-bold text-center">Aigent Z: Dynamic Contextual Intelligence</h1>
+
+        <div className="absolute flex top-4 right-4 items-center space-x-4">
           <WalletConnector 
             onConnect={handleWalletConnect} 
             connectedAddress={walletAddress}

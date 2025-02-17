@@ -7,6 +7,7 @@ import { MetisIntegration } from './api/MetisIntegration';
 import { SpecializedDomainManager, DomainService, DomainConfig } from './SpecializedDomainManager';
 import { SpecializedDomain } from '../types/domains';
 import { IQubeData, ContextInsight, DomainContext } from '../types/context';
+import { NebulaIntegration } from './api/NebulaIntegration';
 
 // Enhanced logging utility
 class Logger {
@@ -116,6 +117,7 @@ export class OrchestrationAgent {
     private apiManager: APIIntegrationManager,
     private nlpProcessor?: OpenAIIntegration,
     private metisService?: MetisIntegration,
+    private nebulaService?: NebulaIntegration,
     private domainManager?: SpecializedDomainManager
   ) {
     this.iQubes = new Map(); 
@@ -131,6 +133,8 @@ export class OrchestrationAgent {
     
     // Ensure APIIntegrationManager is properly set up
     try {
+      console.log("THIS IS BEFORE INIT in orchestration agent")
+      
       // Register NLP Processor if available
       if (this.nlpProcessor) {
         this.apiManager.registerAPI(this.nlpProcessor);
@@ -140,6 +144,13 @@ export class OrchestrationAgent {
       if (this.metisService) {
         this.apiManager.registerAPI(this.metisService);
       }
+
+      //Register Nebula
+      if (this.nebulaService){
+        this.apiManager.registerAPI(this.nebulaService)
+      }
+
+
     } catch (error) {
       this.logger.log(`Failed to register services: ${error}`, 'warn');
     }
@@ -760,32 +771,38 @@ export class OrchestrationAgent {
       if (!this.initialized) {
         throw new Error('OrchestrationAgent not initialized');
       }
-
+      const service = await this.domainManager.getActiveService(this.currentDomain);
+      console.log("Service", service)
       // Determine domain-specific context
       const domainContext = this.getDomainContext(this.currentDomain);
+      console.log("Current Domain", this.currentDomain)
+      console.log("Domain Context", domainContext)
 
-      // Use domain manager if available and domain is specialized
-      if (this.domainManager && 
-          (this.currentDomain === SpecializedDomain.CRYPTO_ANALYST || 
-           this.currentDomain === SpecializedDomain.AI_COACH)) {
-        const service = await this.domainManager.getActiveService(this.currentDomain);
-        if (!service) {
-          throw new Error('No active service found for specialized domain');
-        }
-        console.log("Service", service)
-        console.log("Current Domain", this.currentDomain)
-        console.log("Current iqubes", this.iQubes)
-        return await this.apiManager.executeAPI(service.id, { 
-          input, 
-          domain: domainContext,
-          context: { domain: this.currentDomain }, 
-          iqubes: this.iQubes
-        });
-      }
+      const domainID = this.domainToAPI(domainContext)
+
+      console.log("Active API", domainID)
+      // // Use domain manager if available and domain is specialized
+      // if (this.domainManager && 
+      //     (this.currentDomain === SpecializedDomain.CRYPTO_ANALYST || 
+      //      this.currentDomain === SpecializedDomain.AI_COACH)) {
+      //   const service = await this.domainManager.getActiveService(this.currentDomain);
+      //   if (!service) {
+      //     throw new Error('No active service found for specialized domain');
+      //   }
+      //   console.log("Service", service)
+      //   console.log("Current Domain", this.currentDomain)
+      //   console.log("Current iqubes", this.iQubes)
+      //   return await this.apiManager.executeAPI(service.id, { 
+      //     input, 
+      //     domain: domainContext,
+      //     context: { domain: this.currentDomain }, 
+      //     iqubes: this.iQubes
+      //   });
+      // }
 
       console.log("Current iqubes", this.iQubes)
       // Default NLP processor execution
-      return await this.apiManager.executeAPI(this.nlpProcessor.id, {
+      return await this.apiManager.executeAPI(domainID, {
         input,
         domain: domainContext,
         context: { domain: this.currentDomain },
@@ -800,10 +817,27 @@ export class OrchestrationAgent {
   private getDomainContext(domain: string): string {
     const domainMap: Record<string, string> = {
       'bitcoin': 'bitcoin_advisor',
-      'crypto': 'bitcoin_advisor',
+      'crypto': 'crypto_analyst',
       'guardian': 'guardian_aigent',
-      'security': 'guardian_aigent',
+      'coach': 'ai_coach',
       'default': 'default'
+    };
+
+    // Find the best matching domain context
+    const matchedDomain = Object.keys(domainMap).find(key => 
+      domain.toLowerCase().includes(key)
+    ) || 'default';
+
+    return domainMap[matchedDomain];
+  }
+
+  private domainToAPI(domain: string): string {
+    const domainMap: Record<string, string> = {
+      'bitcoin_advisor': 'openai',
+      'crypto_analyst': 'nebula',
+      'guardian_aigent': 'metis',
+      'ai_coach': 'openai',
+      'default': 'openai'
     };
 
     // Find the best matching domain context

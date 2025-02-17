@@ -429,8 +429,11 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           tokenId: iQubeTokenId,
           name: formattedMetaQubeData?.['iQubeCreator'] || '',  // Safe access with fallback
           userProfile: 'User Profile'
-        }
+        },
+        
       });
+
+   
 
 
     } catch (err) {
@@ -1274,15 +1277,15 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
               </div>
               <div>
                 <span className="text-gray-400 block text-xs">Creator</span>
-                {metaQubeData ? metaQubeData.iQubeCreator : 'N/A'}
+                {metaQubeData ? metaQubeData.iQubeCreator : setIQubeActivated(null)}
               </div>
               <div>
                 <span className="text-gray-400 block text-xs">iQube Type</span>
-                {metaQubeData ? metaQubeData.iQubeContentType : 'N/A'}
+                {metaQubeData ? metaQubeData.iQubeContentType : setIQubeActivated(null)}
               </div>
               <div>
                 <span className="text-gray-400 block text-xs">Owner Type</span>
-                {metaQubeData ? metaQubeData.ownerType: 'N/A'}
+                {metaQubeData ? metaQubeData.ownerType: setIQubeActivated(null)}
               </div>
             </div>
 
