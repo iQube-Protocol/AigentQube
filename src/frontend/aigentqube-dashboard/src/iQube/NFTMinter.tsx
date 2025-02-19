@@ -921,7 +921,7 @@ const IQubeNFTMinter: React.FC = () => {
   }
 
   return (
-    <div className="">
+    <div className="bg-gradient-to-br from-gray-900 to-blue-900">
       {error && (
         <div className="relative bg-red-50 border-l-4 border-red-500 p-4 my-4">
           <div className="flex items-center pr-8">
@@ -948,40 +948,49 @@ const IQubeNFTMinter: React.FC = () => {
           </button>
         </div>
       )}
-      <div className="w-[100%] bg-[#fff] p-[100px] flex flex-col">
+      <header className="p-8 border-b border-gray-700">
+        <div className="absolute top-4 left-4 flex items-center space-x-4">
+          <button 
+            onClick={goToAIDashboard}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded transition-all duration-300">
+            Back to AI dashboard
+          </button>
+        </div>
+      </header>
+      <div className="w-[100%] bg-gradient-to-br from-gray-900 to-blue-900 p-[25px] flex flex-col">
         <div className="w-[100%] justify-between flex">
           {/* Left Section - Create Qube */}
           <div className="w-[50%] pr-[20px]">
-            <h1 className="font-bold text-[28px] mb-[20px]">Create iQube</h1>
+            <h1 className="font-bold text-[28px] mb-[20px] text-white">Create iQube</h1>
             <hr className="w-[20%] mb-[20px]" />
             <div className="flex my-[20px]">
               {/* Existing tab navigation remains the same */}
               <div
                 className={`${
-                  uploadType === 'memberProfile' ? 'border-b border-b-[blue]' : ''
+                  uploadType === 'memberProfile' ? 'border-b border-b-white' : ''
                 }  mr-[10px] cursor-pointer flex items-center pb-[10px]`}
                 onClick={() => handleToggle('memberProfile')}
               >
-                <CircleUser color="blue" className="mr-[10px]" />
-                <h5 className={`text-[blue] text-[12px]`}>Data Qube</h5>
+                <CircleUser color="white" className="mr-[10px]" />
+                <h5 className={`text-white text-[12px]`}>Data Qube</h5>
               </div>
               <div
                 className={`${
-                  uploadType === 'mediaBlob' ? 'border-b border-b-[blue]' : ''
+                  uploadType === 'mediaBlob' ? 'border-b border-b-[white]' : ''
                 } mr-[10px] cursor-pointer flex items-center pb-[10px]`}
                 onClick={() => handleToggle('mediaBlob')}
               >
-                <FileLock2 color="blue" className="mr-[10px]" />
-                <h5 className={`text-[blue] text-[12px]`}>Content Qube</h5>
+                <FileLock2 color="white" className="mr-[10px]" />
+                <h5 className={`text-white text-[12px]`}>Content Qube</h5>
               </div>
               <div
                 className={`${
-                  uploadType === 'agent' ? 'border-b border-b-[blue]' : ''
+                  uploadType === 'agent' ? 'border-b border-b-[white]' : ''
                 } mr-[10px] cursor-pointer flex items-center pb-[10px]`}
                 onClick={() => handleToggle('agent')}
               >
-                <FileLock2 color="blue" className="mr-[10px]" />
-                <h5 className={`text-[blue] text-[12px]`}>Agent Qube</h5>
+                <FileLock2 color="white" className="mr-[10px]" />
+                <h5 className={`text-[white] text-[12px]`}>Agent Qube</h5>
               </div>
             </div>
             {uploadType === 'mediaBlob' ? (
@@ -999,18 +1008,18 @@ const IQubeNFTMinter: React.FC = () => {
             {uploadType === 'memberProfile' ? (
               <form onSubmit={handleMemberProfileMint}>
                 {/* MetaQube Section */}
-                <div className="bg-[#f6f6f6] p-6 rounded-lg">
+                <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg">
                   <div className="flex items-center mb-[10px]">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-[10px] text-blue-500">
                       <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
                     </svg>
-                    <h3 className="font-bold text-[18px]">MetaQube</h3>
+                    <h3 className="font-bold text-[18px] text-white">MetaQube</h3>
                   </div>
 
                   {/* First row - 2 items */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         iQube Identifier
                       </label>
                       <input
@@ -1028,7 +1037,7 @@ const IQubeNFTMinter: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         iQube Creator
                       </label>
                       <input
@@ -1050,7 +1059,7 @@ const IQubeNFTMinter: React.FC = () => {
                   {/* Second row - 2 items */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Owner Type
                       </label>
                       <select
@@ -1071,7 +1080,7 @@ const IQubeNFTMinter: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Content Type
                       </label>
                       <select
@@ -1099,7 +1108,7 @@ const IQubeNFTMinter: React.FC = () => {
                   {/* Third row - 2 items */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Owner Identifiability
                       </label>
                       <select
@@ -1121,7 +1130,7 @@ const IQubeNFTMinter: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Transaction Date
                       </label>
                       <input
@@ -1143,7 +1152,7 @@ const IQubeNFTMinter: React.FC = () => {
                   {/* Fourth row - 4 scores */}
                   <div className="grid grid-cols-4 gap-4">
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Sensitivity Score
                       </label>
                       <select
@@ -1171,7 +1180,7 @@ const IQubeNFTMinter: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Verifiability Score
                       </label>
                       <select
@@ -1199,7 +1208,7 @@ const IQubeNFTMinter: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Accuracy Score
                       </label>
                       <select
@@ -1227,7 +1236,7 @@ const IQubeNFTMinter: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Risk Score
                       </label>
                       <select
@@ -1258,18 +1267,18 @@ const IQubeNFTMinter: React.FC = () => {
                 </div>
 
                 {/* BlakQube Section */}
-                <div className="bg-[#f6f6f6] p-6 rounded-lg mt-6">
+                <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg mt-6">
                   <div className="flex items-center mb-[10px]">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-[10px] text-red-500">
                       <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
                     </svg>
-                    <h3 className="font-bold text-[18px]">BlakQube</h3>
+                    <h3 className="font-bold text-[18px] text-white">BlakQube</h3>
                   </div>
 
                   <div className="grid grid-cols-3 gap-4">
                     {Object.entries(memberProfile.blakQube).map(([key, value]) => (
                       <div key={key} className="mb-[10px]">
-                        <label className="block text-[10px] font-[500] text-[grey]">
+                        <label className="block text-[10px] font-[500] text-white">
                           {labelMapping[key] || key}:{' '}
                         </label>
                         <input
@@ -1775,7 +1784,7 @@ const IQubeNFTMinter: React.FC = () => {
 
           {/* Right Section - TokenQube Operations */}
           <div className="w-[50%] pl-[20px]">
-            <h1 className="font-bold text-[28px] mb-[20px]">TokenQube Operations</h1>
+            <h1 className="font-bold text-[28px] mb-[20px] text-white">TokenQube Operations</h1>
             <hr className="w-[20%] mb-[20px]" />
             <div className="flex my-[20px]">
               <div
@@ -1784,33 +1793,23 @@ const IQubeNFTMinter: React.FC = () => {
                 } mr-[10px] cursor-pointer flex items-center pb-[10px]`}
                 onClick={() => handleToggle('crosschain')}
               >
-                <Send color="blue" className="mr-[10px]" />
-                <h5 className={`text-[blue] text-[12px]`}>Qube Transfer</h5>
+                <Send color="white" className="mr-[10px]" />
+                <h5 className={`text-[white] text-[12px]`}>Qube Transfer</h5>
               </div>
             </div>
 
-            <div className="bg-white border rounded-[10px] p-[30px] w-full">
-            <div className="bg-white border rounded-[10px] p-[20px] flex flex-col justify-between">
-              <button onClick={goToAIDashboard}>
-                Back to AI dashboard
-              </button>
-            </div>
-            </div>
-              
-            
-
             {uploadType === 'crosschain' && <Web3CrossChain />}
-            <div className="bg-white border rounded-[10px] p-[30px] w-full">
+            <div className="bg-gray-700 border border-gray-600 border rounded-[10px] p-[30px] w-full">
               <div className="flex items-center mb-[10px]">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-[10px] text-blue-500">
                   <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
                 </svg>
-                <h3 className="font-bold text-[18px]">TokenQube</h3>
+                <h3 className="font-bold text-[18px] text-white">TokenQube</h3>
               </div>
               {/* Four-button Grid Layout */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 {/* Token ID Input */}
-                <div className="bg-white border rounded-[10px] p-[20px] flex flex-col justify-between">
+                <div className="pt-4 flex flex-col">
                   <input
                     type="text"
                     placeholder="Enter Token ID"
@@ -1829,45 +1828,51 @@ const IQubeNFTMinter: React.FC = () => {
                 </div>
 
                 {/* Mint iQube Button */}
-                <div className="bg-white border rounded-[10px] p-[20px] flex flex-col justify-between">
+                <div className="pt-4 flex flex-col">
                   <button
                     onClick={() => handleMint({})}
                     disabled={isLoading || !selectedFile || !nftInterface || tokenId}
-                    className={`w-full py-[10px] rounded-[5px] ${
-                      isLoading || !selectedFile || !nftInterface || tokenId ? 'bg-[grey]' : 'bg-[blue]'
-                    } text-[#fff]`}
+                    className={`w-full py-[10px] rounded-[5px] bg-[grey] hover:bg-purple-600
+                     text-[#fff]`}
                   >
                     {isLoading ? 'Minting...' : 'Mint iQube'}
                   </button>
                 </div>
                 
                 {/* Get Metadata Button */}
-                <div className="bg-white border rounded-[10px] p-[20px] flex flex-col justify-between">
+                <div className="pt-2 flex flex-col">
                   <button
                     onClick={handleRetrieveMetadata}
                     disabled={isLoading || !tokenId || !nftInterface}
-                    className={`w-full py-[10px] rounded-[5px] ${
-                      isLoading || !tokenId || !nftInterface ? 'bg-[grey]' : 'bg-[blue]'
-                    } text-[#fff]`}
+                    className={`
+
+                      w-full py-[10px] bg-[grey] rounded-[5px]
+                      ${tokenId
+                        ? ' text-white hover:bg-blue-600' 
+                        : ' text-gray-400 cursor-not-allowed'}
+
+                    `}
                   >
                     {isLoading ? 'Retrieving...' : 'View MetaQube'}
                   </button>
                 </div>
 
                 {/* Decrypt BlakQube Button */}
-                <div className="bg-white border rounded-[10px] p-[20px] flex flex-col justify-between">
+                <div className="pt-2 flex flex-col">
                   <button
                     onClick={handleMemberDataDecryption}
                     disabled={isLoading || !tokenId || !nftInterface}
-                    className={`w-full py-[10px] rounded-[5px] ${
-                      isLoading || !tokenId || !nftInterface
-                        ? 'bg-[grey]'
-                        : 'bg-[blue] hover:bg-[#1a8f3c]'
+                    className={`w-full py-[10px] rounded-[5px] bg-[grey]
+                      ${tokenId
+                        ? 'hover:bg-[#1a8f3c]'
+                        : 'text-gray-400 cursor-not-allowed'
                     } text-[#fff]`}
                   >
                     {isLoading ? 'Decrypting...' : 'Decrypt BlakQube'}
                   </button>
                 </div>
+
+                
               </div>
             </div>
 
@@ -1876,26 +1881,26 @@ const IQubeNFTMinter: React.FC = () => {
               <div className="mt-6 space-y-6">
                 {/* MetaQube Data */}
                 {metaQubeData && (
-                  <div className="bg-[#f6f6f6] p-6 rounded-lg">
-                    <h3 className="font-bold text-[18px] mb-4">MetaQube Data</h3>
+                  <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg">
+                    <h3 className="font-bold text-[18px] mb-4 text-white">MetaQube Data</h3>
                     <div className="space-y-4">
                       {/* First row - 2 items: iQube Identifier and iQube Creator */}
                       <div className="grid grid-cols-2 gap-4">
                         {['iQubeIdentifier', 'iQubeCreator'].map((key) => (
                           <div key={key} className="flex flex-col">
-                            <label className="text-[14px] font-medium text-gray-700 mb-2">
+                            <label className="text-[14px] font-medium text-white mb-2">
                               {key.replace(/([A-Z])/g, ' $1').trim()}
                             </label>
                             <div className="relative group">
                               <div className="bg-[#e8f5e9] p-4 rounded-[5px] shadow-sm min-h-[45px] flex items-center">
-                                <span className="text-[14px] text-gray-600 truncate">
+                                <span className="text-[14px] text-gray-700 truncate">
                                   {metaQubeData[key]}
                                 </span>
                               </div>
                               {typeof metaQubeData[key] === 'string' && metaQubeData[key].length > 40 && (
                                 <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50">
-                                  <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg max-w-[300px] break-all">
-                                    <div className="text-sm">{metaQubeData[key]}</div>
+                                  <div className="bg-gray-900 p-3 rounded-lg shadow-lg max-w-[300px] break-all">
+                                    <div className="text-sm text-gray-700">{metaQubeData[key]}</div>
                                     <div className="absolute left-4 bottom-[-6px] w-3 h-3 bg-gray-900 transform rotate-45"></div>
                                   </div>
                                 </div>
@@ -1909,12 +1914,12 @@ const IQubeNFTMinter: React.FC = () => {
                       <div className="grid grid-cols-2 gap-4">
                         {['ownerType', 'iQubeContentType'].map((key) => (
                           <div key={key} className="flex flex-col">
-                            <label className="text-[14px] font-medium text-gray-700 mb-2">
+                            <label className="text-[14px] font-medium text-white mb-2">
                               {key.replace(/([A-Z])/g, ' $1').trim()}
                             </label>
                             <div className="relative group">
                               <div className="bg-[#e8f5e9] p-4 rounded-[5px] shadow-sm min-h-[45px] flex items-center">
-                                <span className="text-[14px] text-gray-600 truncate">
+                                <span className="text-[14px] text-gray-700 truncate">
                                   {metaQubeData[key]}
                                 </span>
                               </div>
@@ -1935,12 +1940,12 @@ const IQubeNFTMinter: React.FC = () => {
                       <div className="grid grid-cols-2 gap-4">
                         {['ownerIdentifiability', 'transactionDate'].map((key) => (
                           <div key={key} className="flex flex-col">
-                            <label className="text-[14px] font-medium text-gray-700 mb-2">
+                            <label className="text-[14px] font-medium text-white mb-2">
                               {key.replace(/([A-Z])/g, ' $1').trim()}
                             </label>
                             <div className="relative group">
                               <div className="bg-[#e8f5e9] p-4 rounded-[5px] shadow-sm min-h-[45px] flex items-center">
-                                <span className="text-[14px] text-gray-600 truncate">
+                                <span className="text-[14px] text-gray-700 truncate">
                                   {metaQubeData[key]}
                                 </span>
                               </div>
@@ -1961,18 +1966,18 @@ const IQubeNFTMinter: React.FC = () => {
                       <div className="grid grid-cols-4 gap-4">
                         {['sensitivityScore', 'verifiabilityScore', 'accuracyScore', 'riskScore'].map((key) => (
                           <div key={key} className="flex flex-col">
-                            <label className="text-[14px] font-medium text-gray-700 mb-2">
+                            <label className="text-[14px] font-medium text-white mb-2">
                               {key.replace(/([A-Z])/g, ' $1').trim()}
                             </label>
                             <div className="relative group">
                               <div className="bg-[#e8f5e9] p-4 rounded-[5px] shadow-sm min-h-[45px] flex items-center">
-                                <span className="text-[14px] text-gray-600 truncate">
+                                <span className="text-[14px] text-gray-700 truncate">
                                   {metaQubeData[key]}
                                 </span>
                               </div>
                               {typeof metaQubeData[key] === 'string' && metaQubeData[key].length > 40 && (
                                 <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50">
-                                  <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg max-w-[300px] break-all">
+                                  <div className="bg-gray-900 text-black p-3 rounded-lg shadow-lg max-w-[300px] break-all">
                                     <div className="text-sm">{metaQubeData[key]}</div>
                                     <div className="absolute left-4 bottom-[-6px] w-3 h-3 bg-gray-900 transform rotate-45"></div>
                                   </div>
@@ -2017,12 +2022,12 @@ const IQubeNFTMinter: React.FC = () => {
                 )}
                 {/* Encrypted BlakQube Data */}
                 {encryptedBlakQubeData && !blakQubeData && (
-                  <div className="bg-[#f6f6f6] p-6 rounded-lg">
-                    <h3 className="font-bold text-[18px] mb-4">BlakQube Data (Encrypted)</h3>
+                  <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg">
+                    <h3 className="font-bold text-[18px] text-white mb-4">BlakQube Data (Encrypted)</h3>
                     <div className="grid grid-cols-2 gap-4">
                       {Object.entries(encryptedBlakQubeData).map(([key, value]) => (
                         <div key={key} className="flex flex-col">
-                          <label className="text-[14px] font-medium text-gray-700 mb-2">
+                          <label className="text-[14px] font-medium text-white mb-2">
                             {labelMapping[key] || key}
                           </label>
                           <div className="relative group">
