@@ -771,125 +771,24 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       console.log("No data available");
     }
   }, [blakQubeData, encryptedBlakQubeData]); 
-  
+
   const renderBlakQubeData = () => {
-    // Flatten the encrypted BlackQube data into key-value pairs for grid display
-    const dataToRender = [
-      // Name
-      { label: "First Name", value: blakQubeData.firstName, editable: false },
-      { label: "Last Name", value: blakQubeData.lastName, editable: false },
-      
-      // User Profile
-      { label: "FIO handle", value: blakQubeData.fioHandle, editable: false },
-      { label: "Email", value: blakQubeData.email, editable: false },
-      { label: "Phone Number", value: blakQubeData.phoneNumber, editable: false },
-      { label: "Address", value: blakQubeData.address, editable: false },
-      { label: "Age Range", value: blakQubeData.ageRange, editable: false },
-      { label: "Address", value: blakQubeData.address, editable: false },
+    if (!blakQubeData) return null;
 
-      { label: "Metaiye Shares", value: blakQubeData.metaiyeShares, editable: false },
-      { label: "KNYT Coin Owned", value: blakQubeData.kyntCoinOwned, editable: false },
-      { label: "OM Member Since", value: blakQubeData.omMemberSince, editable: false },
-      { label: "OM Tier Status", value: blakQubeData.omTierStatus, editable: false },
-      { label: "EVM Public Key", value: blakQubeData.evmPublicKey, editable: false },
-      { label: "Third Web Public Key", value: blakQubeData.thirdWebPublicKey, editable: false },
-      { label: "MetaMask Public Key", value: blakQubeData.metaMaskPublicKey, editable: false },
-
-      { label: "Other Wallet Public Keys", value: blakQubeData.otherWalletPublicKeys, editable: false },
-      { label: "Meta Keep ID", value: blakQubeData.metaKeepId, editable: false },
-      { label: "Twitter Handle", value: blakQubeData.twitterHandle, editable: false },
-      { label: "Instagram Handle", value: blakQubeData.instagramHandle, editable: false },
-      { label: "Facebook ID", value: blakQubeData.facebookId, editable: false },
-      { label: "TikTok Handle", value: blakQubeData.tikTokHandle, editable: false },
-
-      { label: "LinkedIn ID", value: blakQubeData.linkedInId, editable: false },
-      { label: "Discord Handle", value: blakQubeData.discordHandle, editable: false },
-      { label: "Telegram Handle", value: blakQubeData.telegramHandle, editable: false },
-      { label: "Motion KNYT Books Owned", value: blakQubeData.motionKNYTBooksOwned, editable: false },
-      { label: "Still KNYT Books Owned", value: blakQubeData.stillKNYTBooksOwned, editable: false },
-      { label: "Print KNYT Books Owned", value: blakQubeData.printKNYTBooksOwned, editable: false },
-      { label: "KNYT Posters Owned", value: blakQubeData.knytPostersOwned, editable: false },
-      
-      { label: "KNYT Cards Owned", value: blakQubeData.knytCardsOwned, editable: false },
-      { label: "KNYT Characters Owned", value: blakQubeData.knytCharactersOwned, editable: false }
-      
-    ];
+    const dataToRender = Object.entries(blakQubeData).map(([key, value]) => ({
+      label: key.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase()), // Format camelCase to readable text
+      value: value,
+      editable: false
+    }));
 
     return (
       <div className="grid grid-cols-3 gap-2 text-white">
         {dataToRender.map((item, index) => (
           <div key={index} className="bg-gray-700 p-2 rounded relative">
             <span className="text-gray-400 block text-xs">{item.label}</span>
-            <div className="truncate">
-              {item.value}
-            </div>
+            <div className="truncate">{item.value}</div>
             {item.editable && (
-              <button 
-                className="absolute top-1 right-1 text-xs bg-blue-600 text-white rounded px-1 hover:bg-blue-700"
-                onClick={() => {/* TODO: Implement edit functionality */}}
-              >
-                Edit
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const renderEncryptedBlakQubeData = () => {
-    // Flatten the encrypted BlackQube data into key-value pairs for grid display
-    const dataToRender = [
-      // Name
-      { label: "First Name", value: encryptedBlakQubeData.firstName, editable: false },
-      { label: "Last Name", value: encryptedBlakQubeData.lastName, editable: false },
-      
-      // User Profile
-      { label: "FIO handle", value: encryptedBlakQubeData.fioHandle, editable: false },
-      { label: "Email", value: encryptedBlakQubeData.email, editable: false },
-      { label: "Phone Number", value: encryptedBlakQubeData.phoneNumber, editable: false },
-      { label: "Address", value: encryptedBlakQubeData.address, editable: false },
-      { label: "Age Range", value: encryptedBlakQubeData.ageRange, editable: false },
-      { label: "Address", value: encryptedBlakQubeData.address, editable: false },
-
-      { label: "Metaiye Shares", value: encryptedBlakQubeData.metaiyeShares, editable: false },
-      { label: "KNYT Coin Owned", value: encryptedBlakQubeData.kyntCoinOwned, editable: false },
-      { label: "OM Member Since", value: encryptedBlakQubeData.omMemberSince, editable: false },
-      { label: "OM Tier Status", value: encryptedBlakQubeData.omTierStatus, editable: false },
-      { label: "EVM Public Key", value: encryptedBlakQubeData.evmPublicKey, editable: false },
-      { label: "Third Web Public Key", value: encryptedBlakQubeData.thirdWebPublicKey, editable: false },
-      { label: "MetaMask Public Key", value: encryptedBlakQubeData.metaMaskPublicKey, editable: false },
-
-      { label: "Other Wallet Public Keys", value: encryptedBlakQubeData.otherWalletPublicKeys, editable: false },
-      { label: "Meta Keep ID", value: encryptedBlakQubeData.metaKeepId, editable: false },
-      { label: "Twitter Handle", value: encryptedBlakQubeData.twitterHandle, editable: false },
-      { label: "Instagram Handle", value: encryptedBlakQubeData.instagramHandle, editable: false },
-      { label: "Facebook ID", value: encryptedBlakQubeData.facebookId, editable: false },
-      { label: "TikTok Handle", value: encryptedBlakQubeData.tikTokHandle, editable: false },
-
-      { label: "LinkedIn ID", value: encryptedBlakQubeData.linkedInId, editable: false },
-      { label: "Discord Handle", value: encryptedBlakQubeData.discordHandle, editable: false },
-      { label: "Telegram Handle", value: encryptedBlakQubeData.telegramHandle, editable: false },
-      { label: "Motion KNYT Books Owned", value: encryptedBlakQubeData.motionKNYTBooksOwned, editable: false },
-      { label: "Still KNYT Books Owned", value: encryptedBlakQubeData.stillKNYTBooksOwned, editable: false },
-      { label: "Print KNYT Books Owned", value: encryptedBlakQubeData.printKNYTBooksOwned, editable: false },
-      { label: "KNYT Posters Owned", value: encryptedBlakQubeData.knytPostersOwned, editable: false },
-      
-      { label: "KNYT Cards Owned", value: encryptedBlakQubeData.knytCardsOwned, editable: false },
-      { label: "KNYT Characters Owned", value: encryptedBlakQubeData.knytCharactersOwned, editable: false }
-      
-    ];
-
-    return (
-      <div className="grid grid-cols-3 gap-2 text-white">
-        {dataToRender.map((item, index) => (
-          <div key={index} className="bg-gray-700 p-2 rounded relative">
-            <span className="text-gray-400 block text-xs">{item.label}</span>
-            <div className="truncate">
-              {item.value}
-            </div>
-            {item.editable && (
-              <button 
+              <button
                 className="absolute top-1 right-1 text-xs bg-blue-600 text-white rounded px-1 hover:bg-blue-700"
                 onClick={() => {/* TODO: Implement edit functionality */}}
               >
