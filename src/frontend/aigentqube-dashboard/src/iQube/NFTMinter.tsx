@@ -804,15 +804,6 @@ const IQubeNFTMinter: React.FC = () => {
               </div>
               <div
                 className={`${
-                  uploadType === 'mediaBlob' ? 'border-b border-b-[white]' : ''
-                } mr-[10px] cursor-pointer flex items-center pb-[10px]`}
-                onClick={() => handleToggle('mediaBlob')}
-              >
-                <FileLock2 color="white" className="mr-[10px]" />
-                <h5 className={`text-white text-[12px]`}>Content Qube</h5>
-              </div>
-              <div
-                className={`${
                   uploadType === 'agent' ? 'border-b border-b-[white]' : ''
                 } mr-[10px] cursor-pointer flex items-center pb-[10px]`}
                 onClick={() => handleToggle('agent')}
@@ -820,6 +811,16 @@ const IQubeNFTMinter: React.FC = () => {
                 <FileLock2 color="white" className="mr-[10px]" />
                 <h5 className={`text-[white] text-[12px]`}>Agent Qube</h5>
               </div>
+              <div
+                className={`${
+                  uploadType === 'mediaBlob' ? 'border-b border-b-[white]' : ''
+                } mr-[10px] cursor-pointer flex items-center pb-[10px]`}
+                onClick={() => handleToggle('mediaBlob')}
+              >
+                <FileLock2 color="white" className="mr-[10px]" />
+                <h5 className={`text-white text-[12px]`}>Content Qube</h5>
+              </div>
+              
             </div>
             {uploadType === 'mediaBlob' ? (
               <div className="flex w-full">
