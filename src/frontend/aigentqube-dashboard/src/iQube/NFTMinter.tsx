@@ -1469,7 +1469,7 @@ const IQubeNFTMinter: React.FC = () => {
             <div className="flex my-[20px]">
               <div
                 className={`${
-                  uploadType === 'crosschain' ? 'border-b border-b-[blue]' : ''
+                  uploadType === 'crosschain' ? 'border-b border-b-[white]' : ''
                 } mr-[10px] cursor-pointer flex items-center pb-[10px]`}
                 onClick={() => handleToggle('crosschain')}
               >
