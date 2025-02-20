@@ -24,15 +24,15 @@ export default function CrossChain() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-gray-700 border border-gray-600 rounded p-[30px]">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-4 text-center py-3">
+        <div className="bg-gray-400  rounded-lg shadow-md">
+          <h2 className="text-xl font-bold mb-4 text-center py-3 text-white">
             Cross-Chain Transfer
           </h2>
-          <form onSubmit={handleTransfer} className="space-y-4 p-4 bg-white rounded-lg shadow-md">
+          <form onSubmit={handleTransfer} className="space-y-4 p-4 bg-gray-800 rounded-lg shadow-md">
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 From
               </label>
               <select
@@ -57,7 +57,7 @@ export default function CrossChain() {
               </div>
             </div>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 To
               </label>
               <select
@@ -76,7 +76,7 @@ export default function CrossChain() {
               <hr className="w-[50%] my-[20px] border-[#f6f6f6]" />
             </div>
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Wallet Address
               </label>
               <input
@@ -88,7 +88,7 @@ export default function CrossChain() {
               />
             </div>
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 iQube ID
               </label>
               <input

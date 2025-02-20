@@ -1489,10 +1489,9 @@ const IQubeNFTMinter: React.FC = () => {
               {/* Four-button Grid Layout */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 {/* Token ID Input */}
-                <div className="pt-4 flex flex-col">
+                <div className="pt-4 flex flex-col text-white">
                   <input
                     type="text"
-                    placeholder="Enter Token ID"
                     value={tokenId}
                     onChange={(e) => {
                       const newValue = e.target.value;
@@ -1503,7 +1502,9 @@ const IQubeNFTMinter: React.FC = () => {
                       }
                     }}
                     disabled={isLoading}
-                    className="w-full border rounded-[5px] p-[10px]"
+                    placeholder="Enter Token ID"
+                    // className="w-full border rounded-[5px] p-[10px] bg-[gray] text-white rounded"
+                   className="placeholder-white rounded-[5px] p-[10px] bg-[gray] text-[white]"
                   />
                 </div>
 

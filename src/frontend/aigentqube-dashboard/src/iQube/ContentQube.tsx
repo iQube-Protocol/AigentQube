@@ -224,17 +224,20 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
     <div className="w-full">
       
       {/* MetaQube Data Section */}
-      <div className="mb-4 p-4 bg-gray-100 rounded-lg">
-        <h3 className="text-lg font-semibold mb-2 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-2 text-green-500">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.59c-.63-.63-.18-1.71.63-1.71H16c.63 0 1.17.46 1.17 1.17v1.17c0 .63-.46 1.17-1.17 1.17H9.41c-.63 0-1.17-.46-1.17-1.17v-.63c.63-.63 1.71-.18 1.71.63l2.59 2.59z" />
+      <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg">
+        <div className="flex items-center mb-[10px]">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-[10px] text-blue-500">
+            <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
           </svg>
-          MetaQube
-        </h3>
+          <h3 className="font-bold text-[18px] text-white">MetaQube</h3>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           {/* First Row: iQube Identifier and iQube Creator */}
-          <div className="flex flex-col">
-            <label htmlFor="iQubeIdentifier" className="text-sm mb-1 text-black">iQube Identifier</label>
+          <div>
+            <label htmlFor="iQubeIdentifier" className="block text-[12px] font-medium text-white mb-2">
+              iQube Identifier
+            </label>
             <input 
               id="iQubeIdentifier"
               type="text" 
@@ -242,11 +245,12 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               placeholder="Enter iQube Identifier"
               value={metaQubeData.iQubeIdentifier}
               onChange={handleMetaQubeChange}
-              className="border p-2 bg-green-50"
+              className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+              required
             />
           </div>
-          <div className="flex flex-col">
-            <label htmlFor="iQubeCreator" className="text-sm mb-1 text-black">iQube Creator</label>
+          <div>
+            <label htmlFor="iQubeCreator" className="block text-[12px] font-medium text-white mb-2">iQube Creator</label>
             <input 
               id="iQubeCreator"
               type="text" 
@@ -254,19 +258,21 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               placeholder="Enter iQube Creator"
               value={metaQubeData.iQubeCreator}
               onChange={handleMetaQubeChange}
-              className="border p-2 bg-green-50"
+              className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+              required
             />
           </div>
 
           {/* Second Row: Owner Type and Owner Identifiability */}
-          <div className="flex flex-col">
-            <label htmlFor="ownerType" className="text-sm mb-1 text-black">Owner Type</label>
+          <div>
+            <label htmlFor="ownerType" className="block text-[12px] font-medium text-white mb-2">Owner Type</label>
             <select 
               id="ownerType"
               name="ownerType"
               value={metaQubeData.ownerType}
               onChange={handleMetaQubeChange}
-              className="border p-2 bg-green-50"
+              className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+              required
             >
               <option value="Person">Person</option>
               <option value="Organisation">Organisation</option>
@@ -274,13 +280,14 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
             </select>
           </div>
           <div className="flex flex-col">
-            <label htmlFor="ownerIdentifiability" className="text-sm mb-1 text-black">Owner Identifiability</label>
+            <label htmlFor="ownerIdentifiability" className="block text-[12px] font-medium text-white mb-2">Owner Identifiability</label>
             <select 
               id="ownerIdentifiability"
               name="ownerIdentifiability"
               value={metaQubeData.ownerIdentifiability}
               onChange={handleMetaQubeChange}
-              className="border p-2 bg-green-50"
+              className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+              required
             >
               <option value="Anonymous">Anonymous</option>
               <option value="Semi-Anonymous">Semi-Anonymous</option>
@@ -290,14 +297,15 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
           </div>
 
           {/* Third Row: Content Type and Transaction Date */}
-          <div className="flex flex-col">
-            <label htmlFor="iQubeContentType" className="text-sm mb-1 text-black">Content Type</label>
+          <div>
+            <label htmlFor="iQubeContentType" className="block text-[12px] font-medium text-white mb-2">Content Type</label>
             <select 
               id="iQubeContentType"
               name="iQubeContentType"
               value={metaQubeData.iQubeContentType}
               onChange={handleMetaQubeChange}
-              className="border p-2 bg-green-50"
+              className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+              required
             >
               <option value="mp3">mp3</option>
               <option value="mp4">mp4</option>
@@ -307,91 +315,133 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               <option value="Other">Other</option>
             </select>
           </div>
-          <div className="flex flex-col">
-            <label htmlFor="transactionDate" className="text-sm mb-1 text-black">Transaction Date</label>
+          <div>
+            <label htmlFor="transactionDate" className="block text-[12px] font-medium text-white mb-2">Transaction Date</label>
             <input 
               id="transactionDate"
               type="date" 
               name="transactionDate"
               value={metaQubeData.transactionDate}
               onChange={handleMetaQubeChange}
-              className="border p-2 bg-green-50"
+              className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+              required
             />
           </div>
 
           {/* Fourth Row: All Four Scores */}
-          <div className="flex flex-col col-span-2 grid grid-cols-4 gap-4">
-            <div className="flex flex-col">
-              <label htmlFor="sensitivityScore" className="text-sm mb-1 text-black">Sensitivity</label>
-              <input 
+          
+        </div>
+        <div className="grid grid-cols-4 gap-4 pt-4">
+            <div>
+              <label className="block text-[12px] font-medium text-white mb-2">
+                Sensitivity Score
+              </label>
+              <select
                 id="sensitivityScore"
-                type="number" 
                 name="sensitivityScore"
-                placeholder="Enter Sensitivity"
                 value={metaQubeData.sensitivityScore}
                 onChange={handleMetaQubeChange}
-                min="1"
-                max="10"
-                className="border p-2 bg-green-50"
-              />
+                className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                required
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+              </select>
             </div>
-            <div className="flex flex-col">
-              <label htmlFor="verifiabilityScore" className="text-sm mb-1 text-black">Verifiability</label>
-              <input 
+            <div>
+              <label className="block text-[12px] font-medium text-white mb-2">
+                Verifiability Score
+              </label>
+              <select
                 id="verifiabilityScore"
-                type="number" 
                 name="verifiabilityScore"
-                placeholder="Enter Verifiability"
                 value={metaQubeData.verifiabilityScore}
                 onChange={handleMetaQubeChange}
-                min="1"
-                max="10"
-                className="border p-2 bg-green-50"
-              />
+                className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                required
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+              </select>
             </div>
-            <div className="flex flex-col">
-              <label htmlFor="accuracyScore" className="text-sm mb-1 text-black">Accuracy</label>
-              <input 
+            <div>
+              <label className="block text-[12px] font-medium text-white mb-2">
+                Accuracy Score
+              </label>
+              <select
                 id="accuracyScore"
-                type="number" 
                 name="accuracyScore"
-                placeholder="Enter Accuracy"
                 value={metaQubeData.accuracyScore}
                 onChange={handleMetaQubeChange}
-                min="1"
-                max="10"
-                className="border p-2 bg-green-50"
-              />
+                className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                required
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+              </select>
             </div>
-            <div className="flex flex-col">
-              <label htmlFor="riskScore" className="text-sm mb-1 text-black">Risk</label>
-              <input 
+            <div>
+              <label className="block text-[12px] font-medium text-white mb-2">
+                Risk Score
+              </label>
+              <select
                 id="riskScore"
-                type="number" 
                 name="riskScore"
-                placeholder="Enter Risk"
                 value={metaQubeData.riskScore}
                 onChange={handleMetaQubeChange}
-                min="1"
-                max="10"
-                className="border p-2 bg-green-50"
-              />
+                className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                required
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+              </select>
             </div>
           </div>
-        </div>
       </div>
 
       {/* BlakQube Structured Data Section */}
-      <div className="mb-4 p-4 bg-gray-100 rounded-lg">
-        <h3 className="text-lg font-semibold mb-2 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-2 text-red-500">
+      <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg mt-6">
+        <div className="flex items-center mb-[10px]">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-[10px] text-red-500">
             <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
           </svg>
-          BlakQube
-        </h3>
+          <h3 className="font-bold text-[18px] text-white">BlakQube</h3>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col">
-            <label htmlFor="format" className="text-sm mb-1 text-black">Format</label>
+            <label htmlFor="format" className="text-sm mb-1 text-white">Format</label>
             <input 
               id="format"
               type="text" 
@@ -399,11 +449,11 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               placeholder="Enter Format"
               value={blakQubeData.format}
               onChange={handleBlakQubeChange}
-              className="border p-2 bg-red-50"
+              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
             />
           </div>
           <div className="flex flex-col">
-            <label htmlFor="episode" className="text-sm mb-1 text-black">Episode</label>
+            <label htmlFor="episode" className="text-sm mb-1 text-white">Episode</label>
             <input 
               id="episode"
               type="text" 
@@ -411,11 +461,11 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               placeholder="Enter Episode"
               value={blakQubeData.episode}
               onChange={handleBlakQubeChange}
-              className="border p-2 bg-red-50"
+              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
             />
           </div>
           <div className="flex flex-col">
-            <label htmlFor="version" className="text-sm mb-1 text-black">Version</label>
+            <label htmlFor="version" className="text-sm mb-1 text-white">Version</label>
             <input 
               id="version"
               type="text" 
@@ -423,11 +473,11 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               placeholder="Enter Version"
               value={blakQubeData.version}
               onChange={handleBlakQubeChange}
-              className="border p-2 bg-red-50"
+              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
             />
           </div>
           <div className="flex flex-col">
-            <label htmlFor="rarity" className="text-sm mb-1 text-black">Rarity</label>
+            <label htmlFor="rarity" className="text-sm mb-1 text-white">Rarity</label>
             <input 
               id="rarity"
               type="text" 
@@ -435,11 +485,11 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               placeholder="Enter Rarity"
               value={blakQubeData.rarity}
               onChange={handleBlakQubeChange}
-              className="border p-2 bg-red-50"
+              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
             />
           </div>
           <div className="flex flex-col">
-            <label htmlFor="serialNumber" className="text-sm mb-1 text-black">Serial Number</label>
+            <label htmlFor="serialNumber" className="text-sm mb-1 text-white">Serial Number</label>
             <input 
               id="serialNumber"
               type="text" 
@@ -447,11 +497,11 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               placeholder="Enter Serial Number"
               value={blakQubeData.serialNumber}
               onChange={handleBlakQubeChange}
-              className="border p-2 bg-red-50"
+              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
             />
           </div>
           <div className="flex flex-col">
-            <label htmlFor="specificTraits" className="text-sm mb-1 text-black">Specific Traits</label>
+            <label htmlFor="specificTraits" className="text-sm mb-1 text-white">Specific Traits</label>
             <input 
               id="specificTraits"
               type="text" 
@@ -459,11 +509,11 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               placeholder="Enter Specific Traits"
               value={blakQubeData.specificTraits}
               onChange={handleBlakQubeChange}
-              className="border p-2 bg-red-50"
+              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
             />
           </div>
           <div className="flex flex-col">
-            <label htmlFor="payloadFile" className="text-sm mb-1 text-black">Payload File</label>
+            <label htmlFor="payloadFile" className="text-sm mb-1 text-white">Payload File</label>
             <input 
               id="payloadFile"
               type="text" 
@@ -471,11 +521,11 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               placeholder="Enter Payload File"
               value={blakQubeData.payloadFile}
               onChange={handleBlakQubeChange}
-              className="border p-2 bg-red-50"
+              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
             />
           </div>
           <div className="flex flex-col">
-            <label htmlFor="currentOwner" className="text-sm mb-1 text-black">Current Owner</label>
+            <label htmlFor="currentOwner" className="text-sm mb-1 text-white">Current Owner</label>
             <input 
               id="currentOwner"
               type="text" 
@@ -483,11 +533,11 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               placeholder="Enter Current Owner"
               value={blakQubeData.currentOwner}
               onChange={handleBlakQubeChange}
-              className="border p-2 bg-red-50"
+              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
             />
           </div>
           <div className="flex flex-col col-span-2">
-            <label htmlFor="updatableData" className="text-sm mb-1 text-black">Updatable Data</label>
+            <label htmlFor="updatableData" className="text-sm mb-1 text-white">Updatable Data</label>
             <input 
               id="updatableData"
               type="text" 
@@ -495,26 +545,26 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               placeholder="Enter Updatable Data"
               value={blakQubeData.updatableData}
               onChange={handleBlakQubeChange}
-              className="border p-2 bg-red-50"
+              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
             />
           </div>
         </div>
       </div>
 
       {/* File Upload Section */}
-      <div className="mb-4 p-4 bg-gray-100 rounded-lg">
-        <label className="block text-sm font-medium text-gray-700">Upload File</label>
+      <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg mt-6">
+        <label className="block text-sm font-medium text-white">Upload File</label>
         <input 
           type="file" 
           onChange={handleFileUpload}
-          className="mt-1 block w-full bg-red-50"
+          className="mt-1 block w-full bg-red-50 rounded-lg"
         />
         {filePreview && (
           <div className="mt-2">
             <img 
               src={filePreview} 
               alt="File Preview" 
-              className="max-h-96 w-full object-contain"
+              className="max-h-96 w-full object-contain "
             />
           </div>
         )}
@@ -529,7 +579,7 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
       >
         {isLoading ? 'Encrypting...' : 'Encrypt BlakQube'}
       </button>
-
+      
       {/* Error and Token ID Display */}
       {error && <p className="text-red-500 mt-2">{error}</p>}
       {tokenId && <p className="text-green-500 mt-2">Minted Token ID: {tokenId}</p>}
