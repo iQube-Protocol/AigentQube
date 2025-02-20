@@ -87,7 +87,6 @@ export class NebulaIntegration implements APIIntegration {
 
       // This needs to be chained for new iQube
 
-      const name = String(iqubesArray[0]?.firstName ) + String(iqubesArray[0]?.lastName );
       const key = iqubesArray.length > 0 && typeof iqubesArray[0].evmPublicKey === "string" 
         && iqubesArray[0].evmPublicKey.startsWith("0x") 
         ? iqubesArray[0].evmPublicKey 
