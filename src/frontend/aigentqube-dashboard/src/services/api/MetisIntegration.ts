@@ -116,6 +116,8 @@ export class MetisIntegration implements APIIntegration {
 
       const iqubesMap = params.iqubes instanceof Map ? params.iqubes : new Map();
       const iqubesArray = Array.from(iqubesMap.values());
+      
+      // This needs to be changed for neq iqube
 
       const name = String(iqubesArray[0]?.firstName ) + String(iqubesArray[0]?.lastName );
       const keys = iqubesArray

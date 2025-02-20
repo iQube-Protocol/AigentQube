@@ -17,8 +17,8 @@ interface DecryptedInformation {
 interface MetadataFields {
   iQubeIdentifier: string
   iQubeCreator: string
-  ownerType: 'Person' | 'Organisation' | 'Thing'
-  iQubeContentType: 'mp3' | 'mp4' | 'pdf' | 'txt' | 'Code' | 'Other'
+  ownerType: 'Individual' | 'Organization' 
+  iQubeContentType: 'Data' | 'Content' | 'Workflow' | 'Agent' | 'Other'
   ownerIdentifiability: 'Anonymous' | 'Semi-Anonymous' | 'Identifiable' | 'Semi-Identifiable'
   transactionDate: string
   sensitivityScore: number
@@ -30,115 +30,23 @@ interface MetadataFields {
 interface UserProfileMetaDataFields {
   metaQube: MetadataFields
   blakQube: {
-    firstName: string
-    lastName: string
-    fioHandle: string
-    email: string
-    phoneNumber: string
-    ageRange: string
-    address: string
-    metaiyeShares: number
-    kyntCoinOwned: number
-    omMemberSince: number
-    omTierStatus: string
+    profession: string
+    web3Interests: string
+    localCity: string
+    publicEmail: string
     evmPublicKey: string
-    thirdWebPublicKey: string
-    metaMaskPublicKey: string
-    otherWalletPublicKeys: string[]
-    metaKeepId: string
-    twitterHandle: string
-    instagramHandle: string
-    facebookId: string
-    tikTokHandle: string
-    linkedInId: string
-    discordHandle: string
-    telegramHandle: string
-    motionKNYTBooksOwned: string[]
-    stillKNYTBooksOwned: string[]
-    printKNYTBooksOwned: string[]
-    knytPostersOwned: string[]
-    knytCardsOwned: string[]
-    knytCharactersOwned: string[]
+    bitcoinPublicKey: string
+    tokensOfInterest: string[]
+    chainIDs: string[]
+    walletsOfInterest: string[]
   }
 }
 
 interface AgentQubeMetaDataFields {
   metaQube: MetadataFields
   blakQube: {
-    agentName: string
-    agentVersion: string
-    agentType: string
-    agentCapabilities: string[]
-    agentLanguages: string[]
-    agentFrameworks: string[]
-    agentAPIs: string[]
-    agentLicenses: string[]
-    agentOwner: string
-    agentDeveloper: string
-    agentStatus: string
-    agentDeploymentType: string
-    agentHostingPlatform: string
-    agentEndpoints: string[]
-    agentAuthentication: string
-    agentRateLimits: string
-    agentUsageCosts: string
-    agentPerformanceMetrics: string
-    agentMaintenanceSchedule: string
-    agentUpdatesHistory: string[]
-    latencyPerToolCall: string
-    apiCallFrequency: string
-    contextWindowUtilization: string
-    llmCallErrorRate: string
-    taskCompletionTime: string
-    memoryUsage: string
-    responseAccuracy: string
-    agentQubeId: string
-    summaryDescription: string
-    uniqueIdentifier: string
-    abiServicesMenu: string[]
-    abiQueryMethod: string
-    abiInputIQubes: string[]
-    abiUsageIQubes: string[]
-    abiOutputIQubes: string[]
-    abiFunctionManifest: string[]
-    abiSystemPrompting: string
-    abiModelRequirements: string[]
-    agentIpOwnership: string
-    trainingDatasets: string
-    verifiableTransactions: string
-    agentInstanceOwner: string
-    agentWalletPublicKey: string
-    agentWeights: string
-    agentBiases: string
-    agentWalletBalance: string
-    tokenUsagePerInteraction: string
-    energyConsumption: string
-    resourceUtilizationEfficiency: string
-    roiMetrics: string
-    scalabilityIndicators: string
-    instructionAdherence: string
-    hallucinationRate: string
-    outputFormatSuccessRate: string
-    contextAdherence: string
-    errorDisparity: string
-    systemUptime: string
-    errorRecoveryRate: string
-    codeQualityMetrics: string
-    testCoverage: string
-    bugDetectionRate: string
-    documentationQuality: string
-    agentSuccessRate: string
-    eventRecallAccuracy: string
-    agentWaitTime: string
-    taskCompletionRate: string
-    humanRequestRate: string
-    stepsPerTask: string
-    toolSelectionAccuracy: string
-    userSatisfactionScore: string
-    responseTimeSatisfaction: string
-    interactionQuality: string
-    featureAdoptionRate: string
-    userRetention: string
+    baseURL: string
+    API_KEY: string
   }
 }
 
@@ -155,11 +63,12 @@ const IQubeNFTMinter: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
   const [decryptedLink, setDecryptedLink] = useState<string>('')
+  
   const [metadataFields, setMetadataFields] = useState<MetadataFields>({
-    iQubeIdentifier: 'OM KNYT Qube Alpha',
-    iQubeCreator: 'Metaiye Media DiD',
-    ownerType: 'Person',
-    iQubeContentType: 'txt',
+    iQubeIdentifier: 'iQube Name',
+    iQubeCreator: 'Company or Individual',
+    ownerType: 'Individual',
+    iQubeContentType: 'Data',
     ownerIdentifiability: 'Identifiable',
     transactionDate: new Date().toISOString(),
     sensitivityScore: 5,
@@ -169,10 +78,10 @@ const IQubeNFTMinter: React.FC = () => {
   })
   const [memberProfile, setMemberProfile] = useState<UserProfileMetaDataFields>({
     metaQube: {
-      iQubeIdentifier: 'OM KNYT Qube Alpha',
-      iQubeCreator: 'Metaiye Media DiD',
-      ownerType: 'Person',
-      iQubeContentType: 'txt',
+      iQubeIdentifier: 'iQube Name',
+      iQubeCreator: 'Company or Individual',
+      ownerType: 'Individual',
+      iQubeContentType: 'Data',
       ownerIdentifiability: 'Identifiable',
       transactionDate: new Date().toISOString(),
       sensitivityScore: 5,
@@ -181,44 +90,24 @@ const IQubeNFTMinter: React.FC = () => {
       riskScore: 4,
     },
     blakQube: {
-      firstName: 'Dele',
-      lastName: 'Atanda',
-      fioHandle: 'Qrypto@KNYT',
-      email: 'info@metame.com',
-      phoneNumber: '787 888 8888',
-      ageRange: '35-45',
-      address: '23 My home',
-      metaiyeShares: 439,
-      kyntCoinOwned: 3000,
-      omMemberSince: 2019,
-      omTierStatus: 'ZeroKnyt',
-      evmPublicKey: 'arkagent.eth',
-      thirdWebPublicKey: 'oX34355464656465',
-      metaMaskPublicKey: 'qrypto@knyt',
-      otherWalletPublicKeys: ['qrypto@knyt', 'arkagent.eth'],
-      metaKeepId: 'info@metame.com',
-      twitterHandle: 'www.x.com/Arkagent',
-      instagramHandle: 'www.instagram.com/arkagent',
-      facebookId: 'www.facebook.com/deleatanda',
-      tikTokHandle: 'www.titktok.com/arkagent',
-      linkedInId: 'www.linlind.com/in/dedleatanda',
-      discordHandle: 'QryptoKnyt',
-      telegramHandle: 'QryptoKnyt',
-      motionKNYTBooksOwned: ['#0E', '#1R', '#2L', '#3E', '#5E', '#6L', '#8R', '#9R'],
-      stillKNYTBooksOwned: ['#0', '#1', '#2', '#3', '#4', '#5', '#6', '#7', '#8', '#9', '#10', '#11'],
-      printKNYTBooksOwned: ['#0E', '#1R', '#2L', '#3E', '#5E', '#6L', '#8R'],
-      knytPostersOwned: ['#0', '#1', '#2', '#3', '#4', '#5', '#6', '#7', '#8', '#9'],
-      knytCardsOwned: ['#0', '#1', '#2', '#3'],
-      knytCharactersOwned: ['Emmissary#18', 'Deji#2'],
+      profession: 'Consultant',
+      web3Interests: 'Builder',
+      localCity: 'New York',
+      publicEmail: 'info@metame.com',
+      evmPublicKey: '0x14b02B70a9740503ef4294FB4CAAf08e2759deA0',
+      bitcoinPublicKey: '0x34355464656465',
+      tokensOfInterest: ['AVA', 'POL', 'BTC','MOR'],
+      chainIDs: ['1', '80002'],
+      walletsOfInterest: ['0x0417409BEFbbE9474a7623b2e704389', '0x0417409BEFb7623b2e7043896566313', '0x041723b2e704389653138b'],
     },
   })
 
   const [agentProfile, setAgentProfile] = useState<AgentQubeMetaDataFields>({
     metaQube: {
-      iQubeIdentifier: 'Agent Qube Alpha',
-      iQubeCreator: 'Metaiye Media DiD',
-      ownerType: 'Person',
-      iQubeContentType: 'Code',
+      iQubeIdentifier: 'iQube Name',
+      iQubeCreator: 'Company or Individual',
+      ownerType: 'Individual',
+      iQubeContentType: 'Data',
       ownerIdentifiability: 'Identifiable',
       transactionDate: new Date().toISOString(),
       sensitivityScore: 5,
@@ -227,80 +116,8 @@ const IQubeNFTMinter: React.FC = () => {
       riskScore: 4,
     },
     blakQube: {
-      agentName: 'Cascade AI',
-      agentVersion: '1.0.0',
-      agentType: 'Coding Assistant',
-      agentCapabilities: ['Code Generation', 'Code Review', 'Debugging'],
-      agentLanguages: ['TypeScript', 'JavaScript', 'Python', 'Solidity'],
-      agentFrameworks: ['React', 'Node.js', 'Web3.js'],
-      agentAPIs: ['OpenAI', 'GitHub', 'Pinata'],
-      agentLicenses: ['MIT'],
-      agentOwner: 'Metaiye Media',
-      agentDeveloper: 'Codeium',
-      agentStatus: 'Active',
-      agentDeploymentType: 'Cloud',
-      agentHostingPlatform: 'AWS',
-      agentEndpoints: ['api.cascade.ai/v1'],
-      agentAuthentication: 'OAuth2.0',
-      agentRateLimits: '100 requests/minute',
-      agentUsageCosts: 'Free Tier',
-      agentPerformanceMetrics: 'Response Time: 200ms',
-      agentMaintenanceSchedule: 'Weekly',
-      agentUpdatesHistory: ['1.0.0 - Initial Release'],
-      latencyPerToolCall: 'Average 250ms per API call',
-      apiCallFrequency: '~1000 calls/day',
-      contextWindowUtilization: '85%',
-      llmCallErrorRate: '<1%',
-      taskCompletionTime: '3-5 seconds',
-      memoryUsage: '2GB average',
-      responseAccuracy: '98%',
-      agentQubeId: 'CascadeAI-v1.0',
-      summaryDescription: 'Advanced coding assistant and development agent',
-      uniqueIdentifier: '0xCA23...4567',
-      abiServicesMenu: ['Code Generation', 'Code Review', 'Debugging', 'Testing'],
-      abiQueryMethod: 'Natural language programming queries',
-      abiInputIQubes: ['CodeQube', 'TestQube'],
-      abiUsageIQubes: ['Code templates', 'Testing patterns'],
-      abiOutputIQubes: ['Generated code', 'Review reports'],
-      abiFunctionManifest: ['generate_code()', 'review_code()', 'debug_code()'],
-      abiSystemPrompting: 'Expert programmer with security focus',
-      abiModelRequirements: ['GPT-4', 'Code analysis models'],
-      agentIpOwnership: 'Centralized - Codeium / 0xCA23...4567',
-      trainingDatasets: '100M code snippets',
-      verifiableTransactions: '500k verified coding sessions',
-      agentInstanceOwner: 'Codeium AI Division',
-      agentWalletPublicKey: 'cascade.eth',
-      agentWeights: 'Programming domain fine-tuning v1.5',
-      agentBiases: 'Security-first bias: 0.3',
-      agentWalletBalance: '3.5 ETH',
-      tokenUsagePerInteraction: '1500 tokens average',
-      energyConsumption: '0.3 kWh per 1000 operations',
-      resourceUtilizationEfficiency: '82%',
-      roiMetrics: '280% ROI on deployment',
-      scalabilityIndicators: 'Can handle 5k concurrent users',
-      instructionAdherence: '98%',
-      hallucinationRate: '<0.05%',
-      outputFormatSuccessRate: '99.9%',
-      contextAdherence: '96%',
-      errorDisparity: '<1.5%',
-      systemUptime: '99.99%',
-      errorRecoveryRate: '99%',
-      codeQualityMetrics: 'A+ rating',
-      testCoverage: '94%',
-      bugDetectionRate: '97%',
-      documentationQuality: '4.9/5',
-      agentSuccessRate: '95%',
-      eventRecallAccuracy: '99%',
-      agentWaitTime: '<80ms',
-      taskCompletionRate: '98%',
-      humanRequestRate: '3%',
-      stepsPerTask: '3',
-      toolSelectionAccuracy: '97%',
-      userSatisfactionScore: '4.8/5',
-      responseTimeSatisfaction: '94%',
-      interactionQuality: '4.9/5',
-      featureAdoptionRate: '88%',
-      userRetention: '82%'
+      baseURL: "https://nebula-api.thirdweb.com", 
+      API_KEY: "API_KEY"
     }
   })
 
@@ -327,7 +144,7 @@ const IQubeNFTMinter: React.FC = () => {
   const handleAgentProfileChange = (
     section: 'metaQube' | 'blakQube',
     field: string,
-    value: string | number | string[],
+    value: string | number,
   ) => {
     setAgentProfile((prevProfile) => ({
       ...prevProfile,
@@ -350,7 +167,7 @@ const IQubeNFTMinter: React.FC = () => {
         try {
           await window.ethereum.request({ method: 'eth_requestAccounts' })
         } catch (requestError) {
-          throw new Error('Failed to request MetaMask accounts: ' + requestError.message)
+          throw new Error('Failed to request MetaMask accounts: ' + requestError)
         }
 
         const accounts = await _interface.connectToMetaMask()
@@ -372,13 +189,51 @@ const IQubeNFTMinter: React.FC = () => {
     initNFTInterface()
   }, [])
 
+  const validatePinataJWT = (token: string) => {
+    console.log('[JWT Validation] Starting validation');
+    
+    if (!token) {
+        console.error('[JWT Validation] Token is empty or undefined');
+        throw new Error('Pinata JWT token is missing');
+    }
+
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+        console.error('[JWT Validation] Invalid token format', {
+            tokenLength: parts.length,
+            tokenParts: parts
+        });
+        throw new Error('Invalid JWT token: Incorrect number of segments');
+    }
+
+    try {
+        // Attempt to decode the payload
+        const payload = JSON.parse(atob(parts[1]));
+        console.log('[JWT Validation] Payload decoded successfully', {
+            exp: payload.exp,
+            iat: payload.iat
+        });
+    } catch (error) {
+        console.error('[JWT Validation] Payload decoding failed', error);
+        throw new Error('Invalid JWT token: Cannot decode payload');
+    }
+
+    console.log('[JWT Validation] Token is valid');
+    return true;
+  };
+
   const handleMemberProfileMint = async (e: FormEvent) => {
+    console.log("RUNNING : handleMemberProfileMint")
+
     e.preventDefault()
     setIsLoading(true)
     setError('')
 
     try {
-      // encrypt blakQube information
+
+      const pinataJWT = process.env.REACT_APP_PINATA_JWT;
+      validatePinataJWT(pinataJWT || '');
+
       let _memberProfile = { ...memberProfile }
 
       let _blakQube = _memberProfile.blakQube
@@ -452,76 +307,64 @@ const IQubeNFTMinter: React.FC = () => {
         throw new Error('NFT interface not initialized')
       }
 
+      // Validate JWT before using it
+      const pinataJWT = process.env.REACT_APP_PINATA_JWT;
+      validatePinataJWT(pinataJWT || '');
+
       // encrypt blakQube information
       let _agentProfile = { ...agentProfile }
       let _blakQube = _agentProfile.blakQube
 
       console.log('Encrypting agent data:', _blakQube)
-      
-      // First get an encryption key
-      const keyResponse = await axios.post(
-        `https://iqubes-server.onrender.com/get-encryption-key`,
-        { uri: 'agent-qube' }
+
+      let { data } = await axios.post(
+        `https://iqubes-server.onrender.com/encrypt-member-qube`,
+        _blakQube,
       )
 
-      if (!keyResponse.data || !keyResponse.data.key) {
-        throw new Error('Failed to get encryption key')
-      }
+      console.log(data)
 
-      const key = keyResponse.data.key
-      console.log('Got encryption key:', key)
-
-      // Then encrypt the data
-      const encryptResponse = await axios.post(
-        `https://iqubes-server.onrender.com/encrypt`,
-        {
-          key: key,
-          text: JSON.stringify(_blakQube)
+      if (data.success) {
+        const { encryptedBlakQube: blakQube, key } = data?.encryptedData
+        _agentProfile.metaQube.blakQubeKey = key
+        const updatedMetaData = {
+          metaQube: _agentProfile.metaQube,
+          blakQube,
         }
-      )
 
-      if (!encryptResponse.data || !encryptResponse.data.encryptedText) {
-        throw new Error('Failed to encrypt data')
+        const metadata = JSON.stringify({
+          name: `iQube NFT #${Date.now()}`,
+          description: 'An encrypted iQube NFT',
+          image: '',
+          attributes: [
+            ...Object.entries(updatedMetaData).map(([key, value]) => ({
+              trait_type: key,
+              value: value,
+            })),
+          ],
+        })
+
+        // Upload JSON to IPFS
+        const metadataUpload = await pinata.upload.json(JSON.parse(metadata))
+        console.log(metadataUpload.IpfsHash)
+        console.log(key)
+        console.log(account)
+
+        // mint the member data qube
+        const receipt = await nftInterface?.mintQube(
+          `ipfs://${metadataUpload.IpfsHash}`,
+          key,
+        )
+
+        const newTokenId = await nftInterface?.getTokenIdFromReceipt(receipt)
+        if (newTokenId) {
+          setTokenId(newTokenId)
+          console.log('NFT minted successfully with token ID:', newTokenId)
+        } else {
+          console.log("NFT minted successfully, but couldn't retrieve token ID")
+        }
       }
-
-      console.log('Encryption successful')
-
-      // Prepare metadata
-      const metadata = JSON.stringify({
-        name: `iQube NFT #${Date.now()}`,
-        description: 'An encrypted AgentQube NFT',
-        attributes: [
-          {
-            trait_type: 'metaQube',
-            value: _agentProfile.metaQube
-          },
-          {
-            trait_type: 'blakQube',
-            value: encryptResponse.data.encryptedText
-          }
-        ]
-      })
-
-      console.log('Uploading metadata to IPFS:', metadata)
-
-      // Upload to IPFS
-      const metadataUpload = await pinata.upload.json(JSON.parse(metadata))
-      console.log('IPFS upload successful:', metadataUpload)
-
-      // Mint the NFT
-      const receipt = await nftInterface.mintQube(
-        `ipfs://${metadataUpload.IpfsHash}`,
-        key
-      )
-
-      const newTokenId = await nftInterface.getTokenIdFromReceipt(receipt)
-      if (newTokenId) {
-        setTokenId(newTokenId)
-        console.log('AgentQube minted successfully with token ID:', newTokenId)
-      } else {
-        console.log("AgentQube minted successfully, but couldn't retrieve token ID")
-      }
-
+      return 
     } catch (error: any) {
       console.error('Error minting AgentQube NFT:', error)
       setError(error.response?.data?.message || error.message || 'Failed to mint AgentQube NFT')
@@ -875,35 +718,20 @@ const IQubeNFTMinter: React.FC = () => {
   }
 
   const labelMapping: { [key: string]: string } = {
-    firstName: 'First Name',
-    lastName: 'Last Name',
-    fioHandle: 'FIO Handle',
-    email: 'Email',
-    phoneNumber: 'Phone Number',
-    ageRange: 'Age Range',
-    address: 'Address',
-    metaiyeShares: 'Metaiye Shares',
-    kyntCoinOwned: 'KNYT Coin Owned',
-    omMemberSince: 'OM Member Since',
-    omTierStatus: 'OM Tier Status',
+    profession: 'Profession',
+    web3Interests: 'Web3 Interests',
+    localCity: 'Local City',
+    publicEmail: 'Email',
     evmPublicKey: 'EVM Public Key',
-    thirdWebPublicKey: 'Third Web Public Key',
-    metaMaskPublicKey: 'MetaMask Public Key',
-    otherWalletPublicKeys: 'Other Wallet Public Keys',
-    metaKeepId: 'Meta Keep ID',
-    twitterHandle: 'Twitter Handle',
-    instagramHandle: 'Instagram Handle',
-    facebookId: 'Facebook ID',
-    tikTokHandle: 'TikTok Handle',
-    linkedInId: 'LinkedIn ID',
-    discordHandle: 'Discord Handle',
-    telegramHandle: 'Telegram Handle',
-    motionKNYTBooksOwned: 'Motion KNYT Books Owned',
-    stillKNYTBooksOwned: 'Still KNYT Books Owned',
-    printKNYTBooksOwned: 'Print KNYT Books Owned',
-    knytPostersOwned: 'KNYT Posters Owned',
-    knytCardsOwned: 'KNYT Cards Owned',
-    knytCharactersOwned: 'KNYT Characters Owned'
+    bitcoinPublicKey: 'BTC Public Key',
+    tokensOfInterest: "Tokens of Interest",
+    chainIDs: "Chain IDs",
+    walletsOfInterest: 'Wallets of Interest',
+  };
+
+  const labelAgentMapping: { [key: string]: string } = {
+    baseURL: "Base URL", 
+    API_KEY: "API KEY"
   };
 
   const tabNames = {
@@ -1075,9 +903,8 @@ const IQubeNFTMinter: React.FC = () => {
                         required
                       >
                         <option value="Person">Person</option>
-                        <option value="Organisation">Organisation</option>
-                        <option value="Thing">Thing</option>
-                      </select>
+                        <option value="Organization">Organization</option>
+=                      </select>
                     </div>
                     <div>
                       <label className="block text-[12px] font-medium text-white mb-2">
@@ -1095,11 +922,12 @@ const IQubeNFTMinter: React.FC = () => {
                         className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
                         required
                       >
+                        <option value="data">Data</option>
                         <option value="mp3">MP3</option>
                         <option value="mp4">MP4</option>
                         <option value="pdf">PDF</option>
                         <option value="txt">TXT</option>
-                        <option value="Code">Code</option>
+                        <option value="agent">Agent</option>
                         <option value="Other">Other</option>
                       </select>
                     </div>
@@ -1181,7 +1009,7 @@ const IQubeNFTMinter: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-[12px] font-medium text-white mb-2">
-                        Verifiability Score
+                        Verifiabile Score
                       </label>
                       <select
                         value={memberProfile.metaQube.verifiabilityScore}
@@ -1321,25 +1149,25 @@ const IQubeNFTMinter: React.FC = () => {
             {uploadType === 'agent' ? (
               <form onSubmit={handleAgentProfileMint}>
                 {/* MetaQube Section */}
-                <div className="bg-[#f6f6f6] p-6 rounded-lg">
+                <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg">
                   <div className="flex items-center mb-[10px]">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-[10px] text-blue-500">
                       <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
                     </svg>
-                    <h3 className="font-bold text-[18px]">MetaQube</h3>
+                    <h3 className="font-bold text-[18px] text-white">MetaQube</h3>
                   </div>
 
                   {/* First row - 2 items */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         iQube Identifier
                       </label>
                       <input
                         type="text"
-                        value={agentProfile.metaQube.iQubeIdentifier}
+                        value={memberProfile.metaQube.iQubeIdentifier}
                         onChange={(e) =>
-                          handleAgentProfileChange(
+                          handleMemberProfileChange(
                             'metaQube',
                             'iQubeIdentifier',
                             e.target.value,
@@ -1350,14 +1178,14 @@ const IQubeNFTMinter: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         iQube Creator
                       </label>
                       <input
                         type="text"
-                        value={agentProfile.metaQube.iQubeCreator}
+                        value={memberProfile.metaQube.iQubeCreator}
                         onChange={(e) =>
-                          handleAgentProfileChange(
+                          handleMemberProfileChange(
                             'metaQube',
                             'iQubeCreator',
                             e.target.value,
@@ -1372,13 +1200,13 @@ const IQubeNFTMinter: React.FC = () => {
                   {/* Second row - 2 items */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Owner Type
                       </label>
                       <select
-                        value={agentProfile.metaQube.ownerType}
+                        value={memberProfile.metaQube.ownerType}
                         onChange={(e) =>
-                          handleAgentProfileChange(
+                          handleMemberProfileChange(
                             'metaQube',
                             'ownerType',
                             e.target.value,
@@ -1388,18 +1216,17 @@ const IQubeNFTMinter: React.FC = () => {
                         required
                       >
                         <option value="Person">Person</option>
-                        <option value="Organisation">Organisation</option>
-                        <option value="Thing">Thing</option>
-                      </select>
+                        <option value="Organization">Organization</option>
+=                      </select>
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Content Type
                       </label>
                       <select
-                        value={agentProfile.metaQube.iQubeContentType}
+                        value={memberProfile.metaQube.iQubeContentType}
                         onChange={(e) =>
-                          handleAgentProfileChange(
+                          handleMemberProfileChange(
                             'metaQube',
                             'iQubeContentType',
                             e.target.value,
@@ -1408,11 +1235,12 @@ const IQubeNFTMinter: React.FC = () => {
                         className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
                         required
                       >
+                        <option value="data">Data</option>
                         <option value="mp3">MP3</option>
                         <option value="mp4">MP4</option>
                         <option value="pdf">PDF</option>
                         <option value="txt">TXT</option>
-                        <option value="Code">Code</option>
+                        <option value="agent">Agent</option>
                         <option value="Other">Other</option>
                       </select>
                     </div>
@@ -1421,13 +1249,13 @@ const IQubeNFTMinter: React.FC = () => {
                   {/* Third row - 2 items */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Owner Identifiability
                       </label>
                       <select
-                        value={agentProfile.metaQube.ownerIdentifiability}
+                        value={memberProfile.metaQube.ownerIdentifiability}
                         onChange={(e) =>
-                          handleAgentProfileChange(
+                          handleMemberProfileChange(
                             'metaQube',
                             'ownerIdentifiability',
                             e.target.value,
@@ -1443,14 +1271,14 @@ const IQubeNFTMinter: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Transaction Date
                       </label>
                       <input
                         type="date"
-                        value={agentProfile.metaQube.transactionDate.split('T')[0]}
+                        value={memberProfile.metaQube.transactionDate.split('T')[0]}
                         onChange={(e) =>
-                          handleAgentProfileChange(
+                          handleMemberProfileChange(
                             'metaQube',
                             'transactionDate',
                             e.target.value,
@@ -1465,13 +1293,13 @@ const IQubeNFTMinter: React.FC = () => {
                   {/* Fourth row - 4 scores */}
                   <div className="grid grid-cols-4 gap-4">
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Sensitivity Score
                       </label>
                       <select
-                        value={agentProfile.metaQube.sensitivityScore}
+                        value={memberProfile.metaQube.sensitivityScore}
                         onChange={(e) =>
-                          handleAgentProfileChange(
+                          handleMemberProfileChange(
                             'metaQube',
                             'sensitivityScore',
                             parseInt(e.target.value)
@@ -1493,13 +1321,13 @@ const IQubeNFTMinter: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
-                        Verifiability Score
+                      <label className="block text-[12px] font-medium text-white mb-2">
+                        Verifiabile Score
                       </label>
                       <select
-                        value={agentProfile.metaQube.verifiabilityScore}
+                        value={memberProfile.metaQube.verifiabilityScore}
                         onChange={(e) =>
-                          handleAgentProfileChange(
+                          handleMemberProfileChange(
                             'metaQube',
                             'verifiabilityScore',
                             parseInt(e.target.value)
@@ -1521,13 +1349,13 @@ const IQubeNFTMinter: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Accuracy Score
                       </label>
                       <select
-                        value={agentProfile.metaQube.accuracyScore}
+                        value={memberProfile.metaQube.accuracyScore}
                         onChange={(e) =>
-                          handleAgentProfileChange(
+                          handleMemberProfileChange(
                             'metaQube',
                             'accuracyScore',
                             parseInt(e.target.value)
@@ -1549,13 +1377,13 @@ const IQubeNFTMinter: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-700 mb-2">
+                      <label className="block text-[12px] font-medium text-white mb-2">
                         Risk Score
                       </label>
                       <select
-                        value={agentProfile.metaQube.riskScore}
+                        value={memberProfile.metaQube.riskScore}
                         onChange={(e) =>
-                          handleAgentProfileChange(
+                          handleMemberProfileChange(
                             'metaQube',
                             'riskScore',
                             parseInt(e.target.value)
@@ -1579,193 +1407,44 @@ const IQubeNFTMinter: React.FC = () => {
                   </div>
                 </div>
 
-                {/* BlakQube Section */}
-                <div className="bg-[#f6f6f6] p-6 rounded-lg mt-6">
+                  {/* BlakQube Section */}
+                  <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg mt-6">
                   <div className="flex items-center mb-[10px]">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-[10px] text-red-500">
                       <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
                     </svg>
-                    <h3 className="font-bold text-[18px]">BlakQube</h3>
+                    <h3 className="font-bold text-[18px] text-white">BlakQube</h3>
                   </div>
 
-                  {/* Basic Information */}
-                  <div className="mb-6">
-                    <h4 className="text-[14px] font-semibold text-gray-700 mb-3 border-b pb-2">Basic Information</h4>
-                    <div className="grid grid-cols-3 gap-4">
-                      {['agentName', 'agentVersion', 'agentType', 'agentCapabilities', 'agentLanguages', 'agentFrameworks'].map((key) => (
-                        <div key={key} className="mb-[10px]">
-                          <label className="block text-[10px] font-[500] text-[grey]">
-                            {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                          </label>
-                          <input
-                            type="text"
-                            value={Array.isArray(agentProfile.blakQube[key]) 
-                              ? agentProfile.blakQube[key].join(', ')
-                              : agentProfile.blakQube[key]}
-                            onChange={(e) => handleAgentProfileChange('blakQube', key, e.target.value)}
-                            className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-                            required
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Performance Metrics */}
-                  <div className="mb-6">
-                    <h4 className="text-[14px] font-semibold text-gray-700 mb-3 border-b pb-2">Performance Metrics</h4>
-                    <div className="grid grid-cols-3 gap-4">
-                      {['latencyPerToolCall', 'apiCallFrequency', 'contextWindowUtilization', 'llmCallErrorRate', 
-                        'taskCompletionTime', 'memoryUsage', 'responseAccuracy'].map((key) => (
-                        <div key={key} className="mb-[10px]">
-                          <label className="block text-[10px] font-[500] text-[grey]">
-                            {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                          </label>
-                          <input
-                            type="text"
-                            value={agentProfile.blakQube[key]}
-                            onChange={(e) => handleAgentProfileChange('blakQube', key, e.target.value)}
-                            className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-                            required
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Identification */}
-                  <div className="mb-6">
-                    <h4 className="text-[14px] font-semibold text-gray-700 mb-3 border-b pb-2">Identification</h4>
-                    <div className="grid grid-cols-3 gap-4">
-                      {['agentQubeId', 'summaryDescription', 'uniqueIdentifier'].map((key) => (
-                        <div key={key} className="mb-[10px]">
-                          <label className="block text-[10px] font-[500] text-[grey]">
-                            {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                          </label>
-                          <input
-                            type="text"
-                            value={agentProfile.blakQube[key]}
-                            onChange={(e) => handleAgentProfileChange('blakQube', key, e.target.value)}
-                            className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-                            required
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* ABI Details */}
-                  <div className="mb-6">
-                    <h4 className="text-[14px] font-semibold text-gray-700 mb-3 border-b pb-2">ABI Details</h4>
-                    <div className="grid grid-cols-3 gap-4">
-                      {['abiServicesMenu', 'abiQueryMethod', 'abiInputIQubes', 'abiUsageIQubes', 
-                        'abiOutputIQubes', 'abiFunctionManifest', 'abiSystemPrompting', 'abiModelRequirements'].map((key) => (
-                        <div key={key} className="mb-[10px]">
-                          <label className="block text-[10px] font-[500] text-[grey]">
-                            {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                          </label>
-                          <input
-                            type="text"
-                            value={Array.isArray(agentProfile.blakQube[key]) 
-                              ? agentProfile.blakQube[key].join(', ')
-                              : agentProfile.blakQube[key]}
-                            onChange={(e) => handleAgentProfileChange('blakQube', key, e.target.value)}
-                            className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-                            required
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Ownership and Training */}
-                  <div className="mb-6">
-                    <h4 className="text-[14px] font-semibold text-gray-700 mb-3 border-b pb-2">Ownership and Training</h4>
-                    <div className="grid grid-cols-3 gap-4">
-                      {['agentIpOwnership', 'trainingDatasets', 'verifiableTransactions', 'agentInstanceOwner',
-                        'agentWalletPublicKey', 'agentWeights', 'agentBiases', 'agentWalletBalance'].map((key) => (
-                        <div key={key} className="mb-[10px]">
-                          <label className="block text-[10px] font-[500] text-[grey]">
-                            {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                          </label>
-                          <input
-                            type="text"
-                            value={agentProfile.blakQube[key]}
-                            onChange={(e) => handleAgentProfileChange('blakQube', key, e.target.value)}
-                            className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-                            required
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Resource Metrics */}
-                  <div className="mb-6">
-                    <h4 className="text-[14px] font-semibold text-gray-700 mb-3 border-b pb-2">Resource Metrics</h4>
-                    <div className="grid grid-cols-3 gap-4">
-                      {['tokenUsagePerInteraction', 'energyConsumption', 'resourceUtilizationEfficiency',
-                        'roiMetrics', 'scalabilityIndicators'].map((key) => (
-                        <div key={key} className="mb-[10px]">
-                          <label className="block text-[10px] font-[500] text-[grey]">
-                            {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                          </label>
-                          <input
-                            type="text"
-                            value={agentProfile.blakQube[key]}
-                            onChange={(e) => handleAgentProfileChange('blakQube', key, e.target.value)}
-                            className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-                            required
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Quality Metrics */}
-                  <div className="mb-6">
-                    <h4 className="text-[14px] font-semibold text-gray-700 mb-3 border-b pb-2">Quality Metrics</h4>
-                    <div className="grid grid-cols-3 gap-4">
-                      {['instructionAdherence', 'hallucinationRate', 'outputFormatSuccessRate', 'contextAdherence',
-                        'errorDisparity', 'systemUptime', 'errorRecoveryRate', 'codeQualityMetrics',
-                        'testCoverage', 'bugDetectionRate', 'documentationQuality'].map((key) => (
-                        <div key={key} className="mb-[10px]">
-                          <label className="block text-[10px] font-[500] text-[grey]">
-                            {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                          </label>
-                          <input
-                            type="text"
-                            value={agentProfile.blakQube[key]}
-                            onChange={(e) => handleAgentProfileChange('blakQube', key, e.target.value)}
-                            className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-                            required
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* User Experience Metrics */}
-                  <div className="mb-6">
-                    <h4 className="text-[14px] font-semibold text-gray-700 mb-3 border-b pb-2">User Experience Metrics</h4>
-                    <div className="grid grid-cols-3 gap-4">
-                      {['agentSuccessRate', 'eventRecallAccuracy', 'agentWaitTime', 'taskCompletionRate',
-                        'humanRequestRate', 'stepsPerTask', 'toolSelectionAccuracy', 'userSatisfactionScore',
-                        'responseTimeSatisfaction', 'interactionQuality', 'featureAdoptionRate', 'userRetention'].map((key) => (
-                        <div key={key} className="mb-[10px]">
-                          <label className="block text-[10px] font-[500] text-[grey]">
-                            {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                          </label>
-                          <input
-                            type="text"
-                            value={agentProfile.blakQube[key]}
-                            onChange={(e) => handleAgentProfileChange('blakQube', key, e.target.value)}
-                            className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-                            required
-                          />
-                        </div>
-                      ))}
-                    </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    {Object.entries(agentProfile.blakQube).map(([key, value]) => (
+                      <div key={key} className="mb-[10px]">
+                        <label className="block text-[10px] font-[500] text-white">
+                          {labelAgentMapping[key] || key}:{' '}
+                        </label>
+                        <input
+                          type={typeof value === 'number' ? 'number' : 'text'}
+                          value={
+                            Array.isArray(value)
+                              ? value.join(', ')
+                              : typeof value === 'string' ||
+                                typeof value === 'number'
+                              ? value
+                              : ''
+                          }
+                          onChange={(e) =>
+                            handleAgentProfileChange(
+                              'blakQube',
+                              key,
+                              e.target.value,
+                            )
+                          }
+                          disabled={isLoading}
+                          required
+                          className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
 
