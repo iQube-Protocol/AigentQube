@@ -116,18 +116,23 @@ export class MetisIntegration implements APIIntegration {
 
       const iqubesMap = params.iqubes instanceof Map ? params.iqubes : new Map();
       const iqubesArray = Array.from(iqubesMap.values());
-
-      const name = String(iqubesArray[0]?.firstName ) + String(iqubesArray[0]?.lastName );
+      
+      // This needs to be changed for neq iqube
+      // const interests = iqubesArray.flatMap(iqube => iqube.blakQube?.web3Interests || []);
       const keys = iqubesArray
-        .flatMap(iqube => iqube.evmPublicKey)
+        .flatMap(iqube => [
+          iqube.evmPublicKey,
+          // iqube.bitcoinPublicKey,
+          // ...(iqube.walletsOfInterest || [])
+        ])
         .filter(key => typeof key === "string" && key.startsWith("0x"));
 
       const metis_data = {
         "public_keys": keys,
         "user_profile": {
-          "Name": name,
-          "Number": iqubesArray[0]?.fioHandle || "",
-          "Email": iqubesArray[0]?.email || "",
+          "Name": " ",
+          "Number": " ",
+          "Email": " ",
           "Organization": iqubesArray[0]?.iQubeCreator || "",
           "interests": []
         },
