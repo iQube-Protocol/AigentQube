@@ -45,8 +45,9 @@ interface UserProfileMetaDataFields {
 interface AgentQubeMetaDataFields {
   metaQube: MetadataFields
   blakQube: {
-    baseURL: string
-    API_KEY: string
+    baseUrl: string
+    apiKey: string
+    agentWalletAddress: string
   }
 }
 
@@ -64,18 +65,18 @@ const IQubeNFTMinter: React.FC = () => {
   const [error, setError] = useState<string>('')
   const [decryptedLink, setDecryptedLink] = useState<string>('')
   
-  const [metadataFields, setMetadataFields] = useState<MetadataFields>({
-    iQubeIdentifier: 'iQube Name',
-    iQubeCreator: 'Company or Individual',
-    ownerType: 'Individual',
-    iQubeContentType: 'Data',
-    ownerIdentifiability: 'Identifiable',
-    transactionDate: new Date().toISOString(),
-    sensitivityScore: 5,
-    verifiabilityScore: 7,
-    accuracyScore: 6,
-    riskScore: 4,
-  })
+  // const [metadataFields, setMetadataFields] = useState<MetadataFields>({
+  //   iQubeIdentifier: 'iQube Name',
+  //   iQubeCreator: 'Company or Individual',
+  //   ownerType: 'Individual',
+  //   iQubeContentType: 'Data',
+  //   ownerIdentifiability: 'Identifiable',
+  //   transactionDate: new Date().toISOString(),
+  //   sensitivityScore: 5,
+  //   verifiabilityScore: 7,
+  //   accuracyScore: 6,
+  //   riskScore: 4,
+  // })
   const [memberProfile, setMemberProfile] = useState<UserProfileMetaDataFields>({
     metaQube: {
       iQubeIdentifier: 'iQube Name',
@@ -107,17 +108,18 @@ const IQubeNFTMinter: React.FC = () => {
       iQubeIdentifier: 'iQube Name',
       iQubeCreator: 'Company or Individual',
       ownerType: 'Individual',
-      iQubeContentType: 'Data',
+      iQubeContentType: 'Agent',
       ownerIdentifiability: 'Identifiable',
       transactionDate: new Date().toISOString(),
-      sensitivityScore: 5,
-      verifiabilityScore: 7,
-      accuracyScore: 6,
-      riskScore: 4,
+      sensitivityScore: 1,
+      verifiabilityScore: 1,
+      accuracyScore: 1,
+      riskScore: 1,
     },
     blakQube: {
-      baseURL: "https://nebula-api.thirdweb.com", 
-      API_KEY: "API_KEY"
+      baseUrl: "https://nebula-api.thirdweb.com", 
+      apiKey: "API_KEY",
+      agentWalletAddress: "Valid Wallet Address",
     }
   })
 
@@ -730,19 +732,10 @@ const IQubeNFTMinter: React.FC = () => {
   };
 
   const labelAgentMapping: { [key: string]: string } = {
-    baseURL: "Base URL", 
-    API_KEY: "API KEY"
+    baseUrl: "Base URL", 
+    apiKey: "API KEY",
+    agentWalletAddress: "Agent Wallet Address"
   };
-
-  const tabNames = {
-    mint: 'Mint',
-    transfer: 'Transfer',
-    knytCharactersOwned: 'KNYT Characters Owned'
-  };
-
-  // function goToAIDashboard () : void {
-  //   window.location.href = window.location.href.slice(0,6);
-  // }
 
   function goToAIDashboard () : void {
     window.location.href = window.location.href.slice(0,-7);
@@ -924,12 +917,6 @@ const IQubeNFTMinter: React.FC = () => {
                         required
                       >
                         <option value="data">Data</option>
-                        <option value="mp3">MP3</option>
-                        <option value="mp4">MP4</option>
-                        <option value="pdf">PDF</option>
-                        <option value="txt">TXT</option>
-                        <option value="agent">Agent</option>
-                        <option value="Other">Other</option>
                       </select>
                     </div>
                   </div>
@@ -1166,9 +1153,9 @@ const IQubeNFTMinter: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        value={memberProfile.metaQube.iQubeIdentifier}
+                        value={agentProfile.metaQube.iQubeIdentifier}
                         onChange={(e) =>
-                          handleMemberProfileChange(
+                          handleAgentProfileChange(
                             'metaQube',
                             'iQubeIdentifier',
                             e.target.value,
@@ -1184,9 +1171,9 @@ const IQubeNFTMinter: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        value={memberProfile.metaQube.iQubeCreator}
+                        value={agentProfile.metaQube.iQubeCreator}
                         onChange={(e) =>
-                          handleMemberProfileChange(
+                          handleAgentProfileChange(
                             'metaQube',
                             'iQubeCreator',
                             e.target.value,
@@ -1205,9 +1192,9 @@ const IQubeNFTMinter: React.FC = () => {
                         Owner Type
                       </label>
                       <select
-                        value={memberProfile.metaQube.ownerType}
+                        value={agentProfile.metaQube.ownerType}
                         onChange={(e) =>
-                          handleMemberProfileChange(
+                          handleAgentProfileChange(
                             'metaQube',
                             'ownerType',
                             e.target.value,
@@ -1225,9 +1212,9 @@ const IQubeNFTMinter: React.FC = () => {
                         Content Type
                       </label>
                       <select
-                        value={memberProfile.metaQube.iQubeContentType}
+                        value={agentProfile.metaQube.iQubeContentType}
                         onChange={(e) =>
-                          handleMemberProfileChange(
+                          handleAgentProfileChange(
                             'metaQube',
                             'iQubeContentType',
                             e.target.value,
@@ -1236,13 +1223,7 @@ const IQubeNFTMinter: React.FC = () => {
                         className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
                         required
                       >
-                        <option value="data">Data</option>
-                        <option value="mp3">MP3</option>
-                        <option value="mp4">MP4</option>
-                        <option value="pdf">PDF</option>
-                        <option value="txt">TXT</option>
                         <option value="agent">Agent</option>
-                        <option value="Other">Other</option>
                       </select>
                     </div>
                   </div>
@@ -1254,9 +1235,9 @@ const IQubeNFTMinter: React.FC = () => {
                         Owner Identifiability
                       </label>
                       <select
-                        value={memberProfile.metaQube.ownerIdentifiability}
+                        value={agentProfile.metaQube.ownerIdentifiability}
                         onChange={(e) =>
-                          handleMemberProfileChange(
+                          handleAgentProfileChange(
                             'metaQube',
                             'ownerIdentifiability',
                             e.target.value,
@@ -1277,9 +1258,9 @@ const IQubeNFTMinter: React.FC = () => {
                       </label>
                       <input
                         type="date"
-                        value={memberProfile.metaQube.transactionDate.split('T')[0]}
+                        value={agentProfile.metaQube.transactionDate.split('T')[0]}
                         onChange={(e) =>
-                          handleMemberProfileChange(
+                          handleAgentProfileChange(
                             'metaQube',
                             'transactionDate',
                             e.target.value,
@@ -1298,9 +1279,9 @@ const IQubeNFTMinter: React.FC = () => {
                         Sensitivity Score
                       </label>
                       <select
-                        value={memberProfile.metaQube.sensitivityScore}
+                        value={agentProfile.metaQube.sensitivityScore}
                         onChange={(e) =>
-                          handleMemberProfileChange(
+                          handleAgentProfileChange(
                             'metaQube',
                             'sensitivityScore',
                             parseInt(e.target.value)
@@ -1326,9 +1307,9 @@ const IQubeNFTMinter: React.FC = () => {
                         Verifiabile Score
                       </label>
                       <select
-                        value={memberProfile.metaQube.verifiabilityScore}
+                        value={agentProfile.metaQube.verifiabilityScore}
                         onChange={(e) =>
-                          handleMemberProfileChange(
+                          handleAgentProfileChange(
                             'metaQube',
                             'verifiabilityScore',
                             parseInt(e.target.value)
@@ -1354,9 +1335,9 @@ const IQubeNFTMinter: React.FC = () => {
                         Accuracy Score
                       </label>
                       <select
-                        value={memberProfile.metaQube.accuracyScore}
+                        value={agentProfile.metaQube.accuracyScore}
                         onChange={(e) =>
-                          handleMemberProfileChange(
+                          handleAgentProfileChange(
                             'metaQube',
                             'accuracyScore',
                             parseInt(e.target.value)
@@ -1382,9 +1363,9 @@ const IQubeNFTMinter: React.FC = () => {
                         Risk Score
                       </label>
                       <select
-                        value={memberProfile.metaQube.riskScore}
+                        value={agentProfile.metaQube.riskScore}
                         onChange={(e) =>
-                          handleMemberProfileChange(
+                          handleAgentProfileChange(
                             'metaQube',
                             'riskScore',
                             parseInt(e.target.value)
