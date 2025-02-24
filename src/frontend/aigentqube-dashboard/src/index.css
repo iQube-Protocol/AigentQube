@@ -16,3 +16,61 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+@media (max-width: 768px) {
+
+  * {/*needed for no more overlap of header of page*/
+    position: static !important; /*important to override any presets*/
+   }
+  
+   /*creates single column layout when hamburger is open */
+  .grid-cols-12 { /*only main grid */
+    grid-template-columns: 1fr !important;
+  }
+
+  
+  .col-span-4,
+  .col-span-8 {/* fullwidth sidebar and content*/
+    grid-column: span 1 / span 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .css-37zkie { /* card grid container */
+    grid-template-columns: minmax(0, 1fr) !important;
+    margin-top: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+  .css-37zkie > :last-child {
+    margin-bottom: 1.5rem !important;
+  }
+  .chakra-card.css-1g472s4 {
+    margin-bottom: 0rem !important; /* Reduced spacing */
+  }
+  .css-tqrgag{
+    margin-bottom: 0.5rem !important;
+  }
+  .css-19w804n{
+    margin-bottom: 0.5rem !important;
+  }
+}
+
+.chakra-card.css-1g472s4 { /*needed for no more overlap of prompts*/
+  height: auto !important; /*card heigh min*/ 
+  margin-bottom: 2rem;
+}
+
+/* grid container spacing*/
+.css-37zkie {
+  /* row-gap: 1rem !important; needed for spacing between cards and prompt box */ /*keep like this for now8*/
+  /* margin-bottom: 2rem !important;  */
+}
+
+
+/*.chakra-card_body.css-1qwqyo4 { card text protections for aigent
+  padding-bottom: 1.5rem !important;
+  overflow-wrap: anywhere !important;
+  hyphens: auto !important;
+}
+*/
+
