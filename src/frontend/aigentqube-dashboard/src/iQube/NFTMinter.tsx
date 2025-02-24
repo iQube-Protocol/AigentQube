@@ -786,12 +786,12 @@ const IQubeNFTMinter: React.FC = () => {
         </div>
       </header>
       <div className="w-[100%] bg-gradient-to-br from-gray-900 to-blue-900 p-[25px] flex flex-col">
-        <div className="w-[100%] justify-between flex">
+        <div className="w-[100%] flex flex-col md:flex-row md:justify-between">
           {/* Left Section - Create Qube */}
-          <div className="w-[50%] pr-[20px]">
+          <div className="w-full md:w-[50%] md:pr-[20px] mb-8 md:mb-0">
             <h1 className="font-bold text-[28px] mb-[20px] text-white">Create iQube</h1>
             <hr className="w-[20%] mb-[20px]" />
-            <div className="flex my-[20px]">
+            <div className="flex flex-col md:flex-row gap-4 my-[20px]">
               {/* Existing tab navigation remains the same */}
               <div
                 className={`${
@@ -1463,7 +1463,7 @@ const IQubeNFTMinter: React.FC = () => {
           </div>
 
           {/* Right Section - TokenQube Operations */}
-          <div className="w-[50%] pl-[20px]">
+          <div className="w-full md:w-[50%] md:pl-[20px]">
             <h1 className="font-bold text-[28px] mb-[20px] text-white">TokenQube Operations</h1>
             <hr className="w-[20%] mb-[20px]" />
             <div className="flex my-[20px]">
