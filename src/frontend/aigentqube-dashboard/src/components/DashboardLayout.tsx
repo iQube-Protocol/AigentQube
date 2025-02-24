@@ -202,7 +202,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </button>  
         </div>
 
-        <h1 className="text-2xl font-bold text-center">Aigent Z: Dynamic Contextual Intelligence</h1>
+        <h1 className="text-2xl font-bold text-center flex-grow whitespace-normal break-words">Aigent Z: Dynamic Contextual Intelligence</h1>
 
         <div className="absolute flex top-4 right-4 items-center space-x-2">
           <WalletConnector 
