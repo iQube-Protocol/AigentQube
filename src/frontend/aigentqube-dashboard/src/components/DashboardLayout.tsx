@@ -184,12 +184,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <div className="aigentqube-dashboard min-h-screen bg-gradient-to-br from-gray-900 to-blue-900 text-white">
-      <header className="flex justify-center items-center p-4 border-b border-gray-700 relative">
+      <header id = "dashboard-Header" className="flex justify-center items-center p-4 border-b border-gray-700 relative">
         {/* Button Container */}
         <div className="absolute top-4 left-4 flex items-center space-x-4">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded transition-all duration-300"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded transition-all duration-300 h-[2.5rem]"
           >
             {isSidebarOpen ? "Close Menu" : <span className="text-lg">☰</span>}
           </button>
@@ -202,9 +202,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </button>  
         </div>
 
-        <h1 className="text-2xl font-bold text-center flex-grow whitespace-normal break-words">Aigent Z: Dynamic Contextual Intelligence</h1>
+        <h1 id = "Aigentz" className="text-2xl font-bold text-center flex-grow whitespace-normal break-words">Aigent Z: Dynamic Contextual Intelligence</h1>
 
-        <div className="absolute flex top-4 right-4 items-center space-x-2">
+        <div id = "wallet-connection" className="absolute flex top-4 right-4 items-center space-x-2">
           <WalletConnector 
             onConnect={handleWalletConnect} 
             connectedAddress={walletAddress}

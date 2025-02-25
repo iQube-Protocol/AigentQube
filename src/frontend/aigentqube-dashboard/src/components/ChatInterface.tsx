@@ -97,14 +97,14 @@ const DOMAIN_PROMPT_RECOMMENDATIONS: Record<SpecializedDomain, PromptRecommendat
   ],
   'Crypto Analyst': [
     {
+      heading: 'Nebula Introduction',
+      subHeading: 'Service Inquiry',
+      prompt: 'Tell me about all of the services avaliable to Nebula. What kind of operations are possible with this API and what kind of information can you tell me about blockchain.'
+    },
+    {
       heading: 'Token Analysis',
       subHeading: 'Emrging Regulation',
       prompt: 'Analyze the maturity of crypto regulation and the strength of the Crypto market in my local region. What changes are on the horizon?'
-    },
-    {
-      heading: 'Cross-Chain Security',
-      subHeading: 'Risk Mitigation',
-      prompt: 'Evaluate the security status of major cross-chain bridges and recommend risk mitigation strategies.'
     },
     {
       heading: 'Portfolio Optimization',

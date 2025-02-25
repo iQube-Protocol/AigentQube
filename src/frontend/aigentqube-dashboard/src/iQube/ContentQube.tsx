@@ -4,28 +4,21 @@ import PolygonNFTInterface from '../utils/MetaContract';
 import axios from 'axios';
 
 interface MetadataFields {
-  iQubeIdentifier: string;
-  iQubeCreator: string;
-  ownerType: 'Person' | 'Organisation' | 'Thing';
-  iQubeContentType: 'mp3' | 'mp4' | 'pdf' | 'txt' | 'Code' | 'Other';
-  ownerIdentifiability: 'Anonymous' | 'Semi-Anonymous' | 'Identifiable' | 'Semi-Identifiable';
-  transactionDate: string;
-  sensitivityScore: number;
-  verifiabilityScore: number;
-  accuracyScore: number;
-  riskScore: number;
+  iQubeIdentifier: string
+  iQubeCreator: string
+  ownerType: 'Individual' | 'Organization' 
+  iQubeContentType: 'Data' | 'Content' | 'Agent' | 'Other'
+  ownerIdentifiability: 'Anonymous' | 'Semi-Anonymous' | 'Identifiable' | 'Semi-Identifiable'
+  transactionDate: string
+  sensitivityScore: number
+  verifiabilityScore: number
+  accuracyScore: number
+  riskScore: number
 }
 
 interface BlakQubeFields {
-  format?: string;
-  episode?: string;
-  version?: string;
-  rarity?: string;
-  serialNumber?: string;
-  specificTraits?: string;
-  payloadFile?: string;
-  currentOwner?: string;
-  updatableData?: string;
+  name?: string;
+  description?: string;
 }
 
 interface ContentQubeProps {
@@ -57,7 +50,7 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
   const [metaQubeData, setMetaQubeData] = useState<MetadataFields>({
     iQubeIdentifier: '',
     iQubeCreator: '',
-    ownerType: 'Person',
+    ownerType: 'Individual',
     iQubeContentType: 'Other',
     ownerIdentifiability: 'Semi-Anonymous',
     transactionDate: new Date().toISOString(),
@@ -274,29 +267,10 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
               required
             >
-              <option value="Person">Person</option>
+              <option value="Individual">Individual</option>
               <option value="Organisation">Organisation</option>
-              <option value="Thing">Thing</option>
             </select>
           </div>
-          <div className="flex flex-col">
-            <label htmlFor="ownerIdentifiability" className="block text-[12px] font-medium text-white mb-2">Owner Identifiability</label>
-            <select 
-              id="ownerIdentifiability"
-              name="ownerIdentifiability"
-              value={metaQubeData.ownerIdentifiability}
-              onChange={handleMetaQubeChange}
-              className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
-              required
-            >
-              <option value="Anonymous">Anonymous</option>
-              <option value="Semi-Anonymous">Semi-Anonymous</option>
-              <option value="Identifiable">Identifiable</option>
-              <option value="Semi-Identifiable">Semi-Identifiable</option>
-            </select>
-          </div>
-
-          {/* Third Row: Content Type and Transaction Date */}
           <div>
             <label htmlFor="iQubeContentType" className="block text-[12px] font-medium text-white mb-2">Content Type</label>
             <select 
@@ -315,6 +289,25 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               <option value="Other">Other</option>
             </select>
           </div>
+
+          {/* Third Row: Content Type and Transaction Date */}
+          <div className="flex flex-col">
+            <label htmlFor="ownerIdentifiability" className="block text-[12px] font-medium text-white mb-2">Owner Identifiability</label>
+            <select 
+              id="ownerIdentifiability"
+              name="ownerIdentifiability"
+              value={metaQubeData.ownerIdentifiability}
+              onChange={handleMetaQubeChange}
+              className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+              required
+            >
+              <option value="Anonymous">Anonymous</option>
+              <option value="Semi-Anonymous">Semi-Anonymous</option>
+              <option value="Identifiable">Identifiable</option>
+              <option value="Semi-Identifiable">Semi-Identifiable</option>
+            </select>
+          </div>
+
           <div>
             <label htmlFor="transactionDate" className="block text-[12px] font-medium text-white mb-2">Transaction Date</label>
             <input 
@@ -331,7 +324,7 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
           {/* Fourth Row: All Four Scores */}
           
         </div>
-        <div className="grid grid-cols-4 gap-4 pt-4">
+        <div className="grid grid-cols-4 gap-4 pt-4 items-end">
             <div>
               <label className="block text-[12px] font-medium text-white mb-2">
                 Sensitivity Score
@@ -358,7 +351,7 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
             </div>
             <div>
               <label className="block text-[12px] font-medium text-white mb-2">
-                Verifiability Score
+                Verifiabile Score
               </label>
               <select
                 id="verifiabilityScore"

@@ -1026,7 +1026,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       {/* Activate iQubes */}
       <div className="pt-4">
         <h2 className="text-lg font-medium text-gray-300 mb-3">
-        Active iQubes  |  Connect & Activate up to 3
+        Active iQubes
         </h2>
         <div className="grid grid-cols-3 gap-4">
           {/* Check if orchestrationAgent is initialized and has iQubes */}
@@ -1062,7 +1062,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
             <div className="col-span-3">
               <div className="bg-gray-700 p-4 rounded-lg border border-gray-600 text-center">
                 <span className="text-gray-400">
-                  No iQubes available. Connect an iQube and press Use iQube to activate.
+                  No iQubes avaliable. Activate up to 3.
                 </span>
               </div>
             </div>
