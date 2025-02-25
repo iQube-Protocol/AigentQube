@@ -53,6 +53,21 @@ code {
   .css-19w804n{
     margin-bottom: 0.5rem !important;
   }
+  #Aigentz, .notification-center.relative{
+    /* visibility: hidden; */
+    display: none;
+  }
+  #dashboard-Header{
+    height: 4rem;
+    white-space: nowrap;
+  }
+  #wallet-connection{
+    padding-right: clamp(8px, 5vw, 40px);
+    padding-left: clamp(8px, 6vw, 40px);
+  }
+  button.bg-blue-600.text-white{
+    /* padding-left: */
+  }
 }
 
 .chakra-card.css-1g472s4 { /*needed for no more overlap of prompts*/
