@@ -18,7 +18,7 @@ interface MetadataFields {
   iQubeIdentifier: string
   iQubeCreator: string
   ownerType: 'Individual' | 'Organization' 
-  iQubeContentType: 'Data' | 'Content' | 'Workflow' | 'Agent' | 'Other'
+  iQubeContentType: 'Data' | 'Content' | 'Agent' | 'Other'
   ownerIdentifiability: 'Anonymous' | 'Semi-Anonymous' | 'Identifiable' | 'Semi-Identifiable'
   transactionDate: string
   sensitivityScore: number
@@ -48,6 +48,14 @@ interface AgentQubeMetaDataFields {
     baseUrl: string
     apiKey: string
     agentWalletAddress: string
+  }
+}
+
+interface ContentQubeMetaDataFields {
+  metaQube: MetadataFields
+  blakQube: {
+    name?: string;
+    description?: string;
   }
 }
 
@@ -412,13 +420,6 @@ const IQubeNFTMinter: React.FC = () => {
     if (event.target.files) {
       setSelectedFile(event.target.files[0])
     }
-  }
-
-  const handleMetadataChange = (
-    field: keyof MetadataFields,
-    value: string | number,
-  ) => {
-    setMetadataFields((prev) => ({ ...prev, [field]: value }))
   }
 
   const handleMint = async (contentQubeData: any) => {
@@ -896,7 +897,7 @@ const IQubeNFTMinter: React.FC = () => {
                         className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
                         required
                       >
-                        <option value="Person">Person</option>
+                        <option value="Individual">Individual</option>
                         <option value="Organization">Organization</option>
 =                      </select>
                     </div>
@@ -1153,6 +1154,7 @@ const IQubeNFTMinter: React.FC = () => {
                       </label>
                       <input
                         type="text"
+                        placeholder="Enter iQube Identifier"
                         value={agentProfile.metaQube.iQubeIdentifier}
                         onChange={(e) =>
                           handleAgentProfileChange(
@@ -1203,7 +1205,7 @@ const IQubeNFTMinter: React.FC = () => {
                         className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
                         required
                       >
-                        <option value="Person">Person</option>
+                        <option value="Individual">Individual</option>
                         <option value="Organization">Organization</option>
 =                      </select>
                     </div>
