@@ -770,7 +770,7 @@ const IQubeNFTMinter: React.FC = () => {
           </button>
         </div>
       )}
-      <header className="p-8 border-b border-gray-700">
+      <header className="minter-header p-8 border-b border-gray-700">
         <div className="absolute top-4 left-4 flex items-center space-x-4">
           <button 
             onClick={goToAIDashboard}
