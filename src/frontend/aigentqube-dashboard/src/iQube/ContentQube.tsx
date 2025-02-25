@@ -331,7 +331,7 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
           {/* Fourth Row: All Four Scores */}
           
         </div>
-        <div className="grid grid-cols-4 gap-4 pt-4">
+        <div className="grid grid-cols-4 gap-4 pt-4 items-end">
             <div>
               <label className="block text-[12px] font-medium text-white mb-2">
                 Sensitivity Score

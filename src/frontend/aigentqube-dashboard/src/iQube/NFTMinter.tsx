@@ -979,7 +979,7 @@ const IQubeNFTMinter: React.FC = () => {
                   </div>
 
                   {/* Fourth row - 4 scores */}
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-4 gap-4 items-end">
                     <div>
                       <label className="block text-[12px] font-medium text-white mb-2">
                         Sensitivity Score
@@ -1104,7 +1104,7 @@ const IQubeNFTMinter: React.FC = () => {
                     <h3 className="font-bold text-[18px] text-white">BlakQube</h3>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-4 items-end">
                     {Object.entries(memberProfile.blakQube).map(([key, value]) => (
                       <div key={key} className="mb-[10px]">
                         <label className="block text-[10px] font-[500] text-white">
@@ -1292,7 +1292,7 @@ const IQubeNFTMinter: React.FC = () => {
                   </div>
 
                   {/* Fourth row - 4 scores */}
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-4 gap-4 items-end">
                     <div>
                       <label className="block text-[12px] font-medium text-white mb-2">
                         Sensitivity Score
@@ -1644,7 +1644,7 @@ const IQubeNFTMinter: React.FC = () => {
                       </div>
 
                       {/* Fourth row - 4 scores */}
-                      <div className="grid grid-cols-4 gap-4">
+                      <div className="grid grid-cols-4 gap-4 items-end">
                         {['sensitivityScore', 'verifiabilityScore', 'accuracyScore', 'riskScore'].map((key) => (
                           <div key={key} className="flex flex-col">
                             <label className="text-[14px] font-medium text-white mb-2">
