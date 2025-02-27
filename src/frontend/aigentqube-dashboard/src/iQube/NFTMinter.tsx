@@ -18,7 +18,7 @@ interface MetadataFields {
   iQubeIdentifier: string
   iQubeCreator: string
   ownerType: 'Individual' | 'Organization' 
-  iQubeContentType: 'Data' | 'Content' | 'Agent' | 'Other'
+  iQubeContentType: 'Data' | 'Agent' | 'png' | 'jpeg' | 'pdf' | 'mp3' | 'mp4' |'Other'
   ownerIdentifiability: 'Anonymous' | 'Semi-Anonymous' | 'Identifiable' | 'Semi-Identifiable'
   transactionDate: string
   sensitivityScore: number
@@ -54,8 +54,10 @@ interface AgentQubeMetaDataFields {
 interface ContentQubeMetaDataFields {
   metaQube: MetadataFields
   blakQube: {
-    name?: string;
-    description?: string;
+    blobFile: string;
+    blobPreview: string;
+    encryptedFileHash: string;
+    encryptedFileKey: string;
   }
 }
 
@@ -87,8 +89,8 @@ const IQubeNFTMinter: React.FC = () => {
   // })
   const [memberProfile, setMemberProfile] = useState<UserProfileMetaDataFields>({
     metaQube: {
-      iQubeIdentifier: 'iQube Name',
-      iQubeCreator: 'Company or Individual',
+      iQubeIdentifier: '',
+      iQubeCreator: '',
       ownerType: 'Individual',
       iQubeContentType: 'Data',
       ownerIdentifiability: 'Identifiable',
@@ -113,8 +115,8 @@ const IQubeNFTMinter: React.FC = () => {
 
   const [agentProfile, setAgentProfile] = useState<AgentQubeMetaDataFields>({
     metaQube: {
-      iQubeIdentifier: 'iQube Name',
-      iQubeCreator: 'Company or Individual',
+      iQubeIdentifier: '',
+      iQubeCreator: '',
       ownerType: 'Individual',
       iQubeContentType: 'Agent',
       ownerIdentifiability: 'Identifiable',
@@ -126,8 +128,29 @@ const IQubeNFTMinter: React.FC = () => {
     },
     blakQube: {
       baseUrl: "https://nebula-api.thirdweb.com", 
-      apiKey: "API_KEY",
-      agentWalletAddress: "Valid Wallet Address",
+      apiKey: "API Key",
+      agentWalletAddress: "Valid wallet address",
+    }
+  })
+
+  const [contentProfile, setContentProfile] = useState<ContentQubeMetaDataFields>({
+    metaQube: {
+      iQubeIdentifier: '',
+      iQubeCreator: '',
+      ownerType: 'Individual',
+      iQubeContentType: 'jpeg',
+      ownerIdentifiability: 'Identifiable',
+      transactionDate: new Date().toISOString(),
+      sensitivityScore: 1,
+      verifiabilityScore: 1,
+      accuracyScore: 1,
+      riskScore: 1,
+    },
+    blakQube: {
+      blobFile: "",
+      blobPreview: "",
+      encryptedFileHash: "",
+      encryptedFileKey: ""
     }
   })
 
@@ -136,6 +159,8 @@ const IQubeNFTMinter: React.FC = () => {
   const [metaQubeData, setMetaQubeData] = useState<any>(null)
   const [blakQubeData, setBlakQubeData] = useState<any>(null)
   const [encryptedBlakQubeData, setEncryptedBlakQubeData] = useState<any>(null)
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  
 
   const handleMemberProfileChange = (
     section: 'metaQube' | 'blakQube',
@@ -157,6 +182,20 @@ const IQubeNFTMinter: React.FC = () => {
     value: string | number,
   ) => {
     setAgentProfile((prevProfile) => ({
+      ...prevProfile,
+      [section]: {
+        ...prevProfile[section],
+        [field]: value,
+      },
+    }))
+  }
+
+  const handleContentProfileChange = (
+    section: 'metaQube' | 'blakQube',
+    field: string,
+    value: string | number,
+  ) => {
+    setContentProfile((prevProfile) => ({
       ...prevProfile,
       [section]: {
         ...prevProfile[section],
@@ -332,7 +371,7 @@ const IQubeNFTMinter: React.FC = () => {
         _blakQube,
       )
 
-      console.log(data)
+      console.log("Encrypted data: ",data)
 
       if (data.success) {
         const { encryptedBlakQube: blakQube, key } = data?.encryptedData
@@ -383,9 +422,19 @@ const IQubeNFTMinter: React.FC = () => {
     }
   }
 
-  const handleToggle = (type: string) => {
-    setUploadType(type)
-  }
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      
+      // Create file preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFilePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const getEncryptionData = async (uri: string) => {
     try {
@@ -401,16 +450,132 @@ const IQubeNFTMinter: React.FC = () => {
     }
   }
 
-  const decryptData = async (key: string, encryptedText: string) => {
+  const handleContentProfileMint = async (e: FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError('')
+
     try {
-      let http = await axios.post(
-        'https://iqubes-server.onrender.com/decrypt',
+      if (!nftInterface) {
+        throw new Error('NFT interface not initialized')
+      }
+
+      // Validate JWT before using it
+      const pinataJWT = process.env.REACT_APP_PINATA_JWT;
+      validatePinataJWT(pinataJWT || '');
+
+      // encrypt blakQube information
+      let _contentProfile = { ...contentProfile }
+      //let _blakQube = _contentProfile.blakQube
+      //console.log('Encrypting Content data:', _blakQube)
+
+      // Upload file to IPFS
+      const fileUpload = await pinata.upload.file(selectedFile);
+
+      const encrypted = await getEncryptionData(fileUpload.IpfsHash)
+
+      const { data } = await axios.post(
+        'https://iqubes-server.onrender.com/encrypt-member-qube',
         {
-          key,
-          encryptedText,
-        },
+          blobFile: null,
+          blobPreview: null,
+          encryptedFileHash: fileUpload.IpfsHash,
+          encryptedFileKey: encrypted.key
+        }
       )
-      return http.data
+
+      console.log("This is the returned data", data)
+
+      if (!data.success) {throw new Error('Failed to encrypt BlakQube data')}
+      if (data.success) {
+        const { encryptedBlakQube: blakQube, key } = data?.encryptedData
+        // _contentProfile.metaQube.blakQubeKey = key
+        const updatedMetaData = {
+          metaQube: _contentProfile.metaQube, 
+          blakQube: blakQube
+        }
+
+        const metadata = JSON.stringify({
+          name: `iQube NFT #${Date.now()}`,
+          description: 'An encrypted iQube NFT',
+          image: encrypted.data,
+          attributes: [
+            ...Object.entries(updatedMetaData).map(([key, value]) => ({
+              trait_type: key,
+              value: value,
+            })),
+          ],
+        })
+
+        // Upload JSON to IPFS
+        const metadataUpload = await pinata.upload.json(JSON.parse(metadata))
+        console.log(metadataUpload.IpfsHash)
+        console.log(key)
+        console.log(account)
+
+        // mint the member data qube
+        const receipt = await nftInterface?.mintQube(
+          `ipfs://${metadataUpload.IpfsHash}`,
+          encrypted.key,
+        )
+
+        const newTokenId = await nftInterface?.getTokenIdFromReceipt(receipt)
+        if (newTokenId) {
+          setTokenId(newTokenId)
+          console.log('NFT minted successfully with token ID:', newTokenId)
+        } else {
+          console.log("NFT minted successfully, but couldn't retrieve token ID")
+        }
+      }
+      return 
+    } catch (error: any) {
+      console.error('Error minting AgentQube NFT:', error)
+      setError(error.response?.data?.message || error.message || 'Failed to mint AgentQube NFT')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleToggle = (type: string) => {
+    setUploadType(type)
+  }
+
+  const decryptData = async (key: string, encryptedText: string) => {
+    console.log(key)
+    console.log(encryptedText) 
+    try {
+      // Make the decryption request to the server
+      const response = await axios.post(
+        `${process.env.REACT_APP_SERVER_URL}/decrypt`,
+        {
+          key: key,
+          encryptedData: encryptedText,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+
+      console.log('Server response:', response.data)
+
+      return response.data
+      
+      
+      // let http = await axios.post(
+      //   'https://iqubes-server.onrender.com/decrypt',
+      //   {
+      //     key,
+      //     encryptedText,
+      //   },
+      //   {
+      //     headers: {
+      //       'Content-Type': 'application/json'
+      //     }
+      //   }
+      // )
+      // return http.data
     } catch (error) {
       console.log(error)
     }
@@ -665,6 +830,11 @@ const IQubeNFTMinter: React.FC = () => {
           throw new Error('Failed to retrieve encryption key')
         }
 
+        console.log("Making response to ", `${process.env.REACT_APP_SERVER_URL}/decrypt-member-data` )
+        console.log("With key ", encryptionKey)
+        console.log("With data ", blakQubeAttribute.value)
+
+
         // Make the decryption request to the server
         const response = await axios.post(
           `${process.env.REACT_APP_SERVER_URL}/decrypt-member-data`,
@@ -704,6 +874,108 @@ const IQubeNFTMinter: React.FC = () => {
     }
   }
 
+  const handleContentQubeDecrypt = async () => {
+    setIsLoading(true)
+    setError('')
+    try{
+      if (!nftInterface || !account) {
+        throw new Error('NFT interface not initialized or wallet not connected')
+      }
+      // Get the metadata URI using getBlakQube
+      const metadataURI = await nftInterface.getBlakQube(tokenId)
+      console.log('Fetching metadata from:', metadataURI)
+
+      const metadataResponse = await fetch(
+        metadataURI.replace(
+          'ipfs://',
+          `${process.env.REACT_APP_GATEWAY_URL}/ipfs/`,
+        ),
+      )
+
+      if (!metadataResponse.ok) {
+        throw new Error(`Failed to fetch metadata: ${metadataResponse.statusText}`)
+      }
+
+      const metadata = await metadataResponse.json()
+      console.log('Metadata retrieved:', metadata)
+
+      const blakQubeContent =metadata.attributes.find(
+        (attr: any) => attr.trait_type === 'blakQube',
+      )
+
+      if (!blakQubeContent.value){
+        throw new Error('Encrypted data not found in metadata')
+      }
+      try{
+
+        console.log('Attempting to decrypt with tokenId:', tokenId)
+        console.log('BlakQube value:', blakQubeContent.value)
+        
+        // Get the encryption key first
+        let encryptionKey
+        try {
+          encryptionKey = await nftInterface.getEncryptionKey(tokenId)
+        } catch (keyError: any) {
+          // Check specifically for Web3 JSON-RPC error
+          if (keyError.message?.includes('Internal JSON-RPC error')) {
+            throw new Error('You cannot decrypt this blakQube as you do not own its token')
+          }
+          throw keyError
+        }
+
+        console.log('Encryption key retrieved:', encryptionKey)
+
+        if (!encryptionKey) {
+          throw new Error('Failed to retrieve encryption key')
+        }
+
+        console.log("Making response to ", `${process.env.REACT_APP_SERVER_URL}/decrypt-member-data` )
+        console.log("With key ", encryptionKey)
+        console.log("With data ", blakQubeContent.value)
+
+        // Make the decryption request to the server
+        const response = await axios.post(
+          `${process.env.REACT_APP_SERVER_URL}/decrypt-member-data`,
+          {
+            key: encryptionKey,
+            encryptedData: {"file": blakQubeContent.value.encryptedFileHash},
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        )
+
+        console.log('Server response:', response.data)
+
+        
+        // const fullUrl = `${process.env.REACT_APP_GATEWAY_URL}/ipfs/${
+        //   //decrypted.response
+        //   response1.response
+        // }`
+        // console.log(fullUrl)
+        // setDecryptedLink(fullUrl)
+        
+      }catch (decryptError: any) {
+        console.error('Full decryption error:', decryptError)
+        // If it's our custom error message, throw it as is
+        if (decryptError.message?.includes('You cannot decrypt this blakQube')) {
+          throw decryptError
+        }
+        // For other errors, throw the original error
+        throw decryptError
+      }
+
+    }catch (error: any) {
+      console.error('Decryption error:', error)
+      setError(error.message || 'Failed to decrypt data')
+    } finally {
+      setIsLoading(false)
+    }
+
+  }
+
   const handleError = (error: any) => {
     if (error.code === 4001 || error.message?.includes('user rejected')) {
       return 'Transaction was rejected in MetaMask. You can try again when ready.'
@@ -738,9 +1010,23 @@ const IQubeNFTMinter: React.FC = () => {
     agentWalletAddress: "Agent Wallet Address"
   };
 
+  // const labelContentMapping: { [key: string]: string } = {
+  //   name: "Name", 
+  //   description: "Description",
+  // };
+
   function goToAIDashboard () : void {
     window.location.href = window.location.href.slice(0,-7);
   }
+
+  const handleConditionalClick = (obj: any): void => {
+    console.log(obj);
+    if (obj === 'Data' || obj == "Agent") {
+      handleMemberDataDecryption();
+    } else {
+      handleContentQubeDecrypt();
+    }
+  };
 
   return (
     <div className="bg-gradient-to-br from-gray-900 to-blue-900">
@@ -817,15 +1103,355 @@ const IQubeNFTMinter: React.FC = () => {
               
             </div>
             {uploadType === 'mediaBlob' ? (
-              <div className="flex w-full">
-                {/* Left Section - Content Form */}
-                <div className="w-full">
-                  <ContentQube 
-                    nftInterface={nftInterface}
-                    onContentChange={(content) => handleMint(content)} 
-                  />
+              // <div className="flex w-full">
+              //   {/* Left Section - Content Form */}
+              //   <div className="w-full">
+              //     <ContentQube 
+              //       nftInterface={nftInterface}
+              //       onContentChange={(content) => handleMint(content)} 
+              //     />
+              //   </div>
+              // </div>
+              
+              <form onSubmit={handleContentProfileMint}>
+              {/* MetaQube Section */}
+              <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg">
+                <div className="flex items-center mb-[10px]">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-[10px] text-blue-500">
+                    <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
+                  </svg>
+                  <h3 className="font-bold text-[18px] text-white">MetaQube</h3>
+                </div>
+
+                {/* First row - 2 items */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-[12px] font-medium text-white mb-2">
+                      iQube Identifier
+                    </label>
+                    <input
+                      type="text"
+                      value={contentProfile.metaQube.iQubeIdentifier}
+                      placeholder="Enter iQube Identifier"
+                      onChange={(e) =>
+                        handleContentProfileChange(
+                          'metaQube',
+                          'iQubeIdentifier',
+                          e.target.value,
+                        )
+                      }
+                      className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-white mb-2">
+                      iQube Creator
+                    </label>
+                    <input
+                      type="text"
+                      value={contentProfile.metaQube.iQubeCreator}
+                      placeholder="Enter iQube Creator"
+                      onChange={(e) =>
+                        handleContentProfileChange(
+                          'metaQube',
+                          'iQubeCreator',
+                          e.target.value,
+                        )
+                      }
+                      className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Second row - 2 items */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-[12px] font-medium text-white mb-2">
+                      Owner Type
+                    </label>
+                    <select
+                      value={contentProfile.metaQube.ownerType}
+                      onChange={(e) =>
+                        handleContentProfileChange(
+                          'metaQube',
+                          'ownerType',
+                          e.target.value,
+                        )
+                      }
+                      className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                      required
+                    >
+                      <option value="Individual">Individual</option>
+                      <option value="Organization">Organization</option>
+=                      </select>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-white mb-2">
+                      Content Type
+                    </label>
+                    <select
+                      value={contentProfile.metaQube.iQubeContentType}
+                      onChange={(e) =>
+                        handleContentProfileChange(
+                          'metaQube',
+                          'iQubeContentType',
+                          e.target.value,
+                        )
+                      }
+                      className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                      required
+                    >
+                      <option value="mp3">jpeg</option>
+                      <option value="mp4">png</option>
+                      <option value="pdf">pdf</option>
+                      <option value="txt">mp3</option>
+                      <option value="Code">mp4</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Third row - 2 items */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-[12px] font-medium text-white mb-2">
+                      Owner Identifiability
+                    </label>
+                    <select
+                      value={contentProfile.metaQube.ownerIdentifiability}
+                      onChange={(e) =>
+                        handleContentProfileChange(
+                          'metaQube',
+                          'ownerIdentifiability',
+                          e.target.value,
+                        )
+                      }
+                      className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                      required
+                    >
+                      <option value="Anonymous">Anonymous</option>
+                      <option value="Semi-Anonymous">Semi-Anonymous</option>
+                      <option value="Identifiable">Identifiable</option>
+                      <option value="Semi-Identifiable">Semi-Identifiable</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-white mb-2">
+                      Transaction Date
+                    </label>
+                    <input
+                      type="date"
+                      value={contentProfile.metaQube.transactionDate.split('T')[0]}
+                      onChange={(e) =>
+                        handleContentProfileChange(
+                          'metaQube',
+                          'transactionDate',
+                          e.target.value,
+                        )
+                      }
+                      className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Fourth row - 4 scores */}
+                <div className="grid grid-cols-4 gap-4 items-end">
+                  <div>
+                    <label className="block text-[12px] font-medium text-white mb-2">
+                      Sensitivity Score
+                    </label>
+                    <select
+                      value={contentProfile.metaQube.sensitivityScore}
+                      onChange={(e) =>
+                        handleContentProfileChange(
+                          'metaQube',
+                          'sensitivityScore',
+                          parseInt(e.target.value)
+                        )
+                      }
+                      className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                      required
+                    >
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
+                      <option value="9">9</option>
+                      <option value="10">10</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-white mb-2">
+                      Verifiabile Score
+                    </label>
+                    <select
+                      value={contentProfile.metaQube.verifiabilityScore}
+                      onChange={(e) =>
+                        handleContentProfileChange(
+                          'metaQube',
+                          'verifiabilityScore',
+                          parseInt(e.target.value)
+                        )
+                      }
+                      className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                      required
+                    >
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
+                      <option value="9">9</option>
+                      <option value="10">10</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-white mb-2">
+                      Accuracy Score
+                    </label>
+                    <select
+                      value={contentProfile.metaQube.accuracyScore}
+                      onChange={(e) =>
+                        handleContentProfileChange(
+                          'metaQube',
+                          'accuracyScore',
+                          parseInt(e.target.value)
+                        )
+                      }
+                      className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                      required
+                    >
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
+                      <option value="9">9</option>
+                      <option value="10">10</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-white mb-2">
+                      Risk Score
+                    </label>
+                    <select
+                      value={contentProfile.metaQube.riskScore}
+                      onChange={(e) =>
+                        handleContentProfileChange(
+                          'metaQube',
+                          'riskScore',
+                          parseInt(e.target.value)
+                        )
+                      }
+                      className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                      required
+                    >
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
+                      <option value="9">9</option>
+                      <option value="10">10</option>
+                    </select>
+                  </div>
                 </div>
               </div>
+
+              {/* BlakQube Section
+              <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg mt-6">
+                <div className="flex items-center mb-[10px]">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-[10px] text-red-500">
+                    <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
+                  </svg>
+                  <h3 className="font-bold text-[18px] text-white">BlakQube</h3>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 items-end">
+                  {Object.entries(contentProfile.blakQube).map(([key, value]) => (
+                    <div key={key} className="mb-[10px]">
+                      <label className="block text-[10px] font-[500] text-white">
+                        {labelContentMapping[key] || key}:{' '}
+                      </label>
+                      <input
+                        type={typeof value === 'number' ? 'number' : 'text'}
+                        value={
+                          Array.isArray(value)
+                            ? value.join(', ')
+                            : typeof value === 'string' ||
+                              typeof value === 'number'
+                            ? value
+                            : ''
+                        }
+                        onChange={(e) =>
+                          handleContentProfileChange(
+                            'blakQube',
+                            key,
+                            e.target.value,
+                          )
+                        }
+                        disabled={isLoading}
+                        required
+                        className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div> */}
+
+              {/* File Upload Section */}
+              <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg mt-6">
+                <div className="flex items-center mb-[10px]">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-[10px] text-red-500">
+                    <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
+                  </svg>
+                  <h3 className="font-bold text-[18px] text-white">File Upload</h3>
+                </div>
+                <input 
+                  type="file" 
+                  onChange={handleFileUpload}
+                  className="mt-1 block w-full bg-red-50 rounded-lg"
+                />
+                {filePreview && (
+                  <div className="mt-2">
+                    <img 
+                      src={filePreview} 
+                      alt="File Preview" 
+                      className="max-h-96 w-full object-contain "
+                    />
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-6">
+                <button
+                  disabled={isLoading || !selectedFile}
+                  className={`w-full p-[10px] rounded-[5px] ${
+                    isLoading ? 'bg-[grey]' : 'bg-[blue]'
+                  } text-[#fff]`}
+                >
+                  {isLoading ? 'Encrypting...' : 'Encrypt BlakQube'}
+                </button>
+              </div>
+              </form>
+
+
             ) : null}
 
             {uploadType === 'memberProfile' ? (
@@ -848,6 +1474,7 @@ const IQubeNFTMinter: React.FC = () => {
                       <input
                         type="text"
                         value={memberProfile.metaQube.iQubeIdentifier}
+                        placeholder="Enter iQube Identifier"
                         onChange={(e) =>
                           handleMemberProfileChange(
                             'metaQube',
@@ -866,6 +1493,7 @@ const IQubeNFTMinter: React.FC = () => {
                       <input
                         type="text"
                         value={memberProfile.metaQube.iQubeCreator}
+                        placeholder="Enter iQube Creator"
                         onChange={(e) =>
                           handleMemberProfileChange(
                             'metaQube',
@@ -1123,15 +1751,17 @@ const IQubeNFTMinter: React.FC = () => {
                     ))}
                   </div>
                 </div>
-
-                <button
-                  disabled={isLoading}
-                  className={`w-full p-[10px] rounded-[5px] ${
-                    isLoading ? 'bg-[grey]' : 'bg-[blue]'
-                  } text-[#fff]`}
-                >
-                  {isLoading ? 'Encrypting...' : 'Encrypt BlakQube'}
-                </button>
+                
+                <div className="mt-6">
+                  <button
+                    disabled={isLoading}
+                    className={`w-full p-[10px] rounded-[5px] ${
+                      isLoading ? 'bg-[grey]' : 'bg-[blue]'
+                    } text-[#fff]`}
+                  >
+                    {isLoading ? 'Encrypting...' : 'Encrypt BlakQube'}
+                  </button>
+                </div>
               </form>
             ) : null}
 
@@ -1174,6 +1804,7 @@ const IQubeNFTMinter: React.FC = () => {
                       <input
                         type="text"
                         value={agentProfile.metaQube.iQubeCreator}
+                        placeholder="Enter iQube Creator"
                         onChange={(e) =>
                           handleAgentProfileChange(
                             'metaQube',
@@ -1431,15 +2062,17 @@ const IQubeNFTMinter: React.FC = () => {
                     ))}
                   </div>
                 </div>
-
-                <button
-                  disabled={isLoading}
-                  className={`w-full p-[10px] rounded-[5px] ${
-                    isLoading ? 'bg-[grey]' : 'bg-[blue]'
-                  } text-[#fff]`}
-                >
-                  {isLoading ? 'Encrypting...' : 'Encrypt BlakQube'}
-                </button>
+                
+                <div className="mt-6">
+                  <button
+                    disabled={isLoading}
+                    className={`w-full p-[10px] rounded-[5px] ${
+                      isLoading ? 'bg-[grey]' : 'bg-[blue]'
+                    } text-[#fff]`}
+                  >
+                    {isLoading ? 'Encrypting...' : 'Encrypt BlakQube'}
+                  </button>
+                </div>
               </form>
             ) : null}
 
@@ -1524,7 +2157,8 @@ const IQubeNFTMinter: React.FC = () => {
                 {/* Decrypt BlakQube Button */}
                 <div className="pt-2 flex flex-col">
                   <button
-                    onClick={handleMemberDataDecryption}
+                    onClick={() => handleConditionalClick(metaQubeData.iQubeContentType)}
+                    //onClick={handleMemberDataDecryption}
                     disabled={isLoading || !tokenId || !nftInterface}
                     className={`w-full py-[10px] rounded-[5px] bg-[grey]
                       ${tokenId
@@ -1712,6 +2346,17 @@ const IQubeNFTMinter: React.FC = () => {
                         </div>
                       ))}
                     </div>
+                    {/* Decrypted Link Section */}
+                    {decryptedLink && (
+                        <a
+                          href={decryptedLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[blue] underline mt-4 inline-block"
+                        >
+                          See Decrypted BlakQube.
+                        </a>
+                      )}
                   </div>
                 )}
               </div>

@@ -7,7 +7,7 @@ interface MetadataFields {
   iQubeIdentifier: string
   iQubeCreator: string
   ownerType: 'Individual' | 'Organization' 
-  iQubeContentType: 'Data' | 'Content' | 'Agent' | 'Other'
+  iQubeContentType: 'Data' | 'Agent' | 'png' | 'jpeg' | 'pdf' | 'mp3' | 'mp4' |'Other'
   ownerIdentifiability: 'Anonymous' | 'Semi-Anonymous' | 'Identifiable' | 'Semi-Identifiable'
   transactionDate: string
   sensitivityScore: number
@@ -17,8 +17,13 @@ interface MetadataFields {
 }
 
 interface BlakQubeFields {
-  name?: string;
-  description?: string;
+  name: string;
+  description: string;
+}
+
+interface ContentQubeFields {
+  metaQube: MetadataFields, 
+  blakQube: BlakQubeFields
 }
 
 interface ContentQubeProps {
@@ -35,15 +40,8 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
   
   // State for BlakQube structured data
   const [blakQubeData, setBlakQubeData] = useState<BlakQubeFields>({
-    format: '',
-    episode: '',
-    version: '',
-    rarity: '',
-    serialNumber: '',
-    specificTraits: '',
-    payloadFile: '',
-    currentOwner: '',
-    updatableData: ''
+    name: '',
+    description: ''
   });
 
   // State for MetaQube data
@@ -51,7 +49,7 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
     iQubeIdentifier: '',
     iQubeCreator: '',
     ownerType: 'Individual',
-    iQubeContentType: 'Other',
+    iQubeContentType: 'jpeg',
     ownerIdentifiability: 'Semi-Anonymous',
     transactionDate: new Date().toISOString(),
     sensitivityScore: 5,
@@ -82,100 +80,210 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
     }));
   };
 
-  const handleMetaQubeChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLDataElement>) => {
-    const { name, value } = e.target;
+  // const handleMetaQubeChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLDataElement>) => {
+  //   const { name, value } = e.target;
     
-    // For numeric fields, ensure value is between 1 and 10
-    if (
-      name === 'sensitivityScore' || 
-      name === 'verifiabilityScore' || 
-      name === 'accuracyScore' || 
-      name === 'riskScore'
-    ) {
-      const numValue = Number(value);
-      const clampedValue = Math.min(Math.max(numValue, 1), 10);
+  //   // For numeric fields, ensure value is between 1 and 10
+  //   if (
+  //     name === 'sensitivityScore' || 
+  //     name === 'verifiabilityScore' || 
+  //     name === 'accuracyScore' || 
+  //     name === 'riskScore'
+  //   ) {
+  //     const numValue = Number(value);
+  //     const clampedValue = Math.min(Math.max(numValue, 1), 10);
       
-      setMetaQubeData(prev => ({
-        ...prev,
-        [name]: clampedValue
-      }));
-      return;
-    }
+  //     setMetaQubeData(prev => ({
+  //       ...prev,
+  //       [name]: clampedValue
+  //     }));
+  //     return;
+  //   }
     
-    // For other fields, proceed as normal
+  //   // For other fields, proceed as normal
+  //   setMetaQubeData(prev => ({
+  //     ...prev,
+  //     [name]: value
+  //   }));
+  // };
+
+  const handleMetaQubeChange = (
+    field: string,
+    value: string | number,
+  ) => {
     setMetaQubeData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+          ...prev,
+          [field]: value
+        }));
+  }
+
+  //added
+  const getEncryptionData = async (uri: string) => {
+    try {
+      let http = await axios.post(
+        'https://iqubes-server.onrender.com/get-encryption-key',
+        {
+          uri,
+        },
+      )
+      return http?.data
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  // const handleMint = async () => {
+  //   if (!selectedFile) {
+  //     setError('Please select a file to mint');
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+  //   setError(null);
+
+  //   try {
+  //     // Upload file to IPFS
+  //     const fileUpload = await pinata.upload.file(selectedFile);
+      
+      
+
+  //     // Prepare metadata
+  //     const metaQube: MetadataFields = {
+  //       ...metaQubeData,
+  //       iQubeIdentifier: `ContentQube-${Date.now()}`,
+  //       iQubeContentType: selectedFile.type.includes('image') ? 'Other' : 
+  //                         selectedFile.type.includes('video') ? 'mp4' :
+  //                         selectedFile.type.includes('audio') ? 'mp3' :
+  //                         selectedFile.type.includes('pdf') ? 'pdf' :
+  //                         selectedFile.type.includes('text') ? 'txt' : 'Other',
+  //     };
+
+  //     // Prepare encrypted content data
+  //     const contentQubeData = {
+  //       metaQube,
+  //       blakQube: {
+  //         ...blakQubeData,
+  //         blobFile: selectedFile,
+  //         blobPreview: filePreview,
+  //         encryptedFileHash: fileUpload.IpfsHash,
+  //       }
+  //     };
+
+  //     // Encrypt the content
+  //     const encryptedFile = await axios.post(
+  //       `${process.env.REACT_APP_SERVER_URL}/encrypt-file`, 
+  //       { file: fileUpload.IpfsHash }
+  //     );
+
+  //     // Encrypt BlakQube data
+  //     const encryptedBlakQube = await axios.post(
+  //       `${process.env.REACT_APP_SERVER_URL}/encrypt-data`,
+  //       {
+  //         ...contentQubeData.blakQube,
+  //         blobFile: null,
+  //         blobPreview: null,
+  //         encryptedFileHash: fileUpload.IpfsHash,
+  //         encryptedFileKey: encryptedFile.data.key
+  //       }
+  //     );
+
+  //     if (!encryptedBlakQube.data.success) {
+  //       throw new Error('Failed to encrypt BlakQube data');
+  //     }
+
+  //     // Create metadata
+  //     const metadata = JSON.stringify({
+  //       name: `ContentQube NFT #${Date.now()}`,
+  //       description: 'An encrypted ContentQube NFT',
+  //       image: encryptedFile.data,
+  //       attributes: [
+  //         { trait_type: 'metaQube', value: contentQubeData.metaQube },
+  //         { trait_type: 'blakQube', value: encryptedBlakQube.data.encryptedData.blakQube }
+  //       ],
+  //     });
+
+  //     // Upload metadata to IPFS
+  //     const metadataUpload = await pinata.upload.json(JSON.parse(metadata));
+
+  //     // Mint NFT
+  //     const receipt = await nftInterface.mintQube(
+  //       `ipfs://${metadataUpload.IpfsHash}`,
+  //       encryptedBlakQube.data.encryptedData.key
+  //     );
+
+  //     const newTokenId = await nftInterface.getTokenIdFromReceipt(receipt);
+  //     if (newTokenId) {
+  //       setTokenId(newTokenId);
+  //       console.log('NFT minted successfully with token ID:', newTokenId);
+        
+  //       // Call onContentChange if provided
+  //       if (onContentChange) {
+  //         onContentChange({
+  //           metaQube,
+  //           blakQube: {
+  //             ...contentQubeData.blakQube,
+  //             encryptedFileKey: encryptedFile.data.key,
+  //             tokenId: newTokenId
+  //           }
+  //         });
+  //       }
+  //     } else {
+  //       console.log("NFT minted successfully, but couldn't retrieve token ID");
+  //     }
+  //   } catch (error) {
+  //     console.error('Error minting NFT:', error);
+  //     setError(String(error));
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
 
   const handleMint = async () => {
     if (!selectedFile) {
       setError('Please select a file to mint');
       return;
     }
+    console.log("MEOW")
 
     setIsLoading(true);
-    setError(null);
+    setError('');
 
     try {
       // Upload file to IPFS
       const fileUpload = await pinata.upload.file(selectedFile);
 
-      // Prepare metadata
-      const metaQube: MetadataFields = {
-        ...metaQubeData,
-        iQubeIdentifier: `ContentQube-${Date.now()}`,
-        iQubeContentType: selectedFile.type.includes('image') ? 'Other' : 
-                          selectedFile.type.includes('video') ? 'mp4' :
-                          selectedFile.type.includes('audio') ? 'mp3' :
-                          selectedFile.type.includes('pdf') ? 'pdf' :
-                          selectedFile.type.includes('text') ? 'txt' : 'Other',
-      };
-
-      // Prepare encrypted content data
-      const contentQubeData = {
-        metaQube,
-        blakQube: {
-          ...blakQubeData,
-          blobFile: selectedFile,
-          blobPreview: filePreview,
-          encryptedFileHash: fileUpload.IpfsHash,
-        }
-      };
-
-      // Encrypt the content
-      const encryptedFile = await axios.post(
-        `${process.env.REACT_APP_SERVER_URL}/encrypt-file`, 
-        { file: fileUpload.IpfsHash }
-      );
-
+      // Get Enc data.
+      // IDK if i need this the working minter has it 
+      // but this hashes the hash to hash again(when we create the qube and mint it))
+      const encrypted = await getEncryptionData(fileUpload.IpfsHash)
       // Encrypt BlakQube data
-      const encryptedBlakQube = await axios.post(
-        `${process.env.REACT_APP_SERVER_URL}/encrypt-data`,
+      const { data: encryptedBlakQube } = await axios.post(
+        'https://iqubes-server.onrender.com/encrypt-member-qube',
         {
-          ...contentQubeData.blakQube,
-          blobFile: null,
+          ...blakQubeData,
+          blobFile: null, // Remove the file object before encrypting
           blobPreview: null,
           encryptedFileHash: fileUpload.IpfsHash,
-          encryptedFileKey: encryptedFile.data.key
+          encryptedFileKey: encrypted.key
         }
-      );
+      )
 
-      if (!encryptedBlakQube.data.success) {
-        throw new Error('Failed to encrypt BlakQube data');
+      if (!encryptedBlakQube.success) {
+        throw new Error('Failed to encrypt BlakQube data')
       }
-
-      // Create metadata
+  
+      // Create metadata with both MetaQube and encrypted BlakQube
       const metadata = JSON.stringify({
-        name: `ContentQube NFT #${Date.now()}`,
-        description: 'An encrypted ContentQube NFT',
-        image: encryptedFile.data,
+        name: metaQubeData.iQubeIdentifier,
+        //description: metaQubeData.description,
+        image: encrypted.data,
         attributes: [
-          { trait_type: 'metaQube', value: contentQubeData.metaQube },
-          { trait_type: 'blakQube', value: encryptedBlakQube.data.encryptedData.blakQube }
+          { trait_type: 'metaQube', value: metaQubeData },
+          { trait_type: 'blakQube', value: encryptedBlakQube}
         ],
-      });
+      })
+
 
       // Upload metadata to IPFS
       const metadataUpload = await pinata.upload.json(JSON.parse(metadata));
@@ -183,7 +291,7 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
       // Mint NFT
       const receipt = await nftInterface.mintQube(
         `ipfs://${metadataUpload.IpfsHash}`,
-        encryptedBlakQube.data.encryptedData.key
+        encrypted.key,
       );
 
       const newTokenId = await nftInterface.getTokenIdFromReceipt(receipt);
@@ -192,16 +300,19 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
         console.log('NFT minted successfully with token ID:', newTokenId);
         
         // Call onContentChange if provided
+        /*
         if (onContentChange) {
           onContentChange({
             metaQube,
             blakQube: {
               ...contentQubeData.blakQube,
-              encryptedFileKey: encryptedFile.data.key,
+              encryptedFileKey: encrypted.data.key,
               tokenId: newTokenId
             }
           });
         }
+        */
+
       } else {
         console.log("NFT minted successfully, but couldn't retrieve token ID");
       }
@@ -212,6 +323,7 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="w-full">
@@ -237,7 +349,12 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               name="iQubeIdentifier"
               placeholder="Enter iQube Identifier"
               value={metaQubeData.iQubeIdentifier}
-              onChange={handleMetaQubeChange}
+              onChange={(e) =>
+                handleMetaQubeChange(
+                  'iQubeIdentifier',
+                  e.target.value,
+                )
+              }
               className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
               required
             />
@@ -281,11 +398,11 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
               className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
               required
             >
-              <option value="mp3">mp3</option>
-              <option value="mp4">mp4</option>
+              <option value="mp3">jpeg</option>
+              <option value="mp4">png</option>
               <option value="pdf">pdf</option>
-              <option value="txt">txt</option>
-              <option value="Code">Code</option>
+              <option value="txt">mp3</option>
+              <option value="Code">mp4</option>
               <option value="Other">Other</option>
             </select>
           </div>
@@ -434,109 +551,25 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col">
-            <label htmlFor="format" className="text-sm mb-1 text-white">Format</label>
+            <label htmlFor="format" className="text-sm mb-1 text-white">Name</label>
             <input 
               id="format"
               type="text" 
               name="format"
-              placeholder="Enter Format"
-              value={blakQubeData.format}
+              placeholder="Enter Name"
+              value={blakQubeData.name}
               onChange={handleBlakQubeChange}
               className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
             />
           </div>
           <div className="flex flex-col">
-            <label htmlFor="episode" className="text-sm mb-1 text-white">Episode</label>
+            <label htmlFor="episode" className="text-sm mb-1 text-white">Description</label>
             <input 
               id="episode"
               type="text" 
               name="episode"
-              placeholder="Enter Episode"
-              value={blakQubeData.episode}
-              onChange={handleBlakQubeChange}
-              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label htmlFor="version" className="text-sm mb-1 text-white">Version</label>
-            <input 
-              id="version"
-              type="text" 
-              name="version"
-              placeholder="Enter Version"
-              value={blakQubeData.version}
-              onChange={handleBlakQubeChange}
-              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label htmlFor="rarity" className="text-sm mb-1 text-white">Rarity</label>
-            <input 
-              id="rarity"
-              type="text" 
-              name="rarity"
-              placeholder="Enter Rarity"
-              value={blakQubeData.rarity}
-              onChange={handleBlakQubeChange}
-              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label htmlFor="serialNumber" className="text-sm mb-1 text-white">Serial Number</label>
-            <input 
-              id="serialNumber"
-              type="text" 
-              name="serialNumber"
-              placeholder="Enter Serial Number"
-              value={blakQubeData.serialNumber}
-              onChange={handleBlakQubeChange}
-              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label htmlFor="specificTraits" className="text-sm mb-1 text-white">Specific Traits</label>
-            <input 
-              id="specificTraits"
-              type="text" 
-              name="specificTraits"
-              placeholder="Enter Specific Traits"
-              value={blakQubeData.specificTraits}
-              onChange={handleBlakQubeChange}
-              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label htmlFor="payloadFile" className="text-sm mb-1 text-white">Payload File</label>
-            <input 
-              id="payloadFile"
-              type="text" 
-              name="payloadFile"
-              placeholder="Enter Payload File"
-              value={blakQubeData.payloadFile}
-              onChange={handleBlakQubeChange}
-              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label htmlFor="currentOwner" className="text-sm mb-1 text-white">Current Owner</label>
-            <input 
-              id="currentOwner"
-              type="text" 
-              name="currentOwner"
-              placeholder="Enter Current Owner"
-              value={blakQubeData.currentOwner}
-              onChange={handleBlakQubeChange}
-              className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
-            />
-          </div>
-          <div className="flex flex-col col-span-2">
-            <label htmlFor="updatableData" className="text-sm mb-1 text-white">Updatable Data</label>
-            <input 
-              id="updatableData"
-              type="text" 
-              name="updatableData"
-              placeholder="Enter Updatable Data"
-              value={blakQubeData.updatableData}
+              placeholder="Enter Description"
+              value={blakQubeData.description}
               onChange={handleBlakQubeChange}
               className="w-[95%] border rounded-[5px] p-[10px] bg-[#ffebee]"
             />
@@ -546,7 +579,12 @@ const ContentQube: React.FC<ContentQubeProps> = ({ nftInterface, onContentChange
 
       {/* File Upload Section */}
       <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg mt-6">
-        <label className="block text-sm font-medium text-white">Upload File</label>
+        <div className="flex items-center mb-[10px]">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-[10px] text-red-500">
+            <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
+          </svg>
+          <h3 className="font-bold text-[18px] text-white">File Upload</h3>
+        </div>
         <input 
           type="file" 
           onChange={handleFileUpload}
