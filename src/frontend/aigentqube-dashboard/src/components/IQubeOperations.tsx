@@ -16,7 +16,6 @@ import {
 import QubeViewer from './QubeViewer';
 import { registerQube } from '../utils/contractInteraction';
 import PolygonNFTInterface from '../utils/MetaContract'
-import ContentQube from '../iQube/ContentQube'
 import { OrchestrationAgent } from '../services/OrchestrationAgent';
 
 
@@ -966,6 +965,9 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
             ...blakQubeAttrs
           };
 
+          //HERE IS WHERE THE LOGIC FOR AGENT QUBE WILL GO
+          
+
           orchestrationAgent.addIQube(iQubeTokenId, iQube)
           console.log("from agent:", orchestrationAgent.getIQubeById(iQubeTokenId))
 
@@ -1046,16 +1048,87 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
                     &times; {/* The "X" symbol */}
                   </button>
 
-                  {/* iQube Information */}
-                  <div className="text-sm font-medium text-gray-400 mb-1">
-                    {"ID " + iQube.id || 'No label'} {/* Adjust based on available iQube properties */}
-                  </div>
-                  <div className="text-lg font-semibold text-white">
-                    {iQube.iQubeCreator || 'No value'} {/* Adjust based on available iQube properties */}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {iQube.evmPublicKey || 'No category'} {/* Adjust based on available iQube properties */}
-                  </div>
+                  {/* iQube Information for "Data" */}
+                  {iQube.iQubeContentType === "Data" && (
+                    <>
+                      <div className="text-sm font-medium text-gray-400 mb-1">
+                        {"ID " + iQube.id || "No label"}
+                      </div>
+                      <div className="text-lg font-semibold text-white">
+                        {iQube.iQubeIdentifier || "No value"}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {iQube.evmPublicKey || "No category"}
+                      </div>
+                    </>
+                  )}
+
+                  {iQube.iQubeContentType === "png" && (
+                    <>
+                      <div className="text-sm font-medium text-gray-400 mb-1">
+                        {"ID " + iQube.id || "No label"}
+                      </div>
+                      <div className="text-lg font-semibold text-white">
+                        {iQube.iQubeIdentifier || "No value"}
+                      </div>
+                      <img
+                        src={`${process.env.REACT_APP_GATEWAY_URL}/ipfs/${iQube.encryptedFileHash}`}
+                        alt="iQube Preview"
+                        className="w-full h-32 object-cover rounded-md mt-2"
+                      />
+                    </>
+                  )}
+
+                  {iQube.iQubeContentType === "jpeg" && (
+                    <>
+                      <div className="text-sm font-medium text-gray-400 mb-1">
+                        {"ID " + iQube.id || "No label"}
+                      </div>
+                      <div className="text-lg font-semibold text-white">
+                        {iQube.iQubeIdentifier || "No value"}
+                      </div>
+                      <img
+                        src={`${process.env.REACT_APP_GATEWAY_URL}/ipfs/${iQube.encryptedFileHash}`}
+                        alt="iQube Preview"
+                        className="w-full h-32 object-cover rounded-md mt-2"
+                      />
+                    </>
+                  )}
+
+                  {iQube.iQubeContentType === "pdf" && (
+                    <>
+                      <div className="text-sm font-medium text-gray-400 mb-1">
+                        {"ID " + iQube.id || "No label"}
+                      </div>
+                      <div className="text-lg font-semibold text-white">
+                        {iQube.iQubeIdentifier || "No value"}
+                      </div>
+                      <a
+                        href={`${process.env.REACT_APP_GATEWAY_URL}/ipfs/${iQube.encryptedFileHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 underline mt-2 inline-block"
+                      >
+                        View PDF
+                      </a>
+                    </>
+                  )}
+
+                  {!["Data", "pdf", "png", "jpeg"].includes(iQube.iQubeContentType) && (
+                    <>
+                      <div className="text-sm font-medium text-gray-400 mb-1">
+                        {"ID " + iQube.id || "No label"}
+                      </div>
+                      <div className="text-lg font-semibold text-white">
+                        {iQube.iQubeIdentifier || "No value"}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {"Content Type Not Supported Yet"}
+                      </div>
+                    </>
+                  )}
+
+
                 </div>
               ))
           ) : (
@@ -1068,6 +1141,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
             </div>
           )}
         </div>
+    
       </div>
 
 
