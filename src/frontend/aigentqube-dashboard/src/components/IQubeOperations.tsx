@@ -965,6 +965,9 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
             ...blakQubeAttrs
           };
 
+          //HERE IS WHERE THE LOGIC FOR AGENT QUBE WILL GO
+          
+
           orchestrationAgent.addIQube(iQubeTokenId, iQube)
           console.log("from agent:", orchestrationAgent.getIQubeById(iQubeTokenId))
 
@@ -1139,8 +1142,6 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           )}
         </div>
     
-          
-
       </div>
 
 
