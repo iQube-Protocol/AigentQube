@@ -1272,11 +1272,11 @@ const IQubeNFTMinter: React.FC = () => {
                       className="w-full p-[10px] border rounded-[5px] bg-[#e8f5e9]"
                       required
                     >
-                      <option value="mp3">jpeg</option>
-                      <option value="mp4">png</option>
+                      <option value="jpeg">jpeg</option>
+                      <option value="png">png</option>
                       <option value="pdf">pdf</option>
-                      <option value="txt">mp3</option>
-                      <option value="Code">mp4</option>
+                      <option value="mp3">mp3</option>
+                      <option value="mp4">mp4</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>
