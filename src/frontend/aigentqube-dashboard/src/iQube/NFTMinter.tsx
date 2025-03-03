@@ -704,7 +704,7 @@ const IQubeNFTMinter: React.FC = () => {
 
   const handleRetrieveMetadata = async () => {
     console.log('retrieving meta data')
-    setDecryptedLink('')
+    setDecryptedLink(null)
     setMetadata('')
     setMetaQubeData(null)
     setBlakQubeData(null)
@@ -1025,7 +1025,7 @@ const IQubeNFTMinter: React.FC = () => {
     setIsLoading(true)
 
     console.log('retrieving meta data')
-    setDecryptedLink('')
+    setDecryptedLink(null)
     setMetadata('')
     setMetaQubeData(null)
     setBlakQubeData(null)
@@ -2358,39 +2358,40 @@ const IQubeNFTMinter: React.FC = () => {
                   </div>
                 )}
                 {/* BlakQube Data */}
-                {blakQubeData && (
-                  <div className="bg-[#f6f6f6] p-6 rounded-lg">
-                    <h3 className="font-bold text-[18px] mb-4">BlakQube Data (Decrypted)</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      {Object.entries(blakQubeData).map(([key, value]) => (
-                        <div key={key} className="flex flex-col">
-                          <label className="text-[14px] font-medium text-gray-700 mb-2">
-                            {labelMapping[key] || key}
-                          </label>
-                          <div className="relative group">
-                            <div className="bg-[#e8f5e9] p-4 rounded-[5px] shadow-sm min-h-[45px] flex items-center">
-                              <span className="text-[14px] text-gray-600 truncate">
-                                {value}
-                              </span>
-                            </div>
-                            {typeof value === 'string' && value.length > 40 && (
-                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50">
-                                <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg max-w-[300px] break-all">
-                                  <div className="text-sm">{value}</div>
-                                  <div className="absolute left-4 bottom-[-6px] w-3 h-3 bg-gray-900 transform rotate-45"></div>
-                                </div>
-                              </div>
-                            )}
+                {blakQubeData && !decryptedLink && (
+                  <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg">
+                  <h3 className="font-bold text-[18px] text-white mb-4">BlakQube Data</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {Object.entries(blakQubeData).map(([key, value]) => (
+                      <div key={key} className="flex flex-col">
+                        <label className="text-[14px] font-medium text-white mb-2">
+                          {labelMapping[key] || key}
+                        </label>
+                        <div className="relative group">
+                          <div className="bg-[#ffebee] p-4 rounded-[5px] shadow-sm min-h-[45px] flex items-center">
+                            <span className="text-[14px] text-gray-600 truncate">
+                              {value}
+                            </span>
                           </div>
+                          {typeof value === 'string' && value.length > 40 && (
+                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50">
+                              <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg max-w-[300px] break-all">
+                                <div className="text-sm">{value}</div>
+                                <div className="absolute left-4 bottom-[-6px] w-3 h-3 bg-gray-900 transform rotate-45"></div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
+                  
+                </div>
                 )}
                 {/* Encrypted BlakQube Data */}
-                {encryptedBlakQubeData && !blakQubeData && (
+                {encryptedBlakQubeData && !blakQubeData && !decryptedLink && (
                   <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg">
-                    <h3 className="font-bold text-[18px] text-white mb-4">BlakQube Data (Encrypted)</h3>
+                    <h3 className="font-bold text-[18px] text-white mb-4">Encrypted BlakQube Data</h3>
                     <div className="grid grid-cols-2 gap-4">
                       {Object.entries(encryptedBlakQubeData).map(([key, value]) => (
                         <div key={key} className="flex flex-col">
@@ -2415,17 +2416,23 @@ const IQubeNFTMinter: React.FC = () => {
                         </div>
                       ))}
                     </div>
+                    
+                  </div>
+                 
+                )}
+                 {decryptedLink && (
+                  <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg">
+                    <h3 className="font-bold text-[18px] text-white mb-2">Content Link</h3>
+
                     {/* Decrypted Link Section */}
-                    {decryptedLink && (
-                        <a
-                          href={decryptedLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[blue] underline mt-4 inline-block"
-                        >
-                          See Decrypted BlakQube.
-                        </a>
-                      )}
+                    <a
+                      href={decryptedLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 underline inline-block"
+                    >
+                      See Decrypted ContentQube
+                    </a>
                   </div>
                 )}
               </div>
