@@ -477,10 +477,10 @@ const IQubeNFTMinter: React.FC = () => {
       const { data } = await axios.post(
         'https://iqubes-server.onrender.com/encrypt-member-qube',
         {
-          blobFile: null,
-          blobPreview: null,
+          // blobFile: null,
+          // blobPreview: null,
           encryptedFileHash: fileUpload.IpfsHash,
-          encryptedFileKey: encrypted.key
+          //encryptedFileKey: encrypted.key
         }
       )
 
@@ -496,8 +496,7 @@ const IQubeNFTMinter: React.FC = () => {
         }
 
         const metadata = JSON.stringify({
-          name: `iQube NFT #${Date.now()}`,
-          description: 'An encrypted iQube NFT',
+          name: _contentProfile.metaQube.iQubeIdentifier,
           image: encrypted.data,
           attributes: [
             ...Object.entries(updatedMetaData).map(([key, value]) => ({
@@ -516,7 +515,7 @@ const IQubeNFTMinter: React.FC = () => {
         // mint the member data qube
         const receipt = await nftInterface?.mintQube(
           `ipfs://${metadataUpload.IpfsHash}`,
-          encrypted.key,
+          key,
         )
 
         const newTokenId = await nftInterface?.getTokenIdFromReceipt(receipt)
@@ -776,6 +775,8 @@ const IQubeNFTMinter: React.FC = () => {
   const handleMemberDataDecryption = async () => {
     setIsLoading(true)
     setError('')
+
+
     try {
       if (!nftInterface || !account) {
         throw new Error('NFT interface not initialized or wallet not connected')
@@ -881,7 +882,8 @@ const IQubeNFTMinter: React.FC = () => {
       if (!nftInterface || !account) {
         throw new Error('NFT interface not initialized or wallet not connected')
       }
-      // Get the metadata URI using getBlakQube
+
+
       const metadataURI = await nftInterface.getBlakQube(tokenId)
       console.log('Fetching metadata from:', metadataURI)
 
@@ -950,12 +952,12 @@ const IQubeNFTMinter: React.FC = () => {
         console.log('Server response:', response.data)
 
         
-        // const fullUrl = `${process.env.REACT_APP_GATEWAY_URL}/ipfs/${
-        //   //decrypted.response
-        //   response1.response
-        // }`
-        // console.log(fullUrl)
-        // setDecryptedLink(fullUrl)
+        const fullUrl = `${process.env.REACT_APP_GATEWAY_URL}/ipfs/${
+          //decrypted.response
+          response.data.decryptedData.file
+        }`
+        console.log(fullUrl)
+        setDecryptedLink(fullUrl)
         
       }catch (decryptError: any) {
         console.error('Full decryption error:', decryptError)
@@ -1019,13 +1021,80 @@ const IQubeNFTMinter: React.FC = () => {
     window.location.href = window.location.href.slice(0,-7);
   }
 
-  const handleConditionalClick = (obj: any): void => {
-    console.log(obj);
-    if (obj === 'Data' || obj == "Agent") {
-      handleMemberDataDecryption();
-    } else {
-      handleContentQubeDecrypt();
+  const handleConditionalClick = async () => {
+    setIsLoading(true)
+
+    console.log('retrieving meta data')
+    setDecryptedLink('')
+    setMetadata('')
+    setMetaQubeData(null)
+    setBlakQubeData(null)
+
+    if (!tokenId || !nftInterface) {
+      setError('Missing token ID or NFT interface')
     }
+
+    try {
+      const metadataURI = await nftInterface.getBlakQube(tokenId)
+      let fullPath = metadataURI.replace(
+        'ipfs://',
+        `${process.env.REACT_APP_GATEWAY_URL}/ipfs/`,
+      )
+      console.log('Fetching metadata from:', fullPath)
+
+
+      // Fetch and parse metadata
+      const response = await fetch(fullPath)
+      const data = await response.json()
+      
+      // Extract MetaQube and BlakQube data from attributes
+      const metaQubeAttrs = data.attributes.find((attr: any) => attr.trait_type === 'metaQube')?.value || {}
+      const blakQubeAttrs = data.attributes.find((attr: any) => attr.trait_type === 'blakQube')?.value || {}
+      
+      // Remove blakQube-related fields
+      const {
+        blakQubeKey,
+        blakQubeLocation,
+        blakQubeIdentifier,
+        ...cleanMetaQubeData
+      } = metaQubeAttrs
+
+      // Format MetaQube values
+      const formattedMetaQubeData = Object.entries(cleanMetaQubeData).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [key]: formatDisplayValue(value, false)
+        }),
+        {}
+      )
+
+      // Format BlakQube values
+      const formattedBlakQubeData = Object.entries(blakQubeAttrs).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [key]: formatDisplayValue(value, true)
+        }),
+        {}
+      )
+      
+      setMetaQubeData(formattedMetaQubeData)
+      setEncryptedBlakQubeData(formattedBlakQubeData) // Store encrypted data separately
+      setBlakQubeData(null) // Clear any previous decrypted data
+      setMetadata(fullPath)
+
+      if (formattedMetaQubeData.iQubeContentType === 'Data' || formattedMetaQubeData.iQubeContentType == "Agent") {
+        handleMemberDataDecryption();
+      } else {
+        handleContentQubeDecrypt();
+      }
+
+    } catch (error) {
+      console.error('Error retrieving metadata:', error)
+      setError('Failed to retrieve metadata. Please check console for details.')
+    } 
+
+
+
   };
 
   return (
@@ -2157,7 +2226,7 @@ const IQubeNFTMinter: React.FC = () => {
                 {/* Decrypt BlakQube Button */}
                 <div className="pt-2 flex flex-col">
                   <button
-                    onClick={() => handleConditionalClick(metaQubeData.iQubeContentType)}
+                    onClick={() => handleConditionalClick()}
                     //onClick={handleMemberDataDecryption}
                     disabled={isLoading || !tokenId || !nftInterface}
                     className={`w-full py-[10px] rounded-[5px] bg-[grey]
