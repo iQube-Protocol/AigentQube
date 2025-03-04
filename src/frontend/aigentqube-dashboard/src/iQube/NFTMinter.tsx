@@ -2368,7 +2368,7 @@ const IQubeNFTMinter: React.FC = () => {
                           {labelMapping[key] || key}
                         </label>
                         <div className="relative group">
-                          <div className="bg-[#ffebee] p-4 rounded-[5px] shadow-sm min-h-[45px] flex items-center">
+                          <div className="bg-[#e8f5e9] p-4 rounded-[5px] shadow-sm min-h-[45px] flex items-center">
                             <span className="text-[14px] text-gray-600 truncate">
                               {value}
                             </span>
