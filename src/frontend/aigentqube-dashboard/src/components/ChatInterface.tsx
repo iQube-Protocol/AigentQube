@@ -19,6 +19,7 @@ import { VoiceService } from '../services/VoiceService';
 import VoiceRecorder from './VoiceRecorder';
 import AudioPlayer from './AudioPlayer';
 import AudioWaveform from './AudioWaveform';
+import LocalTTSToggle from './LocalTTSToggle';
 
 interface ChatInterfaceProps {
   context?: any;
@@ -266,6 +267,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const voiceApiKey = process.env.REACT_APP_CHIRP_TTS_API_KEY
   const [voiceService, setVoiceService] = useState<VoiceService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [useLocalTTS, setUseLocalTTS] = useState<boolean>(false);
+  const [isLocalTTSReady, setIsLocalTTSReady] = useState<boolean>(false);
   const toast = useToast();
 
   // Helper function to check if an error should be suppressed
@@ -290,10 +293,30 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     return suppressPatterns.some(pattern => pattern.test(errorMessage));
   };
 
-  // Initialize voice service
   useEffect(() => {
     if (voiceApiKey) {
-      setVoiceService(new VoiceService(voiceApiKey));
+      const newVoiceService = new VoiceService({
+        apiKey: voiceApiKey,
+        useLocalTTS: useLocalTTS,
+        modelPath: '/', // Adjust path to where your model files are stored
+        onReadyStateChange: (isReady) => setIsLocalTTSReady(isReady)
+      });
+      
+      setVoiceService(newVoiceService);
+      
+      // Cleanup function
+      return () => {
+        // Revoke any object URLs that might be in messages
+        messages.forEach(message => {
+          if (message.audioChunks) {
+            message.audioChunks.forEach(chunk => {
+              if (chunk.audioUrl) {
+                URL.revokeObjectURL(chunk.audioUrl);
+              }
+            });
+          }
+        });
+      };
     }
   }, [voiceApiKey]);
 
@@ -653,6 +676,64 @@ const handleTranscription = (text: string) => {
     // handleSubmit();
   };
 
+  const handleTTSModeChange = async (useLocal: boolean) => {
+    setUseLocalTTS(useLocal);
+    
+    // Show loading indicator for local mode
+    if (useLocal && !isLocalTTSReady) {
+      toast({
+        title: "Loading local TTS",
+        description: "Initializing browser-based speech synthesis...",
+        status: "info",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+    
+    // Update voice service configuration
+    if (voiceService) {
+      try {
+        const success = await voiceService.updateTTSMode(useLocal);
+        
+        if (success) {
+          toast({
+            title: `Using ${useLocal ? "local" : "remote"} TTS`,
+            description: useLocal 
+              ? "Speech will be generated in your browser" 
+              : "Speech will be generated using our cloud API",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+          
+          // Update local TTS ready state
+          if (useLocal) {
+            setIsLocalTTSReady(voiceService.isLocalReady());
+          }
+        } else if (useLocal) {
+          // If switching to local failed, revert back to API
+          setUseLocalTTS(false);
+          toast({
+            title: "Local TTS Unavailable",
+            description: "Failed to initialize local speech engine. Using API instead.",
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          });
+        }
+      } catch (error) {
+        console.error("Error changing TTS mode:", error);
+        toast({
+          title: "Error Changing TTS Mode",
+          description: error instanceof Error ? error.message : "An unknown error occurred",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    }
+  };
+
   useEffect(() => {
     const keyCount: {[key: string]: number} = {};
     messages.forEach(message => {
@@ -686,6 +767,16 @@ const handleTranscription = (text: string) => {
         borderTopRadius="lg"
       >
         <Text fontSize="lg" fontWeight="bold">{currentDomain}</Text>
+      <Flex align="center" gap={3}>
+        {voiceApiKey && (
+          <LocalTTSToggle
+            isLocalTTS={useLocalTTS}
+            isLocalReady={isLocalTTSReady}
+            isLoading={isLoading}
+            onChange={handleTTSModeChange}
+          />
+        )}
+        
         {isLoading && (
           <Flex align="center">
             <Text fontSize="sm" color="gray.400" mr={2}>Processing</Text>
@@ -699,6 +790,7 @@ const handleTranscription = (text: string) => {
           </Flex>
         )}
       </Flex>
+    </Flex>
 
       <Box 
         flex="1" 
