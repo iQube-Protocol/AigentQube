@@ -1,4 +1,5 @@
 // src/services/VoiceService.ts
+// Optimized version with persistent model loading
 import { InferenceSession, Tensor } from 'onnxruntime-web';
 
 export interface AudioToTextResponse {
@@ -63,6 +64,11 @@ export class VoiceService {
   private modulePhonemizer: any = null;
   private stdoutCaptureRef: string = "";
   private modelPath: string = '/';
+  
+  // Added persistent model and session handling
+  private onnxSession: InferenceSession | null = null;
+  private isModelLoading: boolean = false;
+  private modelLoadPromise: Promise<boolean> | null = null;
 
   constructor(options: VoiceServiceOptions = {}) {
     this.apiKey = options.apiKey || '';
@@ -84,11 +90,12 @@ export class VoiceService {
     
     if (this.useLocalTTS) {
       // Initialize local TTS
-      this.initializeLocalTTS().then(() => {
+      this.modelLoadPromise = this.initializeLocalTTS().then(ready => {
         // Notify when local TTS is ready
         if (onReadyStateChange) {
-          onReadyStateChange(this.isLocalTTSReady);
+          onReadyStateChange(ready);
         }
+        return ready;
       });
     }
   }
@@ -97,19 +104,46 @@ export class VoiceService {
    * Initialize the local TTS model and phonemizer
    */
   private async initializeLocalTTS(): Promise<boolean> {
+    // Prevent multiple simultaneous loads
+    if (this.isModelLoading) {
+      console.log('[VoiceService] Model loading already in progress, waiting...');
+      return this.modelLoadPromise as Promise<boolean>;
+    }
+    
+    // Skip if already initialized
+    if (this.isLocalTTSReady && this.onnxSession) {
+      console.log('[VoiceService] Local TTS already initialized');
+      return true;
+    }
+    
     try {
+      this.isModelLoading = true;
+      
       // Load model configuration
       await this.fetchModelConfig();
       
-      // Load phonemizer module
-      await this.loadPhonemizer();
+      // Load phonemizer module if not already loaded
+      if (!this.modulePhonemizer) {
+        await this.loadPhonemizer();
+      }
+      
+      // Load ONNX model if not already loaded
+      if (!this.onnxSession) {
+        console.log('[VoiceService] Loading ONNX model');
+        this.onnxSession = await InferenceSession.create(`${this.modelPath}model.onnx`, {
+          executionProviders: ["webgpu", "wasm"],
+        });
+        console.log('[VoiceService] ONNX model loaded successfully');
+      }
       
       this.isLocalTTSReady = true;
+      this.isModelLoading = false;
       console.log('[VoiceService] Local TTS initialized successfully');
       return true;
     } catch (error) {
       console.error('[VoiceService] Local TTS initialization error:', error);
       this.isLocalTTSReady = false;
+      this.isModelLoading = false;
       return false;
     }
   }
@@ -135,11 +169,16 @@ export class VoiceService {
         this.modelPath += '/';
       }
       console.log(`[VoiceService] Updated model path: ${this.modelPath}`);
+      
+      // Reset model state if path changed
+      this.isLocalTTSReady = false;
+      this.onnxSession = null;
     }
     
     // Initialize local TTS if needed
     if (useLocalTTS && !this.isLocalTTSReady) {
-      return this.initializeLocalTTS();
+      this.modelLoadPromise = this.initializeLocalTTS();
+      return this.modelLoadPromise;
     }
     
     return true;
@@ -150,6 +189,26 @@ export class VoiceService {
    */
   public isLocalReady(): boolean {
     return this.isLocalTTSReady;
+  }
+  
+  /**
+   * Cleanly dispose resources when no longer needed
+   */
+  public async dispose(): Promise<void> {
+    if (this.onnxSession) {
+      try {
+        console.log('[VoiceService] Disposing ONNX session');
+        await this.onnxSession.release();
+        this.onnxSession = null;
+      } catch (error) {
+        console.error('[VoiceService] Error disposing ONNX session:', error);
+      }
+    }
+    
+    // Clear other resources
+    this.isLocalTTSReady = false;
+    this.modelConfig = null;
+    this.modulePhonemizer = null;
   }
   
   /**
@@ -294,12 +353,15 @@ export class VoiceService {
       console.log('[VoiceService] Local TTS - Phonemizing text:', text);
       const phonemeIds = await this.phonemizeText(text);
       
-      // Step 2: Load ONNX model
-      console.log('[VoiceService] Local TTS - Loading ONNX model');
-      const session = await InferenceSession.create(`${this.modelPath}model.onnx`, {
-        executionProviders: ["webgpu", "wasm"],
-      });
-      console.log('[VoiceService] Local TTS - Model loaded successfully');
+      // Step 2: Use already loaded ONNX model
+      if (!this.onnxSession) {
+        console.log('[VoiceService] Local TTS - Model not loaded, attempting to load');
+        await this.initializeLocalTTS();
+        
+        if (!this.onnxSession) {
+          throw new Error("Failed to load ONNX model");
+        }
+      }
       
       // Step 3: Prepare model inputs
       const sampleRate = this.modelConfig?.audio?.sample_rate || 22050;
@@ -320,7 +382,7 @@ export class VoiceService {
       
       // Step 4: Run inference
       console.log('[VoiceService] Local TTS - Running inference');
-      const results = await session.run(feeds);
+      const results = await this.onnxSession.run(feeds);
       
       // Step 5: Process the results
       const audioData = results.output.data as Float32Array;
@@ -432,16 +494,43 @@ export class VoiceService {
     }
   }
 
+  public normalizeText(text: string): string {
+    /**
+     * Cleans and normalizes the input text for TTS processing.
+     * - Removes excessive whitespace
+     * - Ensures proper punctuation spacing
+     * - Converts to ASCII-friendly format where possible
+     */
+    text = text.trim();
+    text = text.replace(/\s+/g, ' ');  // Normalize whitespace
+    text = text.replace(/([,.!?])/g, ' $1 ');  // Ensure spacing around punctuation
+    text = text.replace(/\s{2,}/g, ' ');  // Remove multiple spaces
+    text = text.replace(/\*/g, '');  // Remove asterisks
+    text = text.replace(/Qube/gi, 'cube');  // Convert "IQubes" to "i-cubes"
+    text = text.replace(/Z/g, 'zee');
+    return text.trim();
+  }
+
   /**
    * Convert text to speech
    */
-  public async textToSpeech(text: string, voice: string = 'en_US-lessac-medium'): Promise<TextToSpeechResponse> {
-    console.log(`[VoiceService] textToSpeech: Starting conversion for text (${text.length} chars) with voice ${voice}`);
-    
+  public async textToSpeech(textInput: string, voice: string = 'en_US-lessac-medium'): Promise<TextToSpeechResponse> {
+    console.log(`[VoiceService] textToSpeech: Starting conversion for text (${textInput.length} chars) with voice ${voice}`);
+    const text = this.normalizeText(textInput)
     // Use local TTS if enabled and ready
-    if (this.useLocalTTS && this.isLocalTTSReady) {
-      console.log('[VoiceService] Using local TTS for text-to-speech');
-      return this.generateLocalSpeech(text);
+    if (this.useLocalTTS) {
+      // If not ready, wait for initialization to complete
+      if (!this.isLocalTTSReady && this.modelLoadPromise) {
+        console.log('[VoiceService] Waiting for local TTS to initialize');
+        await this.modelLoadPromise;
+      }
+      
+      if (this.isLocalTTSReady) {
+        console.log('[VoiceService] Using local TTS for text-to-speech');
+        return this.generateLocalSpeech(text);
+      } else {
+        console.warn('[VoiceService] Local TTS initialization failed, falling back to API');
+      }
     }
     
     // Fall back to API if local TTS is not available
@@ -600,112 +689,114 @@ export class VoiceService {
   }
 
   /**
-   * Split text into logical chunks for better audio processing
-   */
-  private splitTextIntoChunks(text: string, options: { firstChunkMinWords?: number } = {}): string[] {
-    const words = text.split(/\s+/);
-    const minWords = options.firstChunkMinWords || 0;
+ * Split text into natural chunks for better audio processing
+ * Prioritizes complete sentences while maintaining reasonable chunk sizes
+ */
+private splitTextIntoChunks(text: string, options: { firstChunkMinWords?: number } = {}): string[] {
+    // Set minimum sizes and thresholds
+    const minWords = Math.max(3, options.firstChunkMinWords || 3);
+    const idealSentenceSize = 30; // Maximum words in a sentence before considering splitting
+    const maxChunkSize = this.maxChunkLength; // Character limit
   
-    let chunks: string[] = [];
+    // Split text into sentences first
+    const sentences = text.split(/(?<=[.!?])\s+/);
+    const chunks: string[] = [];
+    
     let currentChunk: string[] = [];
-  
-    words.forEach((word, index) => {
-      currentChunk.push(word);
-  
-      // Ensure first chunk is large enough
-      if (index >= minWords && (currentChunk.length >= 10 || word.endsWith('.'))) {
-        chunks.push(currentChunk.join(' '));
-        currentChunk = [];
-      }
-    });
-  
-    // Add remaining words as the last chunk
-    if (currentChunk.length > 0) {
-      chunks.push(currentChunk.join(' '));
-    }
-  
-    return chunks;
-  }
-  
-  /**
-   * Break a long sentence into smaller chunks at logical points
-   */
-  private breakIntoSmallChunks(longSentence: string): string[] {
-    const chunks: string[] = [];
-    const phraseDelimiters = /(?<=[,;:])\s+/g;
-    const phrases = longSentence.split(phraseDelimiters);
+    let currentWordCount = 0;
     
-    let currentChunk = '';
-    
-    for (const phrase of phrases) {
-      if (!phrase.trim()) continue;
+    // Process each sentence
+    for (let i = 0; i < sentences.length; i++) {
+      const sentence = sentences[i].trim();
+      if (!sentence) continue;
       
-      if (currentChunk && (currentChunk.length + phrase.length > this.maxChunkLength)) {
-        chunks.push(currentChunk);
-        currentChunk = phrase;
+      // Count words in this sentence
+      const sentenceWords = sentence.split(/\s+/);
+      const sentenceWordCount = sentenceWords.length;
+      
+      // Case 1: Current chunk is empty - start a new chunk with this sentence
+      if (currentChunk.length === 0) {
+        currentChunk.push(sentence);
+        currentWordCount = sentenceWordCount;
+        
+        // If this is the last sentence or it's already a substantial chunk, finalize it
+        if (i === sentences.length - 1 || sentenceWordCount >= idealSentenceSize) {
+          chunks.push(currentChunk.join(' '));
+          currentChunk = [];
+          currentWordCount = 0;
+        }
+        continue;
+      }
+      
+      // Case 2: Check if adding this sentence would exceed our ideal size
+      const combinedLength = currentChunk.join(' ').length + 1 + sentence.length;
+      const combinedWordCount = currentWordCount + sentenceWordCount;
+      
+      if (combinedLength > maxChunkSize || combinedWordCount > idealSentenceSize * 1.5) {
+        // Adding this sentence would make the chunk too large
+        // Finalize current chunk if it meets minimum requirements
+        if (currentWordCount >= minWords) {
+          chunks.push(currentChunk.join(' '));
+          currentChunk = [sentence];
+          currentWordCount = sentenceWordCount;
+        } else {
+          // Current chunk is too small, so add this sentence anyway
+          currentChunk.push(sentence);
+          currentWordCount += sentenceWordCount;
+        }
       } else {
-        currentChunk = currentChunk ? `${currentChunk} ${phrase}` : phrase;
+        // This sentence fits well with the current chunk
+        currentChunk.push(sentence);
+        currentWordCount += sentenceWordCount;
+      }
+      
+      // If this is the last sentence, finalize the chunk
+      if (i === sentences.length - 1 && currentChunk.length > 0) {
+        chunks.push(currentChunk.join(' '));
       }
     }
     
-    if (currentChunk) {
-      chunks.push(currentChunk);
-    }
-    
-    // If we still have chunks that are too long, break by words
-    return chunks.flatMap(chunk => 
-      chunk.length > this.maxChunkLength ? this.breakByWords(chunk) : chunk
-    );
-  }
-  
-  /**
-   * Break text by words if phrases are still too long
-   */
-  private breakByWords(text: string): string[] {
-    const chunks: string[] = [];
-    const words = text.split(' ');
-    let currentChunk = '';
-    
-    for (const word of words) {
-      if (currentChunk && (currentChunk.length + word.length + 1 > this.maxChunkLength)) {
-        chunks.push(currentChunk);
-        currentChunk = word;
-      } else {
-        currentChunk = currentChunk ? `${currentChunk} ${word}` : word;
-      }
-    }
-    
-    if (currentChunk) {
-      chunks.push(currentChunk);
+    // If we have very short chunks (less than minWords), try to combine them
+    if (chunks.length > 1) {
+      return this.optimizeChunkSizes(chunks, minWords, maxChunkSize);
     }
     
     return chunks;
   }
   
   /**
-   * Optimize chunks by combining very short ones
+   * Optimize chunks by ensuring minimum size and avoiding tiny fragments
    */
-  private optimizeChunks(chunks: string[]): string[] {
-    if (chunks.length <= 1) return chunks;
-    
+  private optimizeChunkSizes(chunks: string[], minWords: number, maxSize: number): string[] {
     const optimized: string[] = [];
     let current = chunks[0];
+    let currentWordCount = current.split(/\s+/).length;
     
     for (let i = 1; i < chunks.length; i++) {
       const next = chunks[i];
+      const nextWordCount = next.split(/\s+/).length;
       
-      // If current chunk is too short and combining won't exceed max length
-      if (current.length < this.minChunkLength && 
-          current.length + next.length <= this.maxChunkLength) {
+      // If current chunk is too small and combining won't exceed max length
+      if (currentWordCount < minWords && 
+          current.length + next.length + 1 <= maxSize) {
         current = `${current} ${next}`;
+        currentWordCount += nextWordCount;
       } else {
-        optimized.push(current);
-        current = next;
+        // If the next chunk is too small and this is the second-to-last chunk,
+        // see if we can combine it with the current chunk
+        if (i === chunks.length - 1 && nextWordCount < minWords && 
+            current.length + next.length + 1 <= maxSize) {
+          current = `${current} ${next}`;
+        } else {
+          optimized.push(current);
+          current = next;
+          currentWordCount = nextWordCount;
+        }
       }
     }
     
-    // Add the last chunk
-    if (current) {
+    // Add the last chunk if not already added
+    if (current && (optimized.length === 0 || optimized[optimized.length - 1] !== current)) {
       optimized.push(current);
     }
     
