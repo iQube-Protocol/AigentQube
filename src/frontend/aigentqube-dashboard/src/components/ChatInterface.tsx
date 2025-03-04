@@ -26,6 +26,15 @@ interface ChatInterfaceProps {
   orchestrationAgent: OrchestrationAgent;
 }
 
+export interface AudioChunk {
+  id: string;        // Unique identifier for the chunk
+  text: string;      // The text content of this chunk
+  audioUrl: string | null;  // URL to the audio file (null if not generated yet)
+  isLoading: boolean;  // Whether this chunk is still being processed
+  error: string | null;  // Error message if processing failed
+  index: number;     // Position in the sequence of chunks
+}
+
 interface Message {
   id: number;
   uniqueId: string;
@@ -35,13 +44,7 @@ interface Message {
   error?: boolean;
   audioUrl?: string;
   isAudioLoading?: boolean;
-  audioChunks?: Array<{
-    index: number;
-    text: string;
-    audioUrl: string | null;
-    isLoading: boolean;
-    error: string | null;
-  }>;
+  audioChunks?: AudioChunk[]
 }
 
 // Define the structure for a prompt recommendation
@@ -261,7 +264,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [currentDomain, setCurrentDomain] = useState<string>(orchestrationAgent?.getCurrentDomain() || 'AigentQube');
   const [isApiInitialized, setIsApiInitialized] = useState(false);
   const voiceApiKey = process.env.REACT_APP_CHIRP_TTS_API_KEY
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [voiceService, setVoiceService] = useState<VoiceService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
@@ -295,26 +297,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [voiceApiKey]);
 
-  // Function to generate speech from text
-const generateSpeech = async (text: string): Promise<string | null> => {
-  if (!voiceService) {
-    console.warn('Voice service not initialized');
-    return null;
-  }
-  
-  try {
-    const response = await voiceService.textToSpeech(text);
-    return response.success ? response.audioUrl || null : null;
-  } catch (error) {
-    console.error('Error generating speech:', error);
-    return null;
-  }
-};
-
 // Handle transcription from voice input
 const handleTranscription = (text: string) => {
   setInputValue(text);
-  setIsTranscribing(false);
 };
 
   // Init orchestration agent
@@ -475,9 +460,9 @@ const handleTranscription = (text: string) => {
       }
       return;
     }
-
-    console.log('Submitted message:', inputValue); // Log the submitted message
-    console.log("Orchestration agent initalized?", orchestrationAgent.isInitialized())
+  
+    console.log('Submitted message:', inputValue);
+    console.log("Orchestration agent initialized?", orchestrationAgent.isInitialized())
     console.log("Current Domain", orchestrationAgent.getCurrentDomain())
     
     const userMessage = createMessage(inputValue, 'user');
@@ -496,13 +481,13 @@ const handleTranscription = (text: string) => {
             console.log('Attempting to initialize OrchestrationAgent before submission');
             await orchestrationAgent.initialize();
           }
-
+  
           // Re-check API initialization
           const apiKey = process.env.REACT_APP_METIS_API_KEY;
           if (!apiKey) {
             throw new Error('Metis API key not found in environment variables');
           }
-
+  
           // Initialize specialized domain if needed
           if (currentDomain !== 'AigentQube' && currentDomain !== 'Generic AI') {
             await orchestrationAgent.initializeSpecializedDomain(currentDomain as SpecializedDomain, {
@@ -518,44 +503,119 @@ const handleTranscription = (text: string) => {
           console.warn('Suppressed initialization error:', errorMessage);
         }
       }
-
+  
       // Perform query using Metis service
       const response = await orchestrationAgent.queryDomain(inputValue);
-
+  
       if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to get response');
       }
-
+  
       // Create assistant's response message
       const assistantMessage = createMessage(response.data.toString(), 'assistant');
+      
+      // Initialize audio chunks array
+      assistantMessage.audioChunks = [];
       assistantMessage.isAudioLoading = true;
       
       // Add the message immediately with loading state for audio
       setMessages(prev => [...prev, assistantMessage]);
       
-      // Generate speech in the background
+      // Generate speech in the background using the streaming approach
       if (voiceService) {
-        generateSpeech(response.data.toString()).then(audioUrl => {
-          if (audioUrl) {
-            // Update the message with the audio URL
-            setMessages(prev => 
-              prev.map(msg => 
-                msg.uniqueId === assistantMessage.uniqueId 
-                  ? { ...msg, audioUrl, isAudioLoading: false } 
-                  : msg
-              )
-            );
-          } else {
-            // Just mark loading as done if audio generation failed
-            setMessages(prev => 
-              prev.map(msg => 
-                msg.uniqueId === assistantMessage.uniqueId 
-                  ? { ...msg, isAudioLoading: false } 
-                  : msg
-              )
-            );
-          }
-        });
+        try {
+          // Use streamAudio to process the text in chunks
+          voiceService.streamAudio(
+            response.data.toString(),
+            (chunk, isComplete) => {
+              // Update the message with the new audio chunk
+              setMessages(prev => {
+                // Find the assistant message to update
+                const messageIndex = prev.findIndex(msg => msg.uniqueId === assistantMessage.uniqueId);
+                
+                if (messageIndex >= 0) {
+                  // Create a copy of the messages array
+                  const updatedMessages = [...prev];
+                  const message = {...updatedMessages[messageIndex]};
+                  
+                  // Initialize audioChunks if not present
+                  const currentChunks = message.audioChunks || [];
+                  
+                  // Find if the chunk already exists
+                  const chunkIndex = currentChunks.findIndex(c => c.index === chunk.index);
+                  
+                  let newChunks;
+                  if (chunkIndex >= 0) {
+                    // Update existing chunk
+                    newChunks = [...currentChunks];
+                    newChunks[chunkIndex] = chunk;
+                  } else {
+                    // Add new chunk
+                    newChunks = [...currentChunks, chunk];
+                  }
+                  
+                  // Update the message with new chunks
+                  message.audioChunks = newChunks;
+                  
+                  // Mark as not loading when all chunks are complete
+                  if (isComplete) {
+                    message.isAudioLoading = false;
+                  }
+                  
+                  // Update the message in our array
+                  updatedMessages[messageIndex] = message;
+                  return updatedMessages;
+                }
+                
+                return prev;
+              });
+            }
+          ).catch(audioError => {
+            console.error('Error streaming audio:', audioError);
+            
+            // Update message to indicate audio streaming error
+            setMessages(prev => {
+              const messageIndex = prev.findIndex(msg => msg.uniqueId === assistantMessage.uniqueId);
+              
+              if (messageIndex >= 0) {
+                const updatedMessages = [...prev];
+                updatedMessages[messageIndex] = {
+                  ...updatedMessages[messageIndex],
+                  isAudioLoading: false
+                };
+                return updatedMessages;
+              }
+              
+              return prev;
+            });
+            
+            toast({
+              title: 'Audio Generation Error',
+              description: audioError instanceof Error ? audioError.message : 'Failed to generate audio',
+              status: 'error',
+              duration: 5000,
+              isClosable: true,
+            });
+          });
+        } catch (audioError) {
+          console.error('Error initiating audio streaming:', audioError);
+          
+          // Update message to indicate audio error
+          setMessages(prev => {
+            const messageIndex = prev.findIndex(msg => msg.uniqueId === assistantMessage.uniqueId);
+            
+            if (messageIndex >= 0) {
+              const updatedMessages = [...prev];
+              updatedMessages[messageIndex] = {
+                ...updatedMessages[messageIndex],
+                isAudioLoading: false
+              };
+              return updatedMessages;
+            }
+            
+            return prev;
+          });
+        }
       }
     } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
@@ -576,7 +636,7 @@ const handleTranscription = (text: string) => {
           isClosable: true,
         });
       }
-
+  
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -673,7 +733,9 @@ const handleTranscription = (text: string) => {
               maxWidth="80%"
               mb={4}
               position="relative" // Add relative positioning to the container
-              pr={message.role === 'assistant' && (message.audioUrl || message.isAudioLoading) ? 6 : 0} // Add padding if we have audio
+              pr={message.role === 'assistant' && 
+                  (message.audioUrl || message.audioChunks?.length || message.isAudioLoading) 
+                  ? 6 : 0} // Add padding if we have audio
             >
               <Box
                 bg={
@@ -711,9 +773,9 @@ const handleTranscription = (text: string) => {
               </Box>
               
               {/* Audio player for assistant messages */}
-              {message.role === 'assistant' && (message.audioUrl || message.isAudioLoading) && (
+              {message.role === 'assistant' && (
                 <AudioPlayer 
-                  audioUrl={message.audioUrl || ''} 
+                  audioChunks={message.audioChunks}
                   isLoading={message.isAudioLoading || false}
                 />
               )}
