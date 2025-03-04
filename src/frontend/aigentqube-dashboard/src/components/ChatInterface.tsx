@@ -12,17 +12,27 @@ import {
   Card,
   CardHeader,
   CardBody,
-  CardFooter,
-  Divider
 } from '@chakra-ui/react';
 import { OrchestrationAgent } from '../services/OrchestrationAgent';
 import { SpecializedDomain, DOMAIN_METADATA } from '../types/domains';
-import { OrganizeImportsMode } from 'typescript';
+import { VoiceService } from '../services/VoiceService';
+import VoiceRecorder from './VoiceRecorder';
+import AudioPlayer from './AudioPlayer';
+import AudioWaveform from './AudioWaveform';
 
 interface ChatInterfaceProps {
   context?: any;
   className?: string;
   orchestrationAgent: OrchestrationAgent;
+}
+
+export interface AudioChunk {
+  id: string;        // Unique identifier for the chunk
+  text: string;      // The text content of this chunk
+  audioUrl: string | null;  // URL to the audio file (null if not generated yet)
+  isLoading: boolean;  // Whether this chunk is still being processed
+  error: string | null;  // Error message if processing failed
+  index: number;     // Position in the sequence of chunks
 }
 
 interface Message {
@@ -32,6 +42,9 @@ interface Message {
   content: string;
   timestamp: Date;
   error?: boolean;
+  audioUrl?: string;
+  isAudioLoading?: boolean;
+  audioChunks?: AudioChunk[]
 }
 
 // Define the structure for a prompt recommendation
@@ -250,6 +263,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [currentDomain, setCurrentDomain] = useState<string>(orchestrationAgent?.getCurrentDomain() || 'AigentQube');
   const [isApiInitialized, setIsApiInitialized] = useState(false);
+  const voiceApiKey = process.env.REACT_APP_CHIRP_TTS_API_KEY
+  const [voiceService, setVoiceService] = useState<VoiceService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
 
@@ -274,6 +289,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     
     return suppressPatterns.some(pattern => pattern.test(errorMessage));
   };
+
+  // Initialize voice service
+  useEffect(() => {
+    if (voiceApiKey) {
+      setVoiceService(new VoiceService(voiceApiKey));
+    }
+  }, [voiceApiKey]);
+
+// Handle transcription from voice input
+const handleTranscription = (text: string) => {
+  setInputValue(text);
+};
 
   // Init orchestration agent
   useEffect(() => {
@@ -426,17 +453,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     };
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!inputValue.trim() || !orchestrationAgent) {
       if (!orchestrationAgent) {
         console.warn('OrchestrationAgent not available');
       }
       return;
     }
-
-    console.log('Submitted message:', inputValue); // Log the submitted message
-    console.log("Orchestration agent initalized?", orchestrationAgent.isInitialized())
+  
+    console.log('Submitted message:', inputValue);
+    console.log("Orchestration agent initialized?", orchestrationAgent.isInitialized())
     console.log("Current Domain", orchestrationAgent.getCurrentDomain())
     
     const userMessage = createMessage(inputValue, 'user');
@@ -455,13 +481,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             console.log('Attempting to initialize OrchestrationAgent before submission');
             await orchestrationAgent.initialize();
           }
-
+  
           // Re-check API initialization
           const apiKey = process.env.REACT_APP_METIS_API_KEY;
           if (!apiKey) {
             throw new Error('Metis API key not found in environment variables');
           }
-
+  
           // Initialize specialized domain if needed
           if (currentDomain !== 'AigentQube' && currentDomain !== 'Generic AI') {
             await orchestrationAgent.initializeSpecializedDomain(currentDomain as SpecializedDomain, {
@@ -477,16 +503,120 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           console.warn('Suppressed initialization error:', errorMessage);
         }
       }
-
+  
       // Perform query using Metis service
       const response = await orchestrationAgent.queryDomain(inputValue);
-
+  
       if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to get response');
       }
-
-      // Add assistant's response
-      setMessages(prev => [...prev, createMessage(response.data.toString(), 'assistant')]);
+  
+      // Create assistant's response message
+      const assistantMessage = createMessage(response.data.toString(), 'assistant');
+      
+      // Initialize audio chunks array
+      assistantMessage.audioChunks = [];
+      assistantMessage.isAudioLoading = true;
+      
+      // Add the message immediately with loading state for audio
+      setMessages(prev => [...prev, assistantMessage]);
+      
+      // Generate speech in the background using the streaming approach
+      if (voiceService) {
+        try {
+          // Use streamAudio to process the text in chunks
+          voiceService.streamAudio(
+            response.data.toString(),
+            (chunk, isComplete) => {
+              // Update the message with the new audio chunk
+              setMessages(prev => {
+                // Find the assistant message to update
+                const messageIndex = prev.findIndex(msg => msg.uniqueId === assistantMessage.uniqueId);
+                
+                if (messageIndex >= 0) {
+                  // Create a copy of the messages array
+                  const updatedMessages = [...prev];
+                  const message = {...updatedMessages[messageIndex]};
+                  
+                  // Initialize audioChunks if not present
+                  const currentChunks = message.audioChunks || [];
+                  
+                  // Find if the chunk already exists
+                  const chunkIndex = currentChunks.findIndex(c => c.index === chunk.index);
+                  
+                  let newChunks;
+                  if (chunkIndex >= 0) {
+                    // Update existing chunk
+                    newChunks = [...currentChunks];
+                    newChunks[chunkIndex] = chunk;
+                  } else {
+                    // Add new chunk
+                    newChunks = [...currentChunks, chunk];
+                  }
+                  
+                  // Update the message with new chunks
+                  message.audioChunks = newChunks;
+                  
+                  // Mark as not loading when all chunks are complete
+                  if (isComplete) {
+                    message.isAudioLoading = false;
+                  }
+                  
+                  // Update the message in our array
+                  updatedMessages[messageIndex] = message;
+                  return updatedMessages;
+                }
+                
+                return prev;
+              });
+            }
+          ).catch(audioError => {
+            console.error('Error streaming audio:', audioError);
+            
+            // Update message to indicate audio streaming error
+            setMessages(prev => {
+              const messageIndex = prev.findIndex(msg => msg.uniqueId === assistantMessage.uniqueId);
+              
+              if (messageIndex >= 0) {
+                const updatedMessages = [...prev];
+                updatedMessages[messageIndex] = {
+                  ...updatedMessages[messageIndex],
+                  isAudioLoading: false
+                };
+                return updatedMessages;
+              }
+              
+              return prev;
+            });
+            
+            toast({
+              title: 'Audio Generation Error',
+              description: audioError instanceof Error ? audioError.message : 'Failed to generate audio',
+              status: 'error',
+              duration: 5000,
+              isClosable: true,
+            });
+          });
+        } catch (audioError) {
+          console.error('Error initiating audio streaming:', audioError);
+          
+          // Update message to indicate audio error
+          setMessages(prev => {
+            const messageIndex = prev.findIndex(msg => msg.uniqueId === assistantMessage.uniqueId);
+            
+            if (messageIndex >= 0) {
+              const updatedMessages = [...prev];
+              updatedMessages[messageIndex] = {
+                ...updatedMessages[messageIndex],
+                isAudioLoading: false
+              };
+              return updatedMessages;
+            }
+            
+            return prev;
+          });
+        }
+      }
     } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       console.error('Chat error:', error);
@@ -506,7 +636,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           isClosable: true,
         });
       }
-
+  
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -556,7 +686,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         borderTopRadius="lg"
       >
         <Text fontSize="lg" fontWeight="bold">{currentDomain}</Text>
-        {isLoading && <Text fontSize="sm" color="gray.400">Processing...</Text>}
+        {isLoading && (
+          <Flex align="center">
+            <Text fontSize="sm" color="gray.400" mr={2}>Processing</Text>
+            <AudioWaveform 
+              isActive={true} 
+              color="gray.400" 
+              height={16}
+              width={40}
+              barCount={3}
+            />
+          </Flex>
+        )}
       </Flex>
 
       <Box 
@@ -590,6 +731,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 'center'
               }
               maxWidth="80%"
+              mb={4}
+              position="relative" // Add relative positioning to the container
+              pr={message.role === 'assistant' && 
+                  (message.audioUrl || message.audioChunks?.length || message.isAudioLoading) 
+                  ? 6 : 0} // Add padding if we have audio
             >
               <Box
                 bg={
@@ -599,12 +745,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 }
                 color="white"
                 px={4}
-                py={2}
+                py={3}
                 borderRadius="lg"
                 boxShadow="md"
                 position="relative"
               >
-                <Text>{message.content}</Text>
+                {/* Message content */}
+                <Text>
+                  {message.content}
+                </Text>
+                
+                {/* Error indicator */}
                 {message.error && (
                   <Box 
                     position="absolute" 
@@ -620,6 +771,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   </Box>
                 )}
               </Box>
+              
+              {/* Audio player for assistant messages */}
+              {message.role === 'assistant' && (
+                <AudioPlayer 
+                  audioChunks={message.audioChunks}
+                  isLoading={message.isAudioLoading || false}
+                />
+              )}
             </Box>
           ))}
           <div ref={messagesEndRef} />
@@ -636,12 +795,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         currentDomain={currentDomain} 
         onRecommendationSelect={handlePromptInsert} 
       />
-
-      <Box 
-        p={4} 
-        bg="gray.700"
-      >
-        <form onSubmit={handleSubmit}>
+        <Box 
+          p={4} 
+          bg="gray.700"
+        >
           <Flex gap={2}>
             <Input
               value={inputValue}
@@ -649,24 +806,45 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               placeholder="Type your message..."
               bg="gray.800"
               color="white"
-              _placeholder={{ color: 'gray.400' }}
+              _placeholder={{ color: "gray.400" }}
               disabled={isLoading}
               borderColor="gray.600"
-              _hover={{ borderColor: 'gray.500' }}
-              _focus={{ borderColor: 'blue.500', boxShadow: 'none' }}
+              _hover={{ borderColor: "gray.500" }}
+              _focus={{ borderColor: "blue.500", boxShadow: "none" }}
+              flex="1"
+              onKeyDown={(e) => {
+                // Allow Enter key to submit
+                if (e.key === 'Enter' && !e.shiftKey && inputValue.trim()) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
             />
+            
+            {/* Voice recorder button */}
+            {voiceApiKey && (
+              <VoiceRecorder 
+                onTranscription={handleTranscription}
+                apiKey={voiceApiKey}
+                disabled={isLoading}
+                existingText={inputValue}
+              />
+            )}
+            
             <Button
-              type="submit"
               colorScheme="blue"
               isDisabled={isLoading || !inputValue.trim()}
               px={8}
-              _hover={{ bg: 'blue.500' }}
+              _hover={{ bg: "blue.500" }}
+              onClick={() => {
+                console.log('Send button clicked');
+                handleSubmit();  // Call handleSubmit on button click
+              }}
             >
               Send
             </Button>
           </Flex>
-        </form>
-      </Box>
+        </Box>
     </Box>
   );
 };
