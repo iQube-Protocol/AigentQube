@@ -12,12 +12,13 @@ import {
   Card,
   CardHeader,
   CardBody,
-  CardFooter,
-  Divider
 } from '@chakra-ui/react';
 import { OrchestrationAgent } from '../services/OrchestrationAgent';
 import { SpecializedDomain, DOMAIN_METADATA } from '../types/domains';
-import { OrganizeImportsMode } from 'typescript';
+import { VoiceService } from '../services/VoiceService';
+import VoiceRecorder from './VoiceRecorder';
+import AudioPlayer from './AudioPlayer';
+import AudioWaveform from './AudioWaveform';
 
 interface ChatInterfaceProps {
   context?: any;
@@ -32,6 +33,15 @@ interface Message {
   content: string;
   timestamp: Date;
   error?: boolean;
+  audioUrl?: string;
+  isAudioLoading?: boolean;
+  audioChunks?: Array<{
+    index: number;
+    text: string;
+    audioUrl: string | null;
+    isLoading: boolean;
+    error: string | null;
+  }>;
 }
 
 // Define the structure for a prompt recommendation
@@ -250,6 +260,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [currentDomain, setCurrentDomain] = useState<string>(orchestrationAgent?.getCurrentDomain() || 'AigentQube');
   const [isApiInitialized, setIsApiInitialized] = useState(false);
+  const voiceApiKey = process.env.REACT_APP_CHIRP_TTS_API_KEY
+  const [voiceService, setVoiceService] = useState<VoiceService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
 
@@ -273,6 +285,29 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     ];
     
     return suppressPatterns.some(pattern => pattern.test(errorMessage));
+  };
+
+  // Initialize voice service
+  useEffect(() => {
+    if (voiceApiKey) {
+      setVoiceService(new VoiceService(voiceApiKey));
+    }
+  }, [voiceApiKey]);
+
+  // Function to generate speech from text
+  const generateSpeech = async (text: string): Promise<string | null> => {
+    if (!voiceService) {
+      console.warn('Voice service not initialized');
+      return null;
+    }
+    
+    try {
+      const response = await voiceService.textToSpeech(text);
+      return response.success ? response.audioUrl || null : null;
+    } catch (error) {
+      console.error('Error generating speech:', error);
+      return null;
+    }
   };
 
   // Init orchestration agent
@@ -485,8 +520,37 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         throw new Error(response.error || 'Failed to get response');
       }
 
-      // Add assistant's response
-      setMessages(prev => [...prev, createMessage(response.data.toString(), 'assistant')]);
+      // Create assistant's response message
+      const assistantMessage = createMessage(response.data.toString(), 'assistant');
+      assistantMessage.isAudioLoading = true;
+      
+      // Add the message immediately with loading state for audio
+      setMessages(prev => [...prev, assistantMessage]);
+      
+      // Generate speech in the background
+      if (voiceService) {
+        generateSpeech(response.data.toString()).then(audioUrl => {
+          if (audioUrl) {
+            // Update the message with the audio URL
+            setMessages(prev => 
+              prev.map(msg => 
+                msg.uniqueId === assistantMessage.uniqueId 
+                  ? { ...msg, audioUrl, isAudioLoading: false } 
+                  : msg
+              )
+            );
+          } else {
+            // Just mark loading as done if audio generation failed
+            setMessages(prev => 
+              prev.map(msg => 
+                msg.uniqueId === assistantMessage.uniqueId 
+                  ? { ...msg, isAudioLoading: false } 
+                  : msg
+              )
+            );
+          }
+        });
+      }
     } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       console.error('Chat error:', error);
@@ -539,6 +603,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Function to find the first ready audio chunk for a message
+  const getFirstReadyAudioUrl = (msg: Message) => {
+    if (msg.audioUrl) return msg.audioUrl;
+    
+    if (msg.audioChunks && msg.audioChunks.length > 0) {
+      const readyChunk = msg.audioChunks.find(chunk => chunk.audioUrl && !chunk.isLoading);
+      return readyChunk?.audioUrl || null;
+    }
+    
+    return null;
+  };
+
   return (
     <Box 
       className="chat-interface"
@@ -556,7 +632,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         borderTopRadius="lg"
       >
         <Text fontSize="lg" fontWeight="bold">{currentDomain}</Text>
-        {isLoading && <Text fontSize="sm" color="gray.400">Processing...</Text>}
+        {isLoading && (
+          <Flex align="center">
+            <Text fontSize="sm" color="gray.400" mr={2}>Processing</Text>
+            <AudioWaveform 
+              isActive={true} 
+              color="gray.400" 
+              height={16}
+              width={40}
+              barCount={3}
+            />
+          </Flex>
+        )}
       </Flex>
 
       <Box 
@@ -590,6 +677,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 'center'
               }
               maxWidth="80%"
+              mb={4}
             >
               <Box
                 bg={
@@ -599,12 +687,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 }
                 color="white"
                 px={4}
-                py={2}
+                py={3}
                 borderRadius="lg"
                 boxShadow="md"
                 position="relative"
               >
-                <Text>{message.content}</Text>
+                {/* Message content */}
+                <Text mb={message.role === 'assistant' && message.audioUrl ? 2 : 0}>
+                  {message.content}
+                </Text>
+                
+                {/* Audio player for assistant messages */}
+                {message.role === 'assistant' && message.audioUrl && (
+                  <AudioPlayer 
+                    audioUrl={message.audioUrl} 
+                    isLoading={message.isAudioLoading || false}
+                  />
+                )}
+                
+                {/* Error indicator */}
                 {message.error && (
                   <Box 
                     position="absolute" 
@@ -620,6 +721,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   </Box>
                 )}
               </Box>
+              
+              {/* Message timestamp (optional enhancement) */}
+              <Text 
+                fontSize="xs" 
+                color="gray.500" 
+                mt={1} 
+                textAlign={message.role === 'user' ? 'right' : 'left'}
+              >
+                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
             </Box>
           ))}
           <div ref={messagesEndRef} />
@@ -654,7 +765,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               borderColor="gray.600"
               _hover={{ borderColor: 'gray.500' }}
               _focus={{ borderColor: 'blue.500', boxShadow: 'none' }}
+              flex="1"
             />
+            
+            {/* Voice recorder button */}
+            {voiceApiKey && (
+              <VoiceRecorder 
+                onTranscription={setInputValue}
+                apiKey={voiceApiKey}
+                disabled={isLoading}
+                existingText={inputValue}
+              />
+            )}
+            
             <Button
               type="submit"
               colorScheme="blue"
