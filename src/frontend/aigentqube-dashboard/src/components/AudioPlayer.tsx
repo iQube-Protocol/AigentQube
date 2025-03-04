@@ -24,10 +24,10 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks = [], isLoading =
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const queueRef = useRef<{ buffer: AudioBuffer; index: number }[]>([]);
+  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const isPlayingRef = useRef(false);
 
   useEffect(() => {
-    // Initialize AudioContext
     audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     return () => {
       audioContextRef.current?.close();
@@ -45,7 +45,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks = [], isLoading =
       const arrayBuffer = await response.arrayBuffer();
       const buffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
 
-      // Add chunk in order, ensuring no duplicates
       if (!queueRef.current.some((c) => c.index === index)) {
         queueRef.current.push({ buffer, index });
         queueRef.current.sort((a, b) => a.index - b.index);
@@ -53,10 +52,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks = [], isLoading =
 
       console.log(`[AudioPlayer] Chunk ${index} decoded and added to queue`);
 
-      // Show play button when first chunk is available
-      if (!isReady) {
-        setIsReady(true);
-      }
+      if (!isReady) setIsReady(true);
 
       // If we were waiting for this chunk, resume playback
       if (waitingForNextChunk && index === currentChunkIndex + 1) {
@@ -68,9 +64,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks = [], isLoading =
       // Auto-play if first chunk is loaded and playback hasn't started
       if (!isPlayingRef.current && queueRef.current.length === 1) {
         console.log(`[AudioPlayer] Auto-playing first chunk ${index}`);
+        setIsPlaying(true); // Play button turns into pause immediately
         playChunk(index);
       }
-
     } catch (error) {
       console.error(`[AudioPlayer] Error decoding chunk ${index}:`, error);
     }
@@ -79,7 +75,12 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks = [], isLoading =
   const playChunk = async (index: number) => {
     if (!audioContextRef.current) return;
 
-    // Get the next available chunk
+    if (sourceNodeRef.current) {
+      sourceNodeRef.current.stop();
+      sourceNodeRef.current.disconnect();
+      sourceNodeRef.current = null;
+    }
+
     const chunkToPlay = queueRef.current.find((c) => c.index === index);
     if (!chunkToPlay) {
       console.warn(`[AudioPlayer] No chunk available to play for index ${index}, waiting for more...`);
@@ -90,13 +91,17 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks = [], isLoading =
     console.log(`[AudioPlayer] Playing chunk ${index}`);
     setCurrentChunkIndex(index);
     isPlayingRef.current = true;
+    setIsPlaying(true); // Ensure play button remains pause
 
     const source = audioContextRef.current.createBufferSource();
     source.buffer = chunkToPlay.buffer;
     source.connect(audioContextRef.current.destination);
+    sourceNodeRef.current = source;
 
     source.onended = () => {
       console.log(`[AudioPlayer] Finished playing chunk ${index}`);
+
+      if (!isPlayingRef.current) return; // Stop if user has paused
 
       const nextChunk = queueRef.current.find((c) => c.index === index + 1);
       if (nextChunk) {
@@ -105,7 +110,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks = [], isLoading =
       } else {
         console.log(`[AudioPlayer] No more chunks available, waiting for next...`);
         setWaitingForNextChunk(true);
-        isPlayingRef.current = false;
       }
     };
 
@@ -117,17 +121,19 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks = [], isLoading =
 
     if (isPlaying) {
       console.log(`[AudioPlayer] Pausing at chunk ${currentChunkIndex}`);
-      audioContextRef.current.suspend();
       isPlayingRef.current = false;
+      if (sourceNodeRef.current) {
+        sourceNodeRef.current.stop();
+        sourceNodeRef.current.disconnect();
+        sourceNodeRef.current = null;
+      }
+      setIsPlaying(false);
     } else {
       console.log(`[AudioPlayer] Resuming from chunk ${currentChunkIndex}`);
-      audioContextRef.current.resume();
-      if (!isPlayingRef.current) {
-        playChunk(currentChunkIndex);
-      }
+      isPlayingRef.current = true;
+      setIsPlaying(true);
+      playChunk(currentChunkIndex);
     }
-
-    setIsPlaying(!isPlaying);
   };
 
   useEffect(() => {
@@ -140,7 +146,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks = [], isLoading =
 
   return (
     <Box position="absolute" top="50%" right="-20px" transform="translateY(-50%)">
-      {isLoading || (!isReady && !queueRef.current.length) ? (
+      {(!isReady && !queueRef.current.length) ? (
         <Box
           bg="blue.500"
           borderRadius="full"
