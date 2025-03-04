@@ -21,7 +21,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const voiceServiceRef = useRef<VoiceService>(new VoiceService(apiKey));
+  const voiceServiceRef = useRef<VoiceService>(new VoiceService({apiKey}));
   const toast = useToast();
 
   // Clean up on unmount
@@ -34,7 +34,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   // Update voice service if API key changes
   useEffect(() => {
     console.log("Voice API Key:", apiKey ? "Set (not showing for security)" : "Not set");
-    voiceServiceRef.current = new VoiceService(apiKey);
+    voiceServiceRef.current = new VoiceService({apiKey});
   }, [apiKey]);
 
   const startRecording = async () => {
