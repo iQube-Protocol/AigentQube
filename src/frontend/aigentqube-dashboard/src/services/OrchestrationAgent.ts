@@ -69,8 +69,6 @@ class OrchestrationError extends Error {
       stack: this.stack
     };
   }
-
-
 }
 
 interface LayerStatus {
