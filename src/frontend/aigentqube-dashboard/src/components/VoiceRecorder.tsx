@@ -1,17 +1,17 @@
-// src/components/SimpleVoiceRecorder.tsx
+// src/components/VoiceRecorder.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, IconButton, Tooltip, useToast } from '@chakra-ui/react';
+import { Box, IconButton, Tooltip, useToast, Spinner } from '@chakra-ui/react';
 import { Mic } from 'lucide-react';
 import { VoiceService } from '../services/VoiceService';
 
-interface SimpleVoiceRecorderProps {
+interface VoiceRecorderProps {
   onTranscription: (text: string) => void;
   disabled?: boolean;
   existingText?: string;
   apiKey: string;
 }
 
-const VoiceRecorder: React.FC<SimpleVoiceRecorderProps> = ({ 
+const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ 
   onTranscription, 
   disabled = false,
   existingText = '',
@@ -19,7 +19,6 @@ const VoiceRecorder: React.FC<SimpleVoiceRecorderProps> = ({
 }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const voiceServiceRef = useRef<VoiceService>(new VoiceService(apiKey));
@@ -41,7 +40,6 @@ const VoiceRecorder: React.FC<SimpleVoiceRecorderProps> = ({
   const startRecording = async () => {
     console.log("Starting voice recording...");
     audioChunksRef.current = [];
-    setRecordedBlob(null);
     
     try {
       console.log("Requesting microphone access...");
@@ -98,32 +96,39 @@ const VoiceRecorder: React.FC<SimpleVoiceRecorderProps> = ({
             
             try {
               // Log the request details
-              const blobCopy = audioBlob.slice(0, audioBlob.size);
               console.log("Audio blob details:", {
-                size: blobCopy.size,
-                type: blobCopy.type
+                size: audioBlob.size,
+                type: audioBlob.type
               });
               
               const response = await voiceServiceRef.current.audioToText(audioBlob);
               console.log("Transcription API response:", response);
               
               if (response.success && response.text) {
-                // Add the transcribed text to any existing text
+                // Add the transcribed text to any existing text (via a callback)
                 const newText = existingText 
                   ? `${existingText} ${response.text}`
                   : response.text;
                   
                 console.log("Transcription successful:", response.text);
-                onTranscription(newText);
+                
+                // IMPORTANT: This was causing form submissions - use a timeout
+                // to break the connection with the mouse/touch event
+                setTimeout(() => {
+                  onTranscription(newText);
+                  setIsProcessing(false);
+                }, 0);
               } else {
                 throw new Error(response.error || 'Failed to transcribe audio');
               }
             } catch (apiError: any) {
               console.error("API error details:", apiError);
+              setIsProcessing(false);
               throw new Error(`API request failed: ${apiError.message}`);
             }
           } catch (error: any) {
             console.error('Error processing audio:', error);
+            setIsProcessing(false);
             toast({
               title: 'Transcription Error',
               description: error.message || 'Failed to transcribe audio',
@@ -140,8 +145,6 @@ const VoiceRecorder: React.FC<SimpleVoiceRecorderProps> = ({
               });
             }
             setIsRecording(false);
-            setIsProcessing(false);
-            resolve();
           }
         });
         
@@ -154,7 +157,7 @@ const VoiceRecorder: React.FC<SimpleVoiceRecorderProps> = ({
   };
 
   const handleMouseDown = () => {
-    if (!disabled) {
+    if (!disabled && !isProcessing) {
       startRecording();
     }
   };
@@ -167,7 +170,7 @@ const VoiceRecorder: React.FC<SimpleVoiceRecorderProps> = ({
 
   // Also handle touch events for mobile
   const handleTouchStart = () => {
-    if (!disabled) {
+    if (!disabled && !isProcessing) {
       startRecording();
     }
   };
@@ -178,34 +181,61 @@ const VoiceRecorder: React.FC<SimpleVoiceRecorderProps> = ({
     }
   };
 
-
   return (
-    <Box display="flex" alignItems="center" gap={2}>
-      <Tooltip label="Hold to record voice" placement="top">
-        <Box 
-          as="button"
-          aria-label="Record voice"
-          borderRadius="full"
-          p={2}
-          bgColor={isRecording ? "red.500" : "blue.500"}
-          color="white"
-          _hover={{ 
-            bgColor: isRecording ? "red.600" : "blue.600" 
-          }}
-          disabled={disabled || isProcessing}
-          opacity={disabled || isProcessing ? 0.6 : 1}
-          cursor={disabled || isProcessing ? "not-allowed" : "pointer"}
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={isRecording ? handleMouseUp : undefined}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          transition="all 0.2s"
-        >
-          <Mic size={18} />
-        </Box>
-      </Tooltip>
-    </Box>
+    <Tooltip label={isProcessing ? "Processing voice..." : "Hold to record voice"} placement="top">
+      <Box
+        position="relative"
+        width="40px" 
+        height="40px"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        {isProcessing ? (
+          // Show spinner in the same position as the mic button
+          <Box
+            borderRadius="full"
+            width="40px"
+            height="40px"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            bg="blue.500"
+          >
+            <Spinner size="sm" color="white" thickness="2px" />
+          </Box>
+        ) : (
+          // Normal mic button
+          <Box 
+            as="button"
+            aria-label="Record voice"
+            borderRadius="full"
+            p={2}
+            bgColor={isRecording ? "red.500" : "blue.500"}
+            color="white"
+            _hover={{ 
+              bgColor: isRecording ? "red.600" : "blue.600" 
+            }}
+            disabled={disabled}
+            opacity={disabled ? 0.6 : 1}
+            cursor={disabled ? "not-allowed" : "pointer"}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={isRecording ? handleMouseUp : undefined}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            transition="all 0.2s"
+            width="40px"
+            height="40px"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Mic size={18} />
+          </Box>
+        )}
+      </Box>
+    </Tooltip>
   );
 };
 

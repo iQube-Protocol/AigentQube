@@ -19,7 +19,6 @@ export interface AudioToTextResponse {
       this.apiKey = apiKey;
       console.log(`VoiceService initialized with API key: ${apiKey ? "[PRESENT]" : "[MISSING]"}`);
       console.log(`Using base URL: ${this.baseUrl}`);
-      console.log('voice service apiKey is ', this.apiKey)
       
       if (!this.apiKey) {
         console.error('ChirpTTS API key is required');

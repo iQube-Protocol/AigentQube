@@ -261,6 +261,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [currentDomain, setCurrentDomain] = useState<string>(orchestrationAgent?.getCurrentDomain() || 'AigentQube');
   const [isApiInitialized, setIsApiInitialized] = useState(false);
   const voiceApiKey = process.env.REACT_APP_CHIRP_TTS_API_KEY
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [voiceService, setVoiceService] = useState<VoiceService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
@@ -295,20 +296,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [voiceApiKey]);
 
   // Function to generate speech from text
-  const generateSpeech = async (text: string): Promise<string | null> => {
-    if (!voiceService) {
-      console.warn('Voice service not initialized');
-      return null;
-    }
-    
-    try {
-      const response = await voiceService.textToSpeech(text);
-      return response.success ? response.audioUrl || null : null;
-    } catch (error) {
-      console.error('Error generating speech:', error);
-      return null;
-    }
-  };
+const generateSpeech = async (text: string): Promise<string | null> => {
+  if (!voiceService) {
+    console.warn('Voice service not initialized');
+    return null;
+  }
+  
+  try {
+    const response = await voiceService.textToSpeech(text);
+    return response.success ? response.audioUrl || null : null;
+  } catch (error) {
+    console.error('Error generating speech:', error);
+    return null;
+  }
+};
+
+// Handle transcription from voice input
+const handleTranscription = (text: string) => {
+  setInputValue(text);
+  setIsTranscribing(false);
+};
 
   // Init orchestration agent
   useEffect(() => {
@@ -461,8 +468,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     };
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!inputValue.trim() || !orchestrationAgent) {
       if (!orchestrationAgent) {
         console.warn('OrchestrationAgent not available');
@@ -603,18 +609,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Function to find the first ready audio chunk for a message
-  const getFirstReadyAudioUrl = (msg: Message) => {
-    if (msg.audioUrl) return msg.audioUrl;
-    
-    if (msg.audioChunks && msg.audioChunks.length > 0) {
-      const readyChunk = msg.audioChunks.find(chunk => chunk.audioUrl && !chunk.isLoading);
-      return readyChunk?.audioUrl || null;
-    }
-    
-    return null;
-  };
-
   return (
     <Box 
       className="chat-interface"
@@ -678,6 +672,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               }
               maxWidth="80%"
               mb={4}
+              position="relative" // Add relative positioning to the container
+              pr={message.role === 'assistant' && (message.audioUrl || message.isAudioLoading) ? 6 : 0} // Add padding if we have audio
             >
               <Box
                 bg={
@@ -693,17 +689,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 position="relative"
               >
                 {/* Message content */}
-                <Text mb={message.role === 'assistant' && message.audioUrl ? 2 : 0}>
+                <Text>
                   {message.content}
                 </Text>
-                
-                {/* Audio player for assistant messages */}
-                {message.role === 'assistant' && message.audioUrl && (
-                  <AudioPlayer 
-                    audioUrl={message.audioUrl} 
-                    isLoading={message.isAudioLoading || false}
-                  />
-                )}
                 
                 {/* Error indicator */}
                 {message.error && (
@@ -722,15 +710,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 )}
               </Box>
               
-              {/* Message timestamp (optional enhancement) */}
-              <Text 
-                fontSize="xs" 
-                color="gray.500" 
-                mt={1} 
-                textAlign={message.role === 'user' ? 'right' : 'left'}
-              >
-                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </Text>
+              {/* Audio player for assistant messages */}
+              {message.role === 'assistant' && (message.audioUrl || message.isAudioLoading) && (
+                <AudioPlayer 
+                  audioUrl={message.audioUrl || ''} 
+                  isLoading={message.isAudioLoading || false}
+                />
+              )}
             </Box>
           ))}
           <div ref={messagesEndRef} />
@@ -747,12 +733,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         currentDomain={currentDomain} 
         onRecommendationSelect={handlePromptInsert} 
       />
-
-      <Box 
-        p={4} 
-        bg="gray.700"
-      >
-        <form onSubmit={handleSubmit}>
+        <Box 
+          p={4} 
+          bg="gray.700"
+        >
           <Flex gap={2}>
             <Input
               value={inputValue}
@@ -760,18 +744,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               placeholder="Type your message..."
               bg="gray.800"
               color="white"
-              _placeholder={{ color: 'gray.400' }}
+              _placeholder={{ color: "gray.400" }}
               disabled={isLoading}
               borderColor="gray.600"
-              _hover={{ borderColor: 'gray.500' }}
-              _focus={{ borderColor: 'blue.500', boxShadow: 'none' }}
+              _hover={{ borderColor: "gray.500" }}
+              _focus={{ borderColor: "blue.500", boxShadow: "none" }}
               flex="1"
+              onKeyDown={(e) => {
+                // Allow Enter key to submit
+                if (e.key === 'Enter' && !e.shiftKey && inputValue.trim()) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
             />
             
             {/* Voice recorder button */}
             {voiceApiKey && (
               <VoiceRecorder 
-                onTranscription={setInputValue}
+                onTranscription={handleTranscription}
                 apiKey={voiceApiKey}
                 disabled={isLoading}
                 existingText={inputValue}
@@ -779,17 +770,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             )}
             
             <Button
-              type="submit"
               colorScheme="blue"
               isDisabled={isLoading || !inputValue.trim()}
               px={8}
-              _hover={{ bg: 'blue.500' }}
+              _hover={{ bg: "blue.500" }}
+              onClick={() => {
+                console.log('Send button clicked');
+                handleSubmit();  // Call handleSubmit on button click
+              }}
             >
               Send
             </Button>
           </Flex>
-        </form>
-      </Box>
+        </Box>
     </Box>
   );
 };

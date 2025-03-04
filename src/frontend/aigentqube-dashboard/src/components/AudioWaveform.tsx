@@ -6,9 +6,8 @@ interface AudioWaveformProps {
   isActive: boolean;
   color?: string;
   height?: number;
-  width?: number | string;
+  width?: number;
   barCount?: number;
-  progress?: number; // 0 to 1 representing playback progress
 }
 
 const AudioWaveform: React.FC<AudioWaveformProps> = ({
@@ -16,8 +15,7 @@ const AudioWaveform: React.FC<AudioWaveformProps> = ({
   color = 'blue.500',
   height = 20,
   width = 80,
-  barCount = 5,
-  progress = 0
+  barCount = 5
 }) => {
   const requestRef = useRef<number>();
   const barsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -69,27 +67,23 @@ const AudioWaveform: React.FC<AudioWaveformProps> = ({
     }
   };
 
-  // Calculate the progress position
-  const progressBarCount = Math.floor(progress * barCount);
-
   return (
     <Flex
       alignItems="center"
-      justifyContent="space-between"
+      justifyContent="center"
       gap={1}
       height={`${height}px`}
-      width={width}
-      position="relative"
+      width={`${width}px`}
     >
       {Array.from({ length: barCount }).map((_, index) => (
         <Box
           key={`bar-${index}`}
           ref={(el) => saveBarRef(el, index)}
-          width="100%"
+          width="3px"
           height="4px"
-          backgroundColor={index < progressBarCount ? color : 'gray.600'}
+          backgroundColor={color}
           borderRadius="sm"
-          transition="height 0.1s ease-in-out, background-color 0.3s ease"
+          transition="height 0.1s ease-in-out"
         />
       ))}
     </Flex>
