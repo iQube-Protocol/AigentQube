@@ -20,6 +20,10 @@ import VoiceRecorder from './VoiceRecorder';
 import AudioPlayer from './AudioPlayer';
 import AudioWaveform from './AudioWaveform';
 import LocalTTSToggle from './LocalTTSToggle';
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import '../index.css';
+import MermaidComponent from './MermaidComponent';
 
 interface ChatInterfaceProps {
   context?: any;
@@ -740,7 +744,6 @@ const handleTranscription = (text: string) => {
       }
     }
   };
-
   useEffect(() => {
     const keyCount: {[key: string]: number} = {};
     messages.forEach(message => {
@@ -831,45 +834,69 @@ const handleTranscription = (text: string) => {
               }
               maxWidth="80%"
               mb={4}
-              position="relative" // Add relative positioning to the container
+              position="relative"
               pr={message.role === 'assistant' && 
                   (message.audioUrl || message.audioChunks?.length || message.isAudioLoading) 
-                  ? 6 : 0} // Add padding if we have audio
+                  ? 6 : 0}
             >
               <Box
-                bg={
-                  message.role === 'user' ? 'blue.600' : 
-                  message.role === 'assistant' ? 'gray.700' : 
-                  message.error ? 'red.600' : 'gray.600'
-                }
-                color="white"
-                px={4}
-                py={3}
-                borderRadius="lg"
-                boxShadow="md"
-                position="relative"
-              >
-                {/* Message content */}
-                <Text>
-                  {message.content}
-                </Text>
-                
-                {/* Error indicator */}
-                {message.error && (
-                  <Box 
-                    position="absolute" 
-                    top="-8px" 
-                    right="-8px"
-                    bg="red.700"
-                    color="white"
-                    borderRadius="full"
-                    p={1}
-                    fontSize="xs"
-                  >
-                    Error
-                  </Box>
-                )}
-              </Box>
+  bg={
+    message.role === 'user'
+      ? 'blue.600'
+      : message.role === 'assistant'
+      ? 'gray.700'
+      : message.error
+      ? 'red.600'
+      : 'gray.600'
+  }
+  color="white"
+  px={4}  // General horizontal padding
+  py={3}  // Vertical padding
+  borderRadius="lg"
+  boxShadow="md"
+  position="relative"
+  className="prose prose-lg max-w-none"
+  textAlign="left"  // Ensures proper text alignment inside the box
+  width="100%"  // Prevents shrinking
+>
+  {/* Render Markdown while keeping left-aligned text */}
+  <ReactMarkdown
+    
+    remarkPlugins={[]}
+    children={message.content}
+    components={{
+      code({ node, inline, className, children }) {
+        if (className === 'language-mermaid') {
+          const chart = String(children).replace(/\\n/g, '\n').trim();
+          return <MermaidComponent key={chart} chart={chart} />;
+        }
+        return (
+          <pre className={className}>
+            <code>{children}</code>
+          </pre>
+        );
+      },
+    }}
+  />
+
+  {/* Error indicator */}
+  {message.error && (
+    <Box 
+      position="absolute" 
+      top="-8px" 
+      right="-8px"
+      bg="red.700"
+      color="white"
+      borderRadius="full"
+      p={1}
+      fontSize="xs"
+    >
+      Error
+    </Box>
+  )}
+</Box>
+
+
               
               {/* Audio player for assistant messages */}
               {message.role === 'assistant' && (
