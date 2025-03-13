@@ -1,14 +1,14 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import {APIIntegration, APIResponse, APIConfig}from './APIIntegrationManager';
-import {ServiceStatus } from '../../types/service';
+import { APIIntegration, APIResponse, APIConfig } from './APIIntegrationManager';
+import { ServiceStatus } from '../../types/service';
 import OpenAI from 'openai';
+import React from 'react';
 
-interface OpenAIMessage{
+interface OpenAIMessage {
     role: 'system' | 'user' | 'assistant';
     content: string;
 }
 
-export class VeniceIntegration implements APIIntegration{
+export class VeniceIntegration implements APIIntegration {
 
     //using OpenAI API class setup as Venice uses openAI
     public readonly id: string = 'veniceai'
@@ -17,8 +17,8 @@ export class VeniceIntegration implements APIIntegration{
     public status: ServiceStatus = ServiceStatus.INITIALIZING
     public readonly config: APIConfig
     private client: OpenAI | null = null
-    private conversationHistory: OpenAIMessage[] = []  
-    private initializationPromise: Promise<void> | null = null 
+    private conversationHistory: OpenAIMessage[] = []
+    private initializationPromise: Promise<void> | null = null
 
     //Enhanced Configuration copied from OpenAiIntegration.ts
 
@@ -46,7 +46,7 @@ export class VeniceIntegration implements APIIntegration{
     - AI security best practices`,
   };
     constructor(config: APIConfig) {
-    const apiKey = config.apiKey || process.env.REACT_APP_VENICE_API_KEY;
+    const apiKey =  config.apiKey || process.env.REACT_APP_VENICE_API_KEY;
     if(!apiKey){
         console.error('Venice API key not found')
         throw new Error('Venice API key is required')
@@ -91,6 +91,7 @@ export class VeniceIntegration implements APIIntegration{
                 // Initialize VeniceAI client
                 this.client = new OpenAI({
                     apiKey: this.config.apiKey,
+                    dangerouslyAllowBrowser: true,
                     timeout: this.config.timeout,
                 });
 
@@ -131,8 +132,11 @@ export class VeniceIntegration implements APIIntegration{
             if(!this.client){
                 throw new Error('Venice API client not initialized')
             }
-            const response = await this.client.models.list();
-            const availableModels = response.data.map((model: any) => model.id);
+            const options = {method: 'GET', headers: {Authorization: `Bearer ${this.config.apiKey}`}};
+            const response = await fetch('https://api.venice.ai/api/v1/models', options);
+            const responseData = await response.json();
+            console.log(responseData);
+            const availableModels = responseData.data.map((model: any) => model.id);
             console.log('[Venice API] Call to validate()');
             //Ensure default model is available
             const isDefaultModelAvailable = availableModels.includes(this.DEFAULT_MODEL);
@@ -200,8 +204,6 @@ export class VeniceIntegration implements APIIntegration{
         }
     }
     private async processMessage(message: string, domain: string, iqubesArray: any[]): Promise<string> {
-        // Future:: Add more initialization check logs
-        // Ensure client is initialized
         if (this.status !== ServiceStatus.READY) {
             console.warn('Venice API is not initialized--attempting force Init');
             try {
@@ -212,16 +214,16 @@ export class VeniceIntegration implements APIIntegration{
                 throw new Error('Venice API initialization failed');
             }
         }
-
-        // Check if client available
+    
         if (!this.client) {
             throw new Error('Venice API client not initialized');
         }
-
+    
         try {
-            const systemPromptKey = Object.keys(this.SYSTEM_PROMPTS).includes(domain) ? domain as keyof typeof this.SYSTEM_PROMPTS : 'default';
-
-            // Format iQube data as String
+            const systemPromptKey = Object.keys(this.SYSTEM_PROMPTS).includes(domain) 
+                ? domain as keyof typeof this.SYSTEM_PROMPTS 
+                : 'default';
+    
             const iqubeDataString = iqubesArray.length > 0
                 ? iqubesArray.map(iq =>
                     `ID: ${iq.id}\n` +
@@ -230,47 +232,76 @@ export class VeniceIntegration implements APIIntegration{
                         .join('\n')
                 ).join('\n\n')
                 : 'No connected iQubes';
-
+    
             console.log(iqubeDataString);
-
-            // Construct system prompt with iQube details
+    
             const systemPromptContent = `${this.SYSTEM_PROMPTS[systemPromptKey]}\n\nConnected iQubes:\n${iqubeDataString}`;
-            const existingSystemPrompt = this.conversationHistory.find(msg => msg.role === 'system');
-
+            
             if (this.conversationHistory.length === 0 || this.conversationHistory[0].role !== 'system') {
-                this.conversationHistory.unshift({
-                    role: 'system',
-                    content: systemPromptContent
-                });
+                this.conversationHistory.unshift({ role: 'system', content: systemPromptContent });
             } else {
                 this.conversationHistory[0].content = systemPromptContent;
             }
-
-            const completion = await this.client.completions.create({
-                prompt: [
-                    ...this.conversationHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n'),
-                    `user: ${message}`
-                ].join('\n'),
-                model: this.DEFAULT_MODEL
+    
+            const requestBody = {
+                model: this.DEFAULT_MODEL || 'llama-3.3-70b',
+                messages: [...this.conversationHistory, { role: 'user', content: message }],
+                venice_parameters: {
+                    enable_web_search: 'auto',
+                    include_venice_system_prompt: true
+                },
+                frequency_penalty: 0,
+                presence_penalty: 0,
+                n: 1,
+                max_tokens: 4096, //Future:: Change upper bound to feasible number
+                temperature: 0.7,
+                top_p: 0.9,
+                stream: false
+            };
+    
+            console.log('Request Payload:', JSON.stringify(requestBody, null, 2));
+    
+            const response = await fetch('https://api.venice.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${this.config.apiKey}`,  
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
             });
-
-            const response = completion.choices[0]?.text;
-            if (!response) {
-                throw new Error('Venice API response is empty');
+    
+            const completion = await response.json();
+    
+            if (!response.ok) {
+                console.error('Venice API Error Response:', completion);
+                throw new Error(`Venice API Error: ${completion.error?.message || 'Unknown error'}`);
             }
+    
+            console.log('Venice API Response:', JSON.stringify(completion, null, 2));
+    
+            const responseContent = completion.choices?.[0]?.message?.content;
+            if (!responseContent) {
+                throw new Error('Venice API response is empty or malformed');
+            }
+            
+            // Extract content after </think>
+            const cleanedResponse = responseContent.includes('</think>') 
+                ? responseContent.split('</think>')[1].trim()  // Remove everything before </think>
+                : responseContent;  // If </think> not found, return original response
 
             this.conversationHistory.push(
                 { role: 'user', content: message },
-                { role: 'assistant', content: response }
+                { role: 'assistant', content: cleanedResponse }
             );
-            this.trimConversationHistory();
 
-            return response;
+            this.trimConversationHistory();
+            return cleanedResponse;
         } catch (error: any) {
             console.error('[Venice API] Process Message Error:', error);
             throw error;
         }
     }
+    
     private trimConversationHistory(): void {
         const systemPrompt = this.conversationHistory[0];
         const recentMessages = this.conversationHistory.slice(this.MAX_HISTORY_LENGTH * 2 + 1);

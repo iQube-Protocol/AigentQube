@@ -382,9 +382,16 @@ const handleTranscription = (text: string) => {
             timestamp: new Date()
           }]);
         } else {
-          // For generic domains, just mark as initialized
-          setIsApiInitialized(true);
-          console.log('Using generic domain, no special initialization needed');
+            // For generic domains, initialize Venice API
+            const veniceApiKey = process.env.REACT_APP_VENICE_API_KEY;
+            if (!veniceApiKey) {
+            throw new Error('Venice API key not found in environment variables');
+            }
+
+            
+
+            setIsApiInitialized(true);
+            console.log('Venice API initialized for generic domain');
         }
       } catch (error: any) {
         const errorMessage = error.message;
