@@ -91,3 +91,33 @@ code {
 }
 */
 
+.prose ul,
+.prose ol {
+  margin-left: 1.5rem; /* Adjust as needed */
+  padding-left: 1.5rem; /* Adjust as needed */
+}
+
+.prose h1 + ul,
+.prose h2 + ul,
+.prose h3 + ul,
+.prose h4 + ul,
+.prose h5 + ul,
+.prose h6 + ul {
+  margin-top: 0;
+  padding-left: 1.5rem; /* Adjust this value to ensure proper list alignment */
+}
+
+.prose h1 + ol,
+.prose h2 + ol,
+.prose h3 + ol,
+.prose h4 + ol,
+.prose h5 + ol,
+.prose h6 + ol {
+  margin-top: 0;
+  padding-left: 1.5rem; /* Adjust this value to ensure proper list alignment */
+}
+
+.mermaid path {
+  stroke: #333; /* Ensure arrows are visible */
+  stroke-width: 2;
+}

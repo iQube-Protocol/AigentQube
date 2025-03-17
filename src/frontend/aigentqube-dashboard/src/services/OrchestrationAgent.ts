@@ -8,6 +8,7 @@ import { SpecializedDomainManager, DomainService, DomainConfig } from './Special
 import { SpecializedDomain } from '../types/domains';
 import { IQubeData, ContextInsight, DomainContext } from '../types/context';
 import { NebulaIntegration } from './api/NebulaIntegration';
+import {VeniceIntegration }from './api/VeniceIntegration';
 
 // Enhanced logging utility
 class Logger {
@@ -113,10 +114,11 @@ export class OrchestrationAgent {
 
   constructor(
     private apiManager: APIIntegrationManager,
-    private nlpProcessor?: OpenAIIntegration,
+    private nlpProcessor?: OpenAIIntegration | VeniceIntegration,
     private metisService?: MetisIntegration,
     private nebulaService?: NebulaIntegration,
-    private domainManager?: SpecializedDomainManager
+    private domainManager?: SpecializedDomainManager,
+    private veniceService?: VeniceIntegration
   ) {
     this.iQubes = new Map(); 
 
@@ -132,7 +134,6 @@ export class OrchestrationAgent {
     // Ensure APIIntegrationManager is properly set up
     try {
       console.log("THIS IS BEFORE INIT in orchestration agent")
-      
       // Register NLP Processor if available
       if (this.nlpProcessor) {
         this.apiManager.registerAPI(this.nlpProcessor);
@@ -146,7 +147,16 @@ export class OrchestrationAgent {
       //Register Nebula
       if (this.nebulaService){
         this.apiManager.registerAPI(this.nebulaService)
+        
       }
+      //Register Venice
+      console.log("Check here")
+      console.log(this.veniceService)
+      if(this.veniceService){
+        this.apiManager.registerAPI(this.veniceService)
+        console.log("VENICE")
+      }
+      
 
 
     } catch (error) {
@@ -197,21 +207,31 @@ export class OrchestrationAgent {
         console.warn('[OrchestrationAgent] Created new APIIntegrationManager');
       }
       
-      // Initialize NLP Processor (OpenAI)
+      // Initialize NLP Processor Venice and Open AI
       try {
-        const openAIKey = process.env.REACT_APP_OPENAI_API_KEY;
-        console.log('[OrchestrationAgent] Initializing OpenAI Integration');
-        
-        if (!openAIKey) {
-          throw new Error('No OpenAI API Key found in environment');
+        const veniceAPIKey = process.env.REACT_APP_VENICE_API_KEY;
+        console.log('[OrchestrationAgent] Initializing Venice Integration');
+        if(!veniceAPIKey){
+          throw new Error('No Venice API Key found in environment');
         }
+        this.nlpProcessor = new VeniceIntegration({
+          apiKey: veniceAPIKey
 
-        // Directly create and initialize OpenAI Integration
-        this.nlpProcessor = new OpenAIIntegration({
-          apiKey: openAIKey
         });
+        
+        // const openAIKey = process.env.REACT_APP_OPENAI_API_KEY;
+        // console.log('[OrchestrationAgent] Initializing OpenAI Integration');
+        
+        // if (!openAIKey) {
+        //   throw new Error('No OpenAI API Key found in environment');
+        // }
 
-        console.log('[OrchestrationAgent] Created OpenAI Integration');
+        // // Directly create and initialize OpenAI Integration
+        // this.nlpProcessor = new OpenAIIntegration({
+        //   apiKey: openAIKey
+        // });
+
+        // console.log('[OrchestrationAgent] Created OpenAI Integration');
 
         // Initialize the NLP Processor
         await this.nlpProcessor.initialize('default');
@@ -708,7 +728,6 @@ export class OrchestrationAgent {
         if (!metisApiKey) {
           throw new Error('Metis API key not found');
         }
-
         // Create and initialize Metis service for the domain
         const metisService = new MetisIntegration({
           apiKey: metisApiKey,
@@ -835,7 +854,7 @@ export class OrchestrationAgent {
       'crypto_analyst': 'nebula',
       'guardian_aigent': 'metis',
       'ai_coach': 'openai',
-      'default': 'openai'
+      'default': 'veniceai'
     };
 
     // Find the best matching domain context
