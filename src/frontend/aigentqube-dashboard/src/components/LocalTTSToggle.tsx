@@ -21,7 +21,7 @@ const LocalTTSToggle: React.FC<LocalTTSToggleProps> = ({
       <Tooltip 
         label={isLocalTTS 
           ? (isLocalReady 
-            ? "Using browser-based TTS (no API calls)" 
+            ? "Using browser-based TTS (no API calls for tts)" 
             : "Loading local TTS engine...")
           : "Using remote TTS API" 
         }

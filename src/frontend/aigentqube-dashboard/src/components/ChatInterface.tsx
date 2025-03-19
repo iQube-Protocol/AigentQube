@@ -21,7 +21,6 @@ import AudioPlayer from './AudioPlayer';
 import AudioWaveform from './AudioWaveform';
 import LocalTTSToggle from './LocalTTSToggle';
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import '../index.css';
 import MermaidComponent from './MermaidComponent';
 
@@ -49,7 +48,8 @@ interface Message {
   error?: boolean;
   audioUrl?: string;
   isAudioLoading?: boolean;
-  audioChunks?: AudioChunk[]
+  audioChunks?: AudioChunk[];
+  isAudioPlaying?: boolean
 }
 
 // Define the structure for a prompt recommendation
@@ -271,8 +271,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const voiceApiKey = process.env.REACT_APP_CHIRP_TTS_API_KEY
   const [voiceService, setVoiceService] = useState<VoiceService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [useLocalTTS, setUseLocalTTS] = useState<boolean>(false);
+  const [useLocalTTS, setUseLocalTTS] = useState<boolean>(true);
   const [isLocalTTSReady, setIsLocalTTSReady] = useState<boolean>(false);
+  const [playingAudioMessages, setPlayingAudioMessages] = useState<Set<string>>(new Set());
   const toast = useToast();
 
   // Helper function to check if an error should be suppressed
@@ -324,10 +325,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [voiceApiKey]);
 
-// Handle transcription from voice input
-const handleTranscription = (text: string) => {
-  setInputValue(text);
-};
+  const handleAudioPlayStateChange = (messageId: string, isPlaying: boolean) => {
+    setPlayingAudioMessages(prev => {
+      const updated = new Set(prev);
+      if (isPlaying) {
+        updated.add(messageId);
+      } else {
+        updated.delete(messageId);
+      }
+      return updated;
+    });
+  };
+
+  // Handle transcription from voice input
+  const handleTranscription = (text: string) => {
+    setInputValue(text);
+  };
 
   // Init orchestration agent
   useEffect(() => {
@@ -786,19 +799,18 @@ const handleTranscription = (text: string) => {
             onChange={handleTTSModeChange}
           />
         )}
-        
-        {isLoading && (
           <Flex align="center">
-            <Text fontSize="sm" color="gray.400" mr={2}>Processing</Text>
-            <AudioWaveform 
-              isActive={true} 
-              color="gray.400" 
-              height={16}
-              width={40}
-              barCount={3}
-            />
+            {isLoading && <Text fontSize="sm" color="gray.400" mr={2}>Processing...</Text>}
+            { playingAudioMessages.size > 0 &&
+                <AudioWaveform 
+                  isActive={true} 
+                  color="gray.400" 
+                  height={16}
+                  width={40}
+                  barCount={3}
+                />
+            }
           </Flex>
-        )}
       </Flex>
     </Flex>
 
@@ -903,6 +915,8 @@ const handleTranscription = (text: string) => {
                 <AudioPlayer 
                   audioChunks={message.audioChunks}
                   isLoading={message.isAudioLoading || false}
+                  onPlayStateChange={handleAudioPlayStateChange}
+                  messageId={message.uniqueId}
                 />
               )}
             </Box>
