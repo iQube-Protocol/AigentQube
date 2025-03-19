@@ -64,12 +64,6 @@ messageId }) => {
         playChunk(index);
       }
 
-      // Auto-play if first chunk is loaded and playback hasn't started
-      // if (!isPlayingRef.current && queueRef.current.length === 1) {
-      //   console.log(`[AudioPlayer] Auto-playing first chunk ${index}`);
-      //   setIsPlaying(true); // Play button turns into pause immediately
-      //   playChunk(index);
-      // }
     } catch (error) {
       console.error(`[AudioPlayer] Error decoding chunk ${index}:`, error);
     }
@@ -138,7 +132,6 @@ messageId }) => {
       setIsPlaying(true);
       onPlayStateChange(messageId, true);
       playChunk(currentChunkIndex);
-      
     }
   };
 
