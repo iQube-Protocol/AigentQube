@@ -14,9 +14,12 @@ interface AudioChunk {
 interface AudioPlayerProps {
   audioChunks?: AudioChunk[];
   isLoading?: boolean;
+  onPlayStateChange?: (messageId: string, isPlaying: boolean) => void;
+  messageId: string;
 }
 
-const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks = [], isLoading = false }) => {
+const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks = [], isLoading = false, onPlayStateChange = () => {},
+messageId }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
@@ -61,12 +64,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks = [], isLoading =
         playChunk(index);
       }
 
-      // Auto-play if first chunk is loaded and playback hasn't started
-      if (!isPlayingRef.current && queueRef.current.length === 1) {
-        console.log(`[AudioPlayer] Auto-playing first chunk ${index}`);
-        setIsPlaying(true); // Play button turns into pause immediately
-        playChunk(index);
-      }
     } catch (error) {
       console.error(`[AudioPlayer] Error decoding chunk ${index}:`, error);
     }
@@ -128,10 +125,12 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks = [], isLoading =
         sourceNodeRef.current = null;
       }
       setIsPlaying(false);
+      onPlayStateChange(messageId, false);
     } else {
       console.log(`[AudioPlayer] Resuming from chunk ${currentChunkIndex}`);
       isPlayingRef.current = true;
       setIsPlaying(true);
+      onPlayStateChange(messageId, true);
       playChunk(currentChunkIndex);
     }
   };
