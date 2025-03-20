@@ -1,6 +1,6 @@
 // src/components/VoiceRecorder.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, IconButton, Tooltip, useToast, Spinner } from '@chakra-ui/react';
+import { Box, Tooltip, useToast, Spinner } from '@chakra-ui/react';
 import { Mic } from 'lucide-react';
 import { VoiceService } from '../services/VoiceService';
 
@@ -27,9 +27,11 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   // Clean up on unmount
   useEffect(() => {
     return () => {
-      stopRecording();
+      if (isRecording) {
+        stopRecording();
+      }
     };
-  }, []);
+  }, [isRecording]);
 
   // Update voice service if API key changes
   useEffect(() => {
@@ -156,33 +158,29 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     });
   };
 
-  const handleMouseDown = () => {
-    if (!disabled && !isProcessing) {
-      startRecording();
+  const toggleRecording = () => {
+    if (disabled || isProcessing) {
+      return;
     }
-  };
-  
-  const handleMouseUp = () => {
+    
     if (isRecording) {
       stopRecording();
-    }
-  };
-
-  // Also handle touch events for mobile
-  const handleTouchStart = () => {
-    if (!disabled && !isProcessing) {
+    } else {
       startRecording();
-    }
-  };
-  
-  const handleTouchEnd = () => {
-    if (isRecording) {
-      stopRecording();
     }
   };
 
   return (
-    <Tooltip label={isProcessing ? "Processing voice..." : "Hold to record voice"} placement="top">
+    <Tooltip 
+      label={
+        isProcessing 
+          ? "Processing voice..." 
+          : isRecording 
+            ? "Tap to stop recording" 
+            : "Tap to start recording"
+      } 
+      placement="top"
+    >
       <Box
         position="relative"
         width="40px" 
@@ -202,13 +200,14 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
             justifyContent="center"
             bg="blue.500"
           >
-            <Spinner size="sm" color="white" thickness="2px" />
+            <Spinner size="sm" color="white" thickness="2px"  label=""
+  aria-label="Processing audio" />
           </Box>
         ) : (
-          // Normal mic button
+          // Toggle button: Mic when not recording, MicOff when recording
           <Box 
             as="button"
-            aria-label="Record voice"
+            aria-label={isRecording ? "Stop recording" : "Start recording"}
             borderRadius="full"
             p={2}
             bgColor={isRecording ? "red.500" : "blue.500"}
@@ -219,11 +218,12 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
             disabled={disabled}
             opacity={disabled ? 0.6 : 1}
             cursor={disabled ? "not-allowed" : "pointer"}
-            onMouseDown={handleMouseDown}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={isRecording ? handleMouseUp : undefined}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
+            onClick={toggleRecording}
+            onTouchEnd={(e: React.TouchEvent<HTMLDivElement>) => {
+              // Prevent default to avoid unintended behaviors
+              e.preventDefault();
+              toggleRecording();
+            }}
             transition="all 0.2s"
             width="40px"
             height="40px"
@@ -231,7 +231,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
             alignItems="center"
             justifyContent="center"
           >
-            <Mic size={18} />
+            {isRecording ? <Mic size={18} /> : <Mic size={18} />}
           </Box>
         )}
       </Box>
