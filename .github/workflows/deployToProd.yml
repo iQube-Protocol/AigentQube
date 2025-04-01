@@ -18,7 +18,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.PRODUCTION_EC2_PRODUCTION_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ec2-3-145-9-148.us-east-2.compute.amazonaws.com >> ~/.ssh/known_hosts
+          ssh-keyscan -H ec2-3-149-213-181.us-east-2.compute.amazonaws.com >> ~/.ssh/known_hosts
 
       - name: Deploy via Rsync
         run: |
