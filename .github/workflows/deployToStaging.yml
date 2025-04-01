@@ -1,0 +1,34 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - staging  # Triggers deployment when ANYONE pushes to staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_EC2_STAGING_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ec2-3.145.9.148 >> ~/.ssh/known_hosts
+
+      - name: Deploy via Rsync
+        run: |
+          cd ./src/frontend/aigentqube-dashboard/
+          rsync -avz --exclude 'node_modules' --exclude '.git' --exclude '.env' \
+          -e "ssh -i~/.ssh/id_rsa" \
+          . ubuntu@ec2-3-145-9-148.us-east-2.compute.amazonaws.com:~/AigentQube
+          ssh ubuntu@ec2-3-145-9-148.us-east-2.compute.amazonaws.com << 'EOF'
+            cd ~/AigentQube
+            npm install
+            cd ~
+            sudo systemctl restart AigentQube.service
+          EOF
