@@ -25,7 +25,7 @@ export class VeniceIntegration implements APIIntegration {
     private readonly MAX_RETRIES = 3;
     private readonly RETRY_DELAY = 1000; // 1 second
     private readonly MAX_HISTORY_LENGTH = 10;
-    private readonly DEFAULT_MODEL = 'deepseek-r1-671b'
+    private readonly DEFAULT_MODEL = 'llama-3.3-70b'
 
     private readonly SYSTEM_PROMPTS: Record<string, string> = {
         'default': `You are an advanced AI assistant integrated with the AigentQube platform. 
