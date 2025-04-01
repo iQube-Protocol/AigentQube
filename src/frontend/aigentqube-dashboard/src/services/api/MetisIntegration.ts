@@ -126,9 +126,15 @@ export class MetisIntegration implements APIIntegration {
           // ...(iqube.walletsOfInterest || [])
         ])
         .filter(key => typeof key === "string" && key.startsWith("0x"));
+        const uniqueKeys = Array.from(new Set(keys));
+        const uniqueIqubesArray = iqubesArray.filter(iqube => 
+          uniqueKeys.some(key => 
+            key === iqube.evmPublicKey
+          )
+        );
 
       const metis_data = {
-        "public_keys": keys,
+        "public_keys": uniqueKeys,
         "user_profile": {
           "Name": " ",
           "Number": " ",
