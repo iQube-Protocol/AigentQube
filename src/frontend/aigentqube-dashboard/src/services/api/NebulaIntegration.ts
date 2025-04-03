@@ -103,7 +103,7 @@ export class NebulaIntegration implements APIIntegration {
         },
       };
 
-      console.log(requestBody)
+      //console.log(requestBody)
 
       const response = await this.axiosInstance.post('/chat', requestBody, {
         headers: {
@@ -111,7 +111,7 @@ export class NebulaIntegration implements APIIntegration {
         },
       });
 
-      console.log(response)
+      //console.log(response)
 
 
       if (!response.data || !response.data.message) {
@@ -148,7 +148,7 @@ export class NebulaIntegration implements APIIntegration {
       this.status = ServiceStatus.ERROR;
       return false;
     }
-    console.log('[Nebula API] Calling validate()');
+   //console.log('[Nebula API] Calling validate()');
     return true;
   }
 }

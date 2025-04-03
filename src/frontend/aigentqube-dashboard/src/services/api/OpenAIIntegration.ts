@@ -133,7 +133,7 @@ Focus on:
 
     this.initializationPromise = (async () => {
       try {
-        console.log('[OpenAI] Starting initialization...');
+        //CD::console.log('[OpenAI] Starting initialization...');
         
         // Validate API key
         if (!this.config.apiKey) {
@@ -161,8 +161,8 @@ Focus on:
             const isValid = await this.validate();
             if (isValid) {
               this.status = ServiceStatus.READY;
-              console.log('[OpenAI] Validation Attempt: ', validationAttempts);              
-              console.log('[OpenAI] Initialization successful');
+              //CD::console.log('[OpenAI] Validation Attempt: ', validationAttempts);              
+              //CD::console.log('[OpenAI] Initialization successful');
               return;
             }
             validationAttempts++;
@@ -207,7 +207,7 @@ Focus on:
       const response = await this.client.models.list();
       const availableModels = response.data.map(model => model.id);
       
-      console.log('[OpenAI] Calling validate()');
+      //CD::console.log('[OpenAI] Calling validate()');
       
       // Ensure default model is available
       const isDefaultModelAvailable = availableModels.includes(this.DEFAULT_MODEL);
@@ -232,7 +232,7 @@ Focus on:
   }
 
   public async execute(params: any): Promise<APIResponse> {
-    console.log('[OpenAI] Execute method called with params:', JSON.stringify(params, null, 2));
+    //CD::console.log('[OpenAI] Execute method called with params:', JSON.stringify(params, null, 2));
     
     try {
 
@@ -240,9 +240,9 @@ Focus on:
 
       // Validate input with detailed logging
       const message = params.message || params.input;
-      console.log('[OpenAI] Message received:', message);
+      //CD::console.log('[OpenAI] Message received:', message);
 
-      console.log('[OpenAI] PARAMS received:', params)
+      //CD::console.log('[OpenAI] PARAMS received:', params)
       
       if (!message) {
         console.warn('[OpenAI] No message or input provided');
@@ -257,19 +257,19 @@ Focus on:
       }
 
       // Diagnostic logging of current service status
-      console.log('[OpenAI] Current Service Status:', {
-        status: this.status,
-        clientInitialized: !!this.client,
-        apiKeyPresent: !!this.config.apiKey
-      });
+     //CD::console.log('[OpenAI] Current Service Status:', {
+      //   status: this.status,
+      //   clientInitialized: !!this.client,
+      //   apiKeyPresent: !!this.config.apiKey
+      // });
 
       // Determine domain
-      console.log("THESE ARE THE PARAMS", params)
+      //console.log("THESE ARE THE PARAMS", params)
       const domain = params.domain || 'default';
-      console.log('[OpenAI] Using domain:', domain);
+      //CD::console.log('[OpenAI] Using domain:', domain);
 
       const iqubes = params.iqubes || 'No connected iQubes';
-      console.log('[OpenAI] These are the connected iqubes:', iqubes);
+      //console.log('[OpenAI] These are the connected iqubes:', iqubes);
 
       const iqubesMap = params.iqubes instanceof Map ? params.iqubes : new Map();
       const iqubesArray = Array.from(iqubesMap.values());
@@ -278,7 +278,7 @@ Focus on:
       // Process message with detailed error handling
       try {
         const response = await this.processMessage(message, domain, iqubesArray);
-        console.log('[OpenAI] Response generated successfully');
+        //console.log('[OpenAI] Response generated successfully');
 
         return {
           success: true,
@@ -318,15 +318,15 @@ Focus on:
   }
 
   private async processMessage(message: string, domain: string = 'default', iqubesArray: any[] = []): Promise<string> {
-    console.log(`[OpenAI] Processing message for domain: ${domain}`);
-    console.log(`[OpenAI - send message] Active iQubes received:`, iqubesArray);
+    //console.log(`[OpenAI] Processing message for domain: ${domain}`);
+    //console.log(`[OpenAI - send message] Active iQubes received:`, iqubesArray);
     
     // Detailed initialization check
-    console.log('[OpenAI] Pre-processing service status:', {
-      status: this.status,
-      clientInitialized: !!this.client,
-      apiKeyPresent: !!this.config.apiKey
-    });
+    // console.log('[OpenAI] Pre-processing service status:', {
+    //   status: this.status,
+    //   clientInitialized: !!this.client,
+    //   apiKeyPresent: !!this.config.apiKey
+    // });
 
     // Validate initialization status with more robust handling
     if (this.status !== ServiceStatus.READY) {
@@ -335,7 +335,7 @@ Focus on:
       try {
         // Force initialization
         await this.initialize('default');
-        console.log('[OpenAI] Initialization completed');
+        //console.log('[OpenAI] Initialization completed');
       } catch (initError) {
         console.error('[OpenAI] Initialization failed:', initError);
         throw new Error(`OpenAI service initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
@@ -354,7 +354,7 @@ Focus on:
         ? domain as keyof typeof this.SYSTEM_PROMPTS 
         : 'default';
 
-      console.log(`[OpenAI] Using system prompt key: ${systemPromptKey}`);
+      //console.log(`[OpenAI] Using system prompt key: ${systemPromptKey}`);
 
       // Format the iQube data as a string
       const iqubeDataString = iqubesArray.length > 0 
@@ -366,7 +366,7 @@ Focus on:
         ).join('\n\n')
       : 'No connected iQubes';
 
-      console.log(iqubeDataString)
+
 
       // Construct system prompt with iQube details
       const systemPromptContent = `${this.SYSTEM_PROMPTS[systemPromptKey]}\n\Here is your direct access to user's connected iQubes:\n${iqubeDataString}`;
@@ -386,8 +386,7 @@ Focus on:
         this.conversationHistory[0].content = systemPromptContent;
       }
 
-      console.log('[OpenAI] Conversation history before request:', 
-        JSON.stringify(this.conversationHistory, null, 2));
+
 
       // Create chat completion
       const completion = await this.client.chat.completions.create({
@@ -398,8 +397,7 @@ Focus on:
         model: this.DEFAULT_MODEL,
       });
 
-      console.log('[OpenAI] Completion received:', 
-        JSON.stringify(completion.choices, null, 2));
+      
 
       // Extract response
       const response = completion.choices[0]?.message?.content;
@@ -418,7 +416,7 @@ Focus on:
       
       this.trimConversationHistory();
       
-      console.log('[OpenAI] Final response:', response);
+
       return response;
     } catch (error: any) {
       console.error(`[OpenAI] Message Processing Error for ${domain} domain:`, error);
