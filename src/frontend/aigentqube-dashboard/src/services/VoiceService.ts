@@ -129,9 +129,28 @@ export class VoiceService {
       
       // Load ONNX model if not already loaded
       if (!this.onnxSession) {
-        //CD::console.log('[VoiceService] Loading ONNX model');
+        // Dynamically determine available execution providers
+        const availableProviders = ["webgpu", "wasm"];
+        const selectedProviders = [];
+
+        for (const provider of availableProviders) {
+          try {
+            await InferenceSession.create(`${this.modelPath}model.onnx`, {
+              executionProviders: [provider],
+            });
+            selectedProviders.push(provider);
+          } catch (error) {
+            console.warn(`[VoiceService] Execution provider "${provider}" is not available:`, error);
+          }
+        }
+
+        if (selectedProviders.length === 0) {
+          throw new Error("No available execution providers for ONNX runtime.");
+        }
+
+        // Use the first available provider
         this.onnxSession = await InferenceSession.create(`${this.modelPath}model.onnx`, {
-          executionProviders: ["webgpu", "wasm"],
+          executionProviders: selectedProviders,
         });
         //CD::console.log('[VoiceService] ONNX model loaded successfully');
       }

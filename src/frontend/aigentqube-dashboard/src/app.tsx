@@ -97,18 +97,18 @@ const theme = chakraExtendTheme({
 
 // Debugging function to log all initialization steps
 const initializationLogger = (step: string, details?: any) => {
-  console.group('🚀 AigentQube Initialization');
-  console.log(`Step: ${step}`);
-  if (details) console.log('Details:', details);
-  console.groupEnd();
+  // console.group('🚀 AigentQube Initialization');
+  // console.log(`Step: ${step}`);
+  // if (details) console.log('Details:', details);
+  // console.groupEnd();
 };
 
 const App: React.FC = () => {
   // Debug environment variables in component
-  console.log('App component mounted. Environment check:', {
-    OPENAI_KEY: process.env.REACT_APP_OPENAI_API_KEY?.substring(0, 10) + '...',
-    NODE_ENV: process.env.NODE_ENV
-  });
+  // CD::console.log('App component mounted. Environment check:', {
+  //   OPENAI_KEY: process.env.REACT_APP_OPENAI_API_KEY?.substring(0, 10) + '...',
+  //   NODE_ENV: process.env.NODE_ENV
+  // });
 
   const toast = useToast();
   
@@ -494,7 +494,7 @@ const App: React.FC = () => {
       });
 
       try {
-        console.log('[App] Starting OrchestrationAgent initialization');
+        //('[App] Starting OrchestrationAgent initialization');
         
         // Initialize with timeout
         const initializationTimeout = new Promise((_, reject) => 
@@ -506,12 +506,12 @@ const App: React.FC = () => {
           initializationTimeout
         ]);
 
-        console.log('[App] OrchestrationAgent initialized successfully');
+        //CD::console.log('[App] OrchestrationAgent initialized successfully');
         
         setOrchestrationAgent(agent);
         
         const serviceStatus = agent.getServiceStatus();
-        console.log('[App] Service Status:', serviceStatus);
+        //CD::console.log('[App] Service Status:', serviceStatus);
 
         setAgentStatus({
           context: serviceStatus.context.isActive,
@@ -523,7 +523,7 @@ const App: React.FC = () => {
                        serviceStatus.service.isActive && 
                        serviceStatus.state.isActive;
         
-        console.log(`[App] Agent Readiness: ${isReady}`);
+        //CD::console.log(`[App] Agent Readiness: ${isReady}`);
         setIsAgentReady(isReady);
 
         // Only show warning if services are completely unavailable
@@ -643,7 +643,7 @@ const App: React.FC = () => {
   // Subscribe to Orchestration Updates
   const handleOrchestrationUpdate = useCallback((state: OrchestrationAgent) => {
     try {
-      console.log('Orchestration State Updated:', state);
+      //console.log('Orchestration State Updated:', state);
       
       // Only show critical errors
       if (state?.context?.error || state?.service?.error || state?.state?.error) {

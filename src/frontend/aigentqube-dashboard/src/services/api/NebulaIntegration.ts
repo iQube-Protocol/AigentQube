@@ -41,7 +41,7 @@ export class NebulaIntegration implements APIIntegration {
       });
 
       this.sessionId = response.data.result.context.session_id
-      console.log('[Nebula API] Session created with ID:', this.sessionId);
+      //CD::console.log('[Nebula API] Session created with ID:', this.sessionId);
       this.status = ServiceStatus.READY;
 
     } catch (error: any) {
