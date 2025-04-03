@@ -357,16 +357,19 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
   const handleViewQube = useCallback(async () => {
     console.log(iQubeTokenId)
-    if (iQubeTokenId.localeCompare("data", undefined, { sensitivity: "base" }) === 0){
-      // console.log('DATA FORM')
-      setShowFormMint(true);
-      setIsDecrypted(false);
-      setIQubeActivated(null);
-    }else if (iQubeTokenId.localeCompare("content", undefined, { sensitivity: "base" }) === 0){
-      // console.log('content')
-    }else{
-      setShowFormMint(false);
-      viewMetaQube();
+    if (iQubeTokenId !== null)
+    {  
+      if (iQubeTokenId.localeCompare("data", undefined, { sensitivity: "base" }) === 0){
+        // console.log('DATA FORM')
+        setShowFormMint(true);
+        setIsDecrypted(false);
+        setIQubeActivated(null);
+      }else if (iQubeTokenId.localeCompare("content", undefined, { sensitivity: "base" }) === 0){
+        // console.log('content')
+      }else{
+        setShowFormMint(false);
+        viewMetaQube();
+      }
     }
   } ,[iQubeTokenId, onContextChange]);
 
@@ -634,7 +637,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         }
       });
 
-      setBlakQubeData(null) // Clear any previous decrypted data
+      // setBlakQubeData(null) // Clear any previous decrypted data
 
 
       // Find the blakQube attribute
@@ -1043,19 +1046,11 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     }));
 
     return (
-      <div className="grid grid-cols-3 gap-2 text-white">
+      <div className="grid gap-2 text-white">
         {dataToRender.map((item, index) => (
-          <div key={index} className="bg-gray-700 p-2 rounded relative">
-            <span className="text-gray-400 block text-xs">{item.label}</span>
-            <div className="truncate">{item.value}</div>
-            {item.editable && (
-              <button
-                className="absolute top-1 right-1 text-xs bg-blue-600 text-white rounded px-1 hover:bg-blue-700"
-                onClick={() => {/* TODO: Implement edit functionality */}}
-              >
-                Edit
-              </button>
-            )}
+          <div key={index} className="bg-gray-700 p-2 rounded truncate w-full">
+            <span className="text-gray-400 text-xs">{item.label}</span>
+            <div className="truncate w-full">{item.value}</div>
           </div>
         ))}
       </div>
@@ -1136,7 +1131,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       )
 
       setMetaQubeData(formattedMetaQubeData)
-      setBlakQubeData(null) // Clear any previous decrypted data
+      // setBlakQubeData(null) // Clear any previous decrypted data
 
       console.log(formattedMetaQubeData)
 
@@ -1435,7 +1430,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
               setIQubeTokenId(newValue);
               if (!newValue) {
                 setMetaQubeData(null);
-                setBlakQubeData(null);
+                // setBlakQubeData(null);
               }
             }}
             placeholder="Enter Token ID"
