@@ -1,7 +1,7 @@
 import { APIIntegration, APIResponse, APIConfig } from './APIIntegrationManager';
 import { ServiceStatus } from '../../types/service';
 import OpenAI from 'openai';
-import React from 'react';
+//import React from 'react';
 
 interface OpenAIMessage {
     role: 'system' | 'user' | 'assistant';
