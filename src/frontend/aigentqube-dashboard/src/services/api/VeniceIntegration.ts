@@ -1,7 +1,7 @@
 import { APIIntegration, APIResponse, APIConfig } from './APIIntegrationManager';
 import { ServiceStatus } from '../../types/service';
 import OpenAI from 'openai';
-import React from 'react';
+//import React from 'react';
 
 interface OpenAIMessage {
     role: 'system' | 'user' | 'assistant';
@@ -77,7 +77,7 @@ export class VeniceIntegration implements APIIntegration {
         }
         this.initializationPromise = (async () => {
             try {
-                console.log('[Venice API] Initializing...');
+                //console.log('[Venice API] Initializing...');
 
                 // Check and Validate API Key
                 if (!this.config.apiKey) {
@@ -105,8 +105,8 @@ export class VeniceIntegration implements APIIntegration {
                         const isValid = await this.validate();
                         if (isValid) {
                             this.status = ServiceStatus.READY;
-                            console.log('[Venice API] Validation Attempt:', validationAttempts);
-                            console.log('[Venice API] Successfully initialized');
+                            //console.log('[Venice API] Validation Attempt:', validationAttempts);
+                            //console.log('[Venice API] Successfully initialized');
                             return;
                         }
                         validationAttempts++;
@@ -135,9 +135,9 @@ export class VeniceIntegration implements APIIntegration {
             const options = {method: 'GET', headers: {Authorization: `Bearer ${this.config.apiKey}`}};
             const response = await fetch('https://api.venice.ai/api/v1/models', options);
             const responseData = await response.json();
-            console.log(responseData);
+            //console.log(responseData);
             const availableModels = responseData.data.map((model: any) => model.id);
-            console.log('[Venice API] Call to validate()');
+            //console.log('[Venice API] Call to validate()');
             //Ensure default model is available
             const isDefaultModelAvailable = availableModels.includes(this.DEFAULT_MODEL);
             this.status = isDefaultModelAvailable ? ServiceStatus.READY : ServiceStatus.ERROR;
@@ -157,13 +157,13 @@ export class VeniceIntegration implements APIIntegration {
         }
     }
     public async execute(params: Record<string, any>): Promise<APIResponse> {
-        console.log('[Venice API] Executing...');
+        //console.log('[Venice API] Executing...');
 
         try {
             // Validate input with logging
             const message = params.message || params.input || params.query;
-            console.log('[Venice API] Input Message:', message);
-            console.log('[Venice API] Params:', params);
+            //console.log('[Venice API] Input Message:', message);
+            //console.log('[Venice API] Params:', params);
 
             if (!message) {
                 console.warn('[Venice API] Invalid input: message, input, or query is required');
@@ -208,7 +208,7 @@ export class VeniceIntegration implements APIIntegration {
             console.warn('Venice API is not initialized--attempting force Init');
             try {
                 await this.initialize('default');
-                console.log('Venice API initialized successfully');
+                //('Venice API initialized successfully');
             } catch (initError) {
                 console.error('Venice API initialization failed:', initError);
                 throw new Error('Venice API initialization failed');
@@ -233,7 +233,7 @@ export class VeniceIntegration implements APIIntegration {
                 ).join('\n\n')
                 : 'No connected iQubes';
     
-            console.log(iqubeDataString);
+            //(iqubeDataString);
     
             const systemPromptContent = `${this.SYSTEM_PROMPTS[systemPromptKey]}\n\nConnected iQubes:\n${iqubeDataString}`;
             
@@ -259,7 +259,7 @@ export class VeniceIntegration implements APIIntegration {
                 stream: false
             };
     
-            console.log('Request Payload:', JSON.stringify(requestBody, null, 2));
+            //('Request Payload:', JSON.stringify(requestBody, null, 2));
     
             const response = await fetch('https://api.venice.ai/api/v1/chat/completions', {
                 method: 'POST',
@@ -277,7 +277,7 @@ export class VeniceIntegration implements APIIntegration {
                 throw new Error(`Venice API Error: ${completion.error?.message || 'Unknown error'}`);
             }
     
-            console.log('Venice API Response:', JSON.stringify(completion, null, 2));
+            //console.log('Venice API Response:', JSON.stringify(completion, null, 2));
     
             const responseContent = completion.choices?.[0]?.message?.content;
             if (!responseContent) {

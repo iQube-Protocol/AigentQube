@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { ethers } from 'ethers';
 import { ABI } from '../utils/ABI'
@@ -17,6 +17,8 @@ import QubeViewer from './QubeViewer';
 import { registerQube } from '../utils/contractInteraction';
 import PolygonNFTInterface from '../utils/MetaContract'
 import { OrchestrationAgent } from '../services/OrchestrationAgent';
+import NFTMinter from '../iQube/NFTMinter';
+import { pinata } from '../utils/pinata-config'
 
 
 const CONTRACT_ADDRESS = '0x632E1d32e34F0A690635BBcbec0D066daa448ede'
@@ -67,7 +69,17 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
   const [iQubes, setIQubes] = useState([]);
   const [metaQubeData, setMetaQubeData] = useState<any>(null)
-  const [blakQubeData, setBlakQubeData] = useState<any>(null)
+  const [blakQubeData, setBlakQubeData] = useState<any>({
+    profession: 'Consultant',
+    web3Interests: 'Builder',
+    localCity: 'New York',
+    publicEmail: 'info@metame.com',
+    evmPublicKey: '0x14b02B70a9740503ef4294FB4CAAf08e2759deA0',
+    bitcoinPublicKey: '0x34355464656465',
+    tokensOfInterest: ['AVA', 'POL', 'BTC', 'MOR'],
+    chainIDs: ['1', '80002'],
+    walletsOfInterest: ['0x0417409BEFbbE9474a7623b2e704389'],
+  });
   const [metadata, setMetadata] = useState<string>('')
   const [decryptedLink, setDecryptedLink] = useState<string>('')
   const [nftInterface, setNftInterface] = useState<PolygonNFTInterface | null>(
@@ -76,6 +88,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
   const [encryptedBlakQubeData, setEncryptedBlakQubeData] = useState<any>(null)
   const [account, setAccount] = useState<string>('')
   const [isDecrypted, setIsDecrypted] = useState(false);
+  const [showFormMint, setShowFormMint] = useState(false);
 
   // Modal for Qube Registry
   const { isOpen: isRegistryOpen, onOpen: onOpenRegistry, onClose: onCloseRegistry } = useDisclosure();
@@ -159,6 +172,9 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       }
     ]
   });
+  
+  const [tokenId, setTokenId] = useState<string>('')
+  
 
   // Function to set error with auto-clear
   const showError = useCallback((message: string) => {
@@ -173,6 +189,12 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     return timerId;
   }, []);
 
+  const handleBlakQubeChange = (key: string, value: string) => {
+    setBlakQubeData((prev: any) => {
+      if (prev[key] === value) return prev; // Prevents unnecessary updates
+      return { ...prev, [key]: value };
+    });
+  };
 
   const formatDisplayValue = (value: any, isBlakQube: boolean = false): string => {
     // Helper to detect encrypted content
@@ -333,14 +355,93 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
   }, []);
 
+  const handleViewQube = useCallback(async () => {
+    console.log(iQubeTokenId)
+    if (iQubeTokenId !== null)
+    {  
+      if (iQubeTokenId.localeCompare("data", undefined, { sensitivity: "base" }) === 0){
+        // console.log('DATA FORM')
+        setShowFormMint(true);
+        setIsDecrypted(false);
+        setIQubeActivated(null);
+      }else if (iQubeTokenId.localeCompare("content", undefined, { sensitivity: "base" }) === 0){
+        // console.log('content')
+      }else{
+        setShowFormMint(false);
+        viewMetaQube();
+      }
+    }
+  } ,[iQubeTokenId, onContextChange]);
+
+  const FormMint = () => {
+    return(
+      <div className="mt-4 bg-gray-700 rounded p-4 space-y-2">
+        {/* First Row: iQube ID, Creator, Type, Owner Type */}
+        <div className="grid grid-cols-4 gap-2 text-white">
+          <div>
+            <span className="text-gray-400 block text-xs">iQube ID</span>
+            {"I dont"}
+          </div>
+          <div>
+            <span className="text-gray-400 block text-xs">Creator</span>
+            {"MEOW"}
+          </div>
+          <div>
+            <span className="text-gray-400 block text-xs">iQube Type</span>
+            {"Slay"}
+          </div>
+          <div>
+            <span className="text-gray-400 block text-xs">Owner Type</span>
+            {"MEOW"}
+          </div>
+        </div>
+
+        {/* Second Row: iQube Scores */}
+        <div className="grid grid-cols-4 gap-2 text-white">
+          <div>
+            <span className="text-gray-400 block text-xs">Sensitivity</span>
+            <ScoreBar score={0.1} />
+          </div>
+          <div>
+            <span className="text-gray-400 block text-xs">Verifiability</span>
+            <ScoreBar score={0.3} />
+          </div>
+          <div>
+            <span className="text-gray-400 block text-xs">Accuracy</span>
+            <ScoreBar score={0.2} />
+          </div>
+          <div>
+            <span className="text-gray-400 block text-xs">Risk</span>
+            <ScoreBar score={0.5} />
+          </div>
+        </div>
+        <div className="mt-2 bg-gray-700 rounded space-y-2">
+            <h3 className="text-white text-lg mb-2 whitespace-nowrap">BlackQube Data</h3>
+              <div className="grid gap-2">
+                {Object.entries(blakQubeData).map(([key, value]) => (
+                  <div key={key} className="w-full  block">
+                    <label className="text-gray-400 text-sm font-medium">{key}</label>
+                    <input
+                      type="text"
+                      defaultValue ={Array.isArray(value) ? (value as string[]).join(', ') : (value as string)}
+                      onBlur={(e) => handleBlakQubeChange(key, e.target.value)}
+                      placeholder="Enter text..."
+                      className="w-[95%] border rounded p-2 bg-red-500/50 text-white"
+                    />
+                  </div>
+                ))}
+              </div>
+          </div>
+      </div>  
+    );
+    
+  };
   const viewMetaQube =  useCallback(async () => {
     console.log('retrieving meta data')
     setDecryptedLink('')
     setMetadata('')
     setMetaQubeData(null)
-    setBlakQubeData(null)
-    console.log(iQubeTokenId)
-
+    // setBlakQubeData(null)
 
     if (!iQubeTokenId || !nftInterface) {
       setError('Missing token ID or NFT interface')
@@ -396,7 +497,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
       setMetaQubeData(formattedMetaQubeData)
       setEncryptedBlakQubeData(formattedBlakQubeData)// Store encrypted data separately
-      setBlakQubeData(null) // Clear any previous decrypted data
+      // setBlakQubeData(null) // Clear any previous decrypted data
       setIsDecrypted(true);
       setMetadata(fullPath)
 
@@ -536,7 +637,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         }
       });
 
-      setBlakQubeData(null) // Clear any previous decrypted data
+      // setBlakQubeData(null) // Clear any previous decrypted data
 
 
       // Find the blakQube attribute
@@ -714,6 +815,170 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     }
   }, [signer, showError, onContextChange]);
 
+  const getEncryptionData = async (uri: string) => {
+    try {
+      let http = await axios.post(
+        'https://iqubes-server.onrender.com/get-encryption-key',
+        {
+          uri,
+        },
+      )
+      return http?.data
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  const validatePinataJWT = (token: string) => {
+    console.log('[JWT Validation] Starting validation');
+    
+    if (!token) {
+        console.error('[JWT Validation] Token is empty or undefined');
+        throw new Error('Pinata JWT token is missing');
+    }
+
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+        console.error('[JWT Validation] Invalid token format', {
+            tokenLength: parts.length,
+            tokenParts: parts
+        });
+        throw new Error('Invalid JWT token: Incorrect number of segments');
+    }
+
+    try {
+        // Attempt to decode the payload
+        const payload = JSON.parse(atob(parts[1]));
+        console.log('[JWT Validation] Payload decoded successfully', {
+            exp: payload.exp,
+            iat: payload.iat
+        });
+    } catch (error) {
+        console.error('[JWT Validation] Payload decoding failed', error);
+        throw new Error('Invalid JWT token: Cannot decode payload');
+    }
+
+    console.log('[JWT Validation] Token is valid');
+    return true;
+  };
+
+  const handleMemberProfileMint = async () => {
+    console.log("RUNNING : handleMemberProfileMint")
+
+    setIsLoading(true)
+    setError('')
+
+    try {
+
+      const pinataJWT = process.env.REACT_APP_PINATA_JWT;
+      validatePinataJWT(pinataJWT || '');
+
+      let _memberProfile = {
+        metaQube:{ 
+          iQubeIdentifier: 'TEST',
+          iQubeCreator: 'Ken and Isabella',
+          ownerType: 'Individual',
+          iQubeContentType: 'Data',
+          ownerIdentifiability: 'Identifiable',
+          transactionDate: new Date().toISOString(),
+          sensitivityScore: 5,
+          verifiabilityScore: 7,
+          accuracyScore: 6,
+          riskScore: 4,
+          blakQubeKey: ''
+        },
+        blakQube:{
+          profession: 'Consultant',
+          web3Interests: 'Builder',
+          localCity: 'New York',
+          publicEmail: 'info@metame.com',
+          evmPublicKey: '0x14b02B70a9740503ef4294FB4CAAf08e2759deA0',
+          bitcoinPublicKey: '0x34355464656465',
+          tokensOfInterest: ['AVA', 'POL', 'BTC','MOR'],
+          chainIDs: ['1', '80002'],
+          walletsOfInterest: ['0x0417409BEFbbE9474a7623b2e704389', '0x0417409BEFb7623b2e7043896566313', '0x041723b2e704389653138b']
+        }
+      };
+      _memberProfile.blakQube = blakQubeData;
+
+      let _blakQube = _memberProfile.blakQube;
+
+      let { data } = await axios.post(
+        `https://iqubes-server.onrender.com/encrypt-member-qube`,
+        _blakQube,
+      )
+
+      console.log(data)
+
+      if (data.success) {
+        const { encryptedBlakQube: blakQube, key } = data?.encryptedData
+        _memberProfile.metaQube.blakQubeKey = key
+        const updatedMetaData = {
+          metaQube: _memberProfile.metaQube,
+          blakQube,
+        }
+
+        const metadata = JSON.stringify({
+          name: `iQube NFT #${Date.now()}`,
+          description: 'An encrypted iQube NFT',
+          image: '',
+          attributes: [
+            ...Object.entries(updatedMetaData).map(([key, value]) => ({
+              trait_type: key,
+              value: value,
+            })),
+          ],
+        })
+
+        // Upload JSON to IPFS
+        const metadataUpload = await pinata.upload.json(JSON.parse(metadata))
+        console.log(metadataUpload.IpfsHash)
+        console.log(key)
+        console.log(account)
+
+        // mint the member data qube
+        const receipt = await nftInterface?.mintQube(
+          `ipfs://${metadataUpload.IpfsHash}`,
+          key,
+        )
+
+        const newTokenId = await nftInterface?.getTokenIdFromReceipt(receipt)
+        if (newTokenId) {
+          setTokenId(newTokenId)
+          setIQubeTokenId(newTokenId)
+          console.log('NFT minted successfully with token ID:', newTokenId)
+        } else {
+          console.log("NFT minted successfully, but couldn't retrieve token ID")
+        }
+      }
+
+      return
+    } catch (error) {
+      console.error('Error minting member profile NFT:', error)
+      setError(
+        'Failed to mint member profile NFT. Please check console for details.',
+      )
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+    const handleError = (error: any) => {
+      if (error.code === 4001 || error.message?.includes('user rejected')) {
+        return 'Transaction was rejected in MetaMask. You can try again when ready.'
+      } else if (error.message?.includes('network')) {
+        return 'Please ensure you are connected to the Polygon Amoy testnet in MetaMask.'
+      } else if (error.message?.includes('insufficient funds')) {
+        return 'Insufficient funds in your wallet for gas fees. Please add funds and try again.'
+      } else if (error.message?.includes('nonce')) {
+        return 'Transaction nonce error. Please refresh the page and try again.'
+      } else if (error.message?.includes('gas')) {
+        return 'Gas estimation failed. The transaction might fail or network might be congested.'
+      } else {
+        return `Operation failed: ${error.message || 'Unknown error occurred'}. Please try again.`
+      }
+    }
+
   function goToMintDashboard () : void {
     window.location.href = window.location.href + "minter";
   }
@@ -781,19 +1046,11 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     }));
 
     return (
-      <div className="grid grid-cols-3 gap-2 text-white">
+      <div className="grid gap-2 text-white">
         {dataToRender.map((item, index) => (
-          <div key={index} className="bg-gray-700 p-2 rounded relative">
-            <span className="text-gray-400 block text-xs">{item.label}</span>
-            <div className="truncate">{item.value}</div>
-            {item.editable && (
-              <button
-                className="absolute top-1 right-1 text-xs bg-blue-600 text-white rounded px-1 hover:bg-blue-700"
-                onClick={() => {/* TODO: Implement edit functionality */}}
-              >
-                Edit
-              </button>
-            )}
+          <div key={index} className="bg-gray-700 p-2 rounded truncate w-full">
+            <span className="text-gray-400 text-xs">{item.label}</span>
+            <div className="truncate w-full">{item.value}</div>
           </div>
         ))}
       </div>
@@ -874,7 +1131,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       )
 
       setMetaQubeData(formattedMetaQubeData)
-      setBlakQubeData(null) // Clear any previous decrypted data
+      // setBlakQubeData(null) // Clear any previous decrypted data
 
       console.log(formattedMetaQubeData)
 
@@ -1173,7 +1430,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
               setIQubeTokenId(newValue);
               if (!newValue) {
                 setMetaQubeData(null);
-                setBlakQubeData(null);
+                // setBlakQubeData(null);
               }
             }}
             placeholder="Enter Token ID"
@@ -1182,7 +1439,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
           {/* View iQube Button */}
           <button 
-            onClick={viewMetaQube}
+            onClick={handleViewQube}
             disabled={!iQubeTokenId}
             className={`
               w-full py-2 rounded transition-all duration-300 ease-in-out
@@ -1211,7 +1468,8 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           {/* Mint (Encrypt) Button */}
           <button 
             //simple function written below the handleMintToken that takes you to path + / + minter
-            onClick={goToMintDashboard} 
+            onClick={() => handleMemberProfileMint()}
+            // {goToMintDashboard} 
 
             // onClick={handleMintToken}            
             //disabled={!iQubeTokenId}
@@ -1238,7 +1496,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
             {error}
           </div>
         )}
-
+        {showFormMint && <FormMint />}
         {/* MetaQube Visualization */}
         {iQubeActivated && (
           <div className="mt-4 bg-gray-700 rounded p-4 space-y-2">

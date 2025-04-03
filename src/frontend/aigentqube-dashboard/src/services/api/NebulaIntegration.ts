@@ -41,7 +41,7 @@ export class NebulaIntegration implements APIIntegration {
       });
 
       this.sessionId = response.data.result.context.session_id
-      console.log('[Nebula API] Session created with ID:', this.sessionId);
+      //CD::console.log('[Nebula API] Session created with ID:', this.sessionId);
       this.status = ServiceStatus.READY;
 
     } catch (error: any) {
@@ -103,7 +103,7 @@ export class NebulaIntegration implements APIIntegration {
         },
       };
 
-      console.log(requestBody)
+      //console.log(requestBody)
 
       const response = await this.axiosInstance.post('/chat', requestBody, {
         headers: {
@@ -111,7 +111,7 @@ export class NebulaIntegration implements APIIntegration {
         },
       });
 
-      console.log(response)
+      //console.log(response)
 
 
       if (!response.data || !response.data.message) {
@@ -148,7 +148,7 @@ export class NebulaIntegration implements APIIntegration {
       this.status = ServiceStatus.ERROR;
       return false;
     }
-    console.log('[Nebula API] Calling validate()');
+   //console.log('[Nebula API] Calling validate()');
     return true;
   }
 }
