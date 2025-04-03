@@ -354,16 +354,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setIsLoading(true);
       try {
         // Check if OrchestrationAgent is initialized
-        console.log('Checking OrchestrationAgent initialization status');
         const isInitialized = orchestrationAgent.isInitialized();
-        console.log('OrchestrationAgent initialization status:', isInitialized);
 
         // If not initialized, attempt to initialize
         if (!isInitialized) {
-          console.log('Attempting to initialize OrchestrationAgent');
           try {
             await orchestrationAgent.initialize();
-            console.log('OrchestrationAgent initialized successfully');
+            //console.log('OrchestrationAgent initialized successfully');
           } catch (initError) {
             console.error('Failed to initialize OrchestrationAgent:', initError);
             const errorMessage = `Initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`;
@@ -381,14 +378,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         // Only initialize if it's a specialized domain
         if (currentDomain !== 'AigentQube' && currentDomain !== 'Generic AI') {
           // Initialize Metis API for the current domain
-          console.log(`Initializing specialized domain: ${currentDomain}`);
           await orchestrationAgent.initializeSpecializedDomain(currentDomain as SpecializedDomain, {
             apiKey,
             instructions: DOMAIN_METADATA[currentDomain as SpecializedDomain]?.defaultInstructions || ''
           });
           
           setIsApiInitialized(true);
-          console.log(`API initialized for domain: ${currentDomain}`);
+          //console.log(`API initialized for domain: ${currentDomain}`);
           
           // Add system message for successful initialization
           setMessages(prev => [...prev, {
@@ -408,7 +404,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             
 
             setIsApiInitialized(true);
-            console.log('Venice API initialized for generic domain');
         }
       } catch (error: any) {
         const errorMessage = error.message;
@@ -445,7 +440,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         await initializeApi();
       } catch (error) {
         if (retries > 0) {
-          console.log(`Retrying initialization. Attempts left: ${retries}`);
+          //console.log(`Retrying initialization. Attempts left: ${retries}`);
           await new Promise(resolve => setTimeout(resolve, delay));
           await initializeWithRetry(retries - 1, delay * 2);
         } else {
@@ -508,9 +503,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       return;
     }
   
-    console.log('Submitted message:', inputValue);
-    console.log("Orchestration agent initialized?", orchestrationAgent.isInitialized())
-    console.log("Current Domain", orchestrationAgent.getCurrentDomain())
+    // console.log('Submitted message:', inputValue);
+    // console.log("Orchestration agent initialized?", orchestrationAgent.isInitialized())
+    // console.log("Current Domain", orchestrationAgent.getCurrentDomain())
     
     const userMessage = createMessage(inputValue, 'user');
     
@@ -525,7 +520,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         try {
           // Ensure OrchestrationAgent is initialized
           if (!orchestrationAgent.isInitialized()) {
-            console.log('Attempting to initialize OrchestrationAgent before submission');
             await orchestrationAgent.initialize();
           }
   
@@ -977,7 +971,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               px={8}
               _hover={{ bg: "blue.500" }}
               onClick={() => {
-                console.log('Send button clicked');
                 handleSubmit();  // Call handleSubmit on button click
               }}
             >

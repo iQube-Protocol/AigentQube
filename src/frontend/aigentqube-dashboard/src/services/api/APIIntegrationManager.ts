@@ -40,10 +40,10 @@ export class APIIntegrationManager {
 
   public async registerAPI(api: APIIntegration): Promise<void> {
     try {
-      console.log(`[APIIntegrationManager] Current Registered integrations:`, 
-        Array.from(this.integrations.keys()));
+      //console.log(`[APIIntegrationManager] Current Registered integrations:`, 
+        //Array.from(this.integrations.keys()));
 
-      console.log(`[APIIntegrationManager] Attempting to register API: ${api.name} (ID: ${api.id})`);
+      //CD::console.log(`[APIIntegrationManager] Attempting to register API: ${api.name} (ID: ${api.id})`);
       
       
       // Validate API status
@@ -54,7 +54,7 @@ export class APIIntegrationManager {
 
       // Check if API is already registered
       if (this.integrations.has(api.id)) {
-        console.log(`[APIIntegrationManager] API ${api.name} (${api.id}) is already registered`);
+        //CD::console.log(`[APIIntegrationManager] API ${api.name} (${api.id}) is already registered`);
         return;
       }
 
@@ -67,13 +67,13 @@ export class APIIntegrationManager {
       // Initialize the integration
       await api.initialize();
 
-      console.log(api.id, api)
+      //CD::console.log(api.id, api)
 
       // Register the API
       this.integrations.set(api.id, api);
-      console.log(`[APIIntegrationManager] API ${api.name} (${api.id}) registered successfully`);
-      console.log(`[APIIntegrationManager] Updated registered integrations:`, 
-        Array.from(this.integrations.keys()));
+      //console.log(`[APIIntegrationManager] API ${api.name} (${api.id}) registered successfully`);
+      //CD::console.log(`[APIIntegrationManager] Updated registered integrations:`, 
+        //CD::Array.from(this.integrations.keys()));
     } catch (error: any) {
       console.error(`[APIIntegrationManager] Failed to register API ${api.name}:`, error);
       throw new Error(`Failed to register API ${api.name}: ${error.message}`);
@@ -82,9 +82,9 @@ export class APIIntegrationManager {
 
   public async executeAPI(integrationId: string, params: any): Promise<APIResponse> {
     
-    console.log(`[APIIntegrationManager] Attempting to execute API (1): ${integrationId}`);
-    console.log(`[APIIntegrationManager] Current registered integrations:`, 
-      Array.from(this.integrations.keys()));
+    //CD::console.log(`[APIIntegrationManager] Attempting to execute API (1): ${integrationId}`);
+    //CD::console.log(`[APIIntegrationManager] Current registered integrations:`, 
+      //CD::Array.from(this.integrations.keys()));
 
     const integration = this.integrations.get(integrationId);
     if (!integration) {
@@ -110,28 +110,28 @@ export class APIIntegrationManager {
 
   public getAPIStatus(integrationId: string): ServiceStatus | null {
     const integration = this.integrations.get(integrationId);
-    console.log(`[APIIntegrationManager] Checking status for ${integrationId}:`, 
-      integration ? integration.status : 'Not Found');
+    //CD::console.log(`[APIIntegrationManager] Checking status for ${integrationId}:`, 
+      //integration ? integration.status : 'Not Found');
     return integration ? integration.status : null;
   }
 
   public getAllIntegrations(): APIIntegration[] {
     const integrations = Array.from(this.integrations.values());
-    console.log(`[APIIntegrationManager] Getting all integrations. Count:`, integrations.length);
+    /*console.log(`[APIIntegrationManager] Getting all integrations. Count:`, integrations.length);
     integrations.forEach(integration => {
       console.log(`- ${integration.name} (${integration.id}): ${integration.status}`);
-    });
+      }); */
     return integrations;
   }
 
   public async validateAllIntegrations(): Promise<Map<string, boolean>> {
-    console.log(`[APIIntegrationManager] Validating all integrations`);
+    //CD::console.log(`[APIIntegrationManager] Validating all integrations`);
     const validationResults = new Map<string, boolean>();
     
     for (const [id, integration] of this.integrations) {
       try {
         const isValid = await integration.validate();
-        console.log(`[APIIntegrationManager] Validation for ${id}: ${isValid}`);
+        //CD::console.log(`[APIIntegrationManager] Validation for ${id}: ${isValid}`);
         validationResults.set(id, isValid);
       } catch (error) {
         console.warn(`[APIIntegrationManager] Validation error for ${id}:`, error);

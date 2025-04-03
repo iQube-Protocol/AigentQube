@@ -84,9 +84,9 @@ export class VoiceService {
       console.error('ChirpTTS API key is required when not using local TTS');
     }
     
-    console.log(`VoiceService initialized with API key: ${this.apiKey ? "[PRESENT]" : "[MISSING]"}`);
-    console.log(`Using base URL: ${this.baseUrl}`);
-    console.log(`Using local TTS: ${this.useLocalTTS ? "Yes" : "No"}`);
+    //CD::console.log(`VoiceService initialized with API key: ${this.apiKey ? "[PRESENT]" : "[MISSING]"}`);
+    //CD::console.log(`Using base URL: ${this.baseUrl}`);
+   //CD::console.log(`Using local TTS: ${this.useLocalTTS ? "Yes" : "No"}`);
     
     if (this.useLocalTTS) {
       // Initialize local TTS
@@ -106,13 +106,13 @@ export class VoiceService {
   private async initializeLocalTTS(): Promise<boolean> {
     // Prevent multiple simultaneous loads
     if (this.isModelLoading) {
-      console.log('[VoiceService] Model loading already in progress, waiting...');
+      //CD::console.log('[VoiceService] Model loading already in progress, waiting...');
       return this.modelLoadPromise as Promise<boolean>;
     }
     
     // Skip if already initialized
     if (this.isLocalTTSReady && this.onnxSession) {
-      console.log('[VoiceService] Local TTS already initialized');
+      //CD::console.log('[VoiceService] Local TTS already initialized');
       return true;
     }
     
@@ -129,16 +129,35 @@ export class VoiceService {
       
       // Load ONNX model if not already loaded
       if (!this.onnxSession) {
-        console.log('[VoiceService] Loading ONNX model');
+        // Dynamically determine available execution providers
+        const availableProviders = ["webgpu", "wasm"];
+        const selectedProviders = [];
+
+        for (const provider of availableProviders) {
+          try {
+            await InferenceSession.create(`${this.modelPath}model.onnx`, {
+              executionProviders: [provider],
+            });
+            selectedProviders.push(provider);
+          } catch (error) {
+            console.warn(`[VoiceService] Execution provider "${provider}" is not available:`, error);
+          }
+        }
+
+        if (selectedProviders.length === 0) {
+          throw new Error("No available execution providers for ONNX runtime.");
+        }
+
+        // Use the first available provider
         this.onnxSession = await InferenceSession.create(`${this.modelPath}model.onnx`, {
-          executionProviders: ["webgpu", "wasm"],
+          executionProviders: selectedProviders,
         });
-        console.log('[VoiceService] ONNX model loaded successfully');
+        //CD::console.log('[VoiceService] ONNX model loaded successfully');
       }
       
       this.isLocalTTSReady = true;
       this.isModelLoading = false;
-      console.log('[VoiceService] Local TTS initialized successfully');
+      //CD::console.log('[VoiceService] Local TTS initialized successfully');
       return true;
     } catch (error) {
       console.error('[VoiceService] Local TTS initialization error:', error);
@@ -168,7 +187,7 @@ export class VoiceService {
       if (!this.modelPath.endsWith('/')) {
         this.modelPath += '/';
       }
-      console.log(`[VoiceService] Updated model path: ${this.modelPath}`);
+      //CD::console.log(`[VoiceService] Updated model path: ${this.modelPath}`);
       
       // Reset model state if path changed
       this.isLocalTTSReady = false;
@@ -197,7 +216,7 @@ export class VoiceService {
   public async dispose(): Promise<void> {
     if (this.onnxSession) {
       try {
-        console.log('[VoiceService] Disposing ONNX session');
+        //CD::console.log('[VoiceService] Disposing ONNX session');
         await this.onnxSession.release();
         this.onnxSession = null;
       } catch (error) {
@@ -222,7 +241,7 @@ export class VoiceService {
       }
       
       this.modelConfig = await response.json();
-      console.log('[VoiceService] Loaded model config:', this.modelConfig);
+      //CD::console.log('[VoiceService] Loaded model config:', this.modelConfig);
     } catch (error) {
       console.error('[VoiceService] Failed to load model config:', error);
       throw error;
@@ -234,7 +253,7 @@ export class VoiceService {
    */
   private async loadPhonemizer(): Promise<void> {
     try {
-      console.log('[VoiceService] Loading phonemizer script');
+      //CD::console.log('[VoiceService] Loading phonemizer script');
       
       // Create script element and load the phonemizer
       const script = document.createElement('script');
@@ -244,7 +263,7 @@ export class VoiceService {
       // Wait for script to load
       await new Promise<void>((resolve, reject) => {
         script.onload = () => {
-          console.log('[VoiceService] Phonemizer script loaded successfully');
+          //CD::console.log('[VoiceService] Phonemizer script loaded successfully');
           resolve();
         };
         script.onerror = () => {
@@ -255,12 +274,12 @@ export class VoiceService {
       });
       
       // Initialize the module with custom print handler - exactly like the working code
-      console.log('[VoiceService] Initializing phonemizer module');
+      //CD::console.log('[VoiceService] Initializing phonemizer module');
       
       // Critical part: Match the exact handler setup from working code
       this.modulePhonemizer = await window.createPiperPhonemize({
         print: (data: string) => {
-          console.log("[VoiceService] Captured stdout:", data);
+          //CD::console.log("[VoiceService] Captured stdout:", data);
           this.stdoutCaptureRef += data;
         },
         printErr: (message: string) => {
@@ -268,7 +287,7 @@ export class VoiceService {
         }
       });
       
-      console.log('[VoiceService] Phonemizer module initialized successfully');
+      //CD::('[VoiceService] Phonemizer module initialized successfully');
     } catch (error) {
       console.error('[VoiceService] Error loading phonemizer:', error);
       throw error;
@@ -294,9 +313,9 @@ export class VoiceService {
         
         const espeakDataPath = `/espeak-ng-data`; 
         
-        console.log("[VoiceService] Running phonemizer with language:", language);
-        console.log("[VoiceService] Using espeak data path:", espeakDataPath);
-        console.log("[VoiceService] Input text length:", inputText.length);
+        //CD::console.log("[VoiceService] Running phonemizer with language:", language);
+        //CD::console.log("[VoiceService] Using espeak data path:", espeakDataPath);
+        //CD::console.log("[VoiceService] Input text length:", inputText.length);
         
         // Use exact same format as working code
         module.callMain([
@@ -309,7 +328,7 @@ export class VoiceService {
         setTimeout(() => {
           // Parse the captured stdout to get phoneme IDs
           const stdoutJson = this.stdoutCaptureRef;
-          console.log("[VoiceService] Phonemizer raw output:", stdoutJson);
+          //CD::console.log("[VoiceService] Phonemizer raw output:", stdoutJson);
           
           if (!stdoutJson) {
             reject(new Error("No output from phonemizer"));
@@ -318,10 +337,10 @@ export class VoiceService {
           
           try {
             const result = JSON.parse(stdoutJson);
-            console.log("[VoiceService] Successfully parsed phonemizer output");
+            //("[VoiceService] Successfully parsed phonemizer output");
             
             if (Array.isArray(result.phoneme_ids)) {
-              console.log(`[VoiceService] Got ${result.phoneme_ids.length} phoneme IDs`);
+              //console.log(`[VoiceService] Got ${result.phoneme_ids.length} phoneme IDs`);
               resolve(result.phoneme_ids);
             } else {
               reject(new Error("No phoneme_ids in result"));
@@ -350,12 +369,12 @@ export class VoiceService {
     
     try {
       // Step 1: Get phoneme IDs
-      console.log('[VoiceService] Local TTS - Phonemizing text:', text);
+      //('[VoiceService] Local TTS - Phonemizing text:', text);
       const phonemeIds = await this.phonemizeText(text);
       
       // Step 2: Use already loaded ONNX model
       if (!this.onnxSession) {
-        console.log('[VoiceService] Local TTS - Model not loaded, attempting to load');
+        //console.log('[VoiceService] Local TTS - Model not loaded, attempting to load');
         await this.initializeLocalTTS();
         
         if (!this.onnxSession) {
@@ -381,12 +400,12 @@ export class VoiceService {
       }
       
       // Step 4: Run inference
-      console.log('[VoiceService] Local TTS - Running inference');
+      //console.log('[VoiceService] Local TTS - Running inference');
       const results = await this.onnxSession.run(feeds);
       
       // Step 5: Process the results
       const audioData = results.output.data as Float32Array;
-      console.log(`[VoiceService] Local TTS - Generated ${audioData.length} audio samples`);
+      //console.log(`[VoiceService] Local TTS - Generated ${audioData.length} audio samples`);
       
       // Create audio buffer and URL
       const audioUrl = this.createAudioUrl(audioData, sampleRate);
@@ -420,22 +439,22 @@ export class VoiceService {
    * Convert audio to text
    */
   public async audioToText(audioBlob: Blob): Promise<AudioToTextResponse> {
-    console.log(`[VoiceService] audioToText: Starting conversion of ${audioBlob.size} bytes, type: ${audioBlob.type}`);
+    //console.log(`[VoiceService] audioToText: Starting conversion of ${audioBlob.size} bytes, type: ${audioBlob.type}`);
     
     // For now, we'll always use the remote API for audio-to-text
     try {
       const formData = new FormData();
       formData.append('file', audioBlob, 'recording.wav');
       
-      console.log(`[VoiceService] audioToText: FormData created with file attachment`);
+      //console.log(`[VoiceService] audioToText: FormData created with file attachment`);
       
       // Log headers being sent
-      const headers = {
-        'X-API-KEY': this.apiKey.substring(0, 4) + '...'  // Log just part of the key for security
-      };
-      console.log(`[VoiceService] audioToText: Headers:`, headers);
+      //CD::const headers = {
+      //  'X-API-KEY': this.apiKey.substring(0, 4) + '...'  // Log just part of the key for security
+      //};
+      //console.log(`[VoiceService] audioToText: Headers:`, headers);
       
-      console.log(`[VoiceService] audioToText: Sending request to ${this.baseUrl}/audio-to-text`);
+      //console.log(`[VoiceService] audioToText: Sending request to ${this.baseUrl}/audio-to-text`);
       
       try {
         const response = await fetch(`${this.baseUrl}/audio-to-text`, {
@@ -460,9 +479,9 @@ export class VoiceService {
           throw new Error(`API error: ${response.status} ${response.statusText}`);
         }
 
-        console.log(`[VoiceService] audioToText: Parsing response JSON`);
+        //(`[VoiceService] audioToText: Parsing response JSON`);
         const data = await response.json();
-        console.log(`[VoiceService] audioToText: Response data:`, data);
+        //console.log(`[VoiceService] audioToText: Response data:`, data);
         
         return {
           success: true,
@@ -515,13 +534,13 @@ export class VoiceService {
    * Convert text to speech
    */
   public async textToSpeech(textInput: string, voice: string = 'en_US-lessac-medium'): Promise<TextToSpeechResponse> {
-    console.log(`[VoiceService] textToSpeech: Starting conversion for text (${textInput.length} chars) with voice ${voice}`);
+    //console.log(`[VoiceService] textToSpeech: Starting conversion for text (${textInput.length} chars) with voice ${voice}`);
     const text = this.normalizeText(textInput)
     // Use local TTS if enabled and ready
     if (this.useLocalTTS) {
       // If not ready, wait for initialization to complete
       if (!this.isLocalTTSReady && this.modelLoadPromise) {
-        console.log('[VoiceService] Waiting for local TTS to initialize');
+        //console.log('[VoiceService] Waiting for local TTS to initialize');
         await this.modelLoadPromise;
       }
       
@@ -539,12 +558,12 @@ export class VoiceService {
       formData.append('text', text);
       formData.append('voice', voice);
       
-      console.log(`[VoiceService] textToSpeech: Request params created`);
+      //console.log(`[VoiceService] textToSpeech: Request params created`);
       
       // Log request details
-      console.log(`[VoiceService] textToSpeech: Sending request to ${this.baseUrl}/text-to-speech`);
+      //console.log(`[VoiceService] textToSpeech: Sending request to ${this.baseUrl}/text-to-speech`);
       
-      const startTime = Date.now();
+      //const startTime = Date.now();
       
       try {
         const response = await fetch(`${this.baseUrl}/text-to-speech`, {
@@ -556,9 +575,9 @@ export class VoiceService {
           body: formData
         });
         
-        const endTime = Date.now();
-        console.log(`[VoiceService] textToSpeech: Network request completed in ${endTime - startTime}ms`);
-        console.log(`[VoiceService] textToSpeech: Response status: ${response.status} ${response.statusText}`);
+        //const endTime = Date.now();
+        //console.log(`[VoiceService] textToSpeech: Network request completed in ${endTime - startTime}ms`);
+        //console.log(`[VoiceService] textToSpeech: Response status: ${response.status} ${response.statusText}`);
         
         if (!response.ok) {
           // Try to get error details from the response
@@ -576,11 +595,11 @@ export class VoiceService {
 
         // Get the audio blob
         const audioBlob = await response.blob();
-        console.log(`[VoiceService] textToSpeech: Received audio blob: ${audioBlob.size} bytes, type: ${audioBlob.type}`);
+        //console.log(`[VoiceService] textToSpeech: Received audio blob: ${audioBlob.size} bytes, type: ${audioBlob.type}`);
         
         // Create an object URL for the audio
         const audioUrl = URL.createObjectURL(audioBlob);
-        console.log(`[VoiceService] textToSpeech: Created object URL: ${audioUrl}`);
+        //CD::console.log(`[VoiceService] textToSpeech: Created object URL: ${audioUrl}`);
         
         return {
           success: true,
@@ -624,7 +643,7 @@ export class VoiceService {
   ): Promise<AudioChunk[]> {
     // Improved text chunking: Ensures the first chunk has at least 12 words
     const chunks = this.splitTextIntoChunks(text, { firstChunkMinWords: 12 });
-    console.log(`[VoiceService] streamAudio: Split text into ${chunks.length} chunks for streaming audio`);
+    //CD::console.log(`[VoiceService] streamAudio: Split text into ${chunks.length} chunks for streaming audio`);
 
     // Ensure TypeScript knows these types
     const audioChunks: AudioChunk[] = chunks.map((text, index) => ({
@@ -636,7 +655,7 @@ export class VoiceService {
       index
     }));
 
-    console.log(`[VoiceService] streamAudio: Created ${audioChunks.length} initial chunk objects`);
+    //console.log(`[VoiceService] streamAudio: Created ${audioChunks.length} initial chunk objects`);
 
     // Store processed chunks
     const results: AudioChunk[] = [...audioChunks];
@@ -644,13 +663,13 @@ export class VoiceService {
     // Process chunks sequentially
     for (let i = 0; i < chunks.length; i++) {
       try {
-        console.log(`[VoiceService] streamAudio: Processing chunk ${i + 1}/${chunks.length}: "${chunks[i].substring(0, 30)}..."`);
+        //CD::console.log(`[VoiceService] streamAudio: Processing chunk ${i + 1}/${chunks.length}: "${chunks[i].substring(0, 30)}..."`);
 
         // Fetch TTS audio for the chunk
         const response = await this.textToSpeech(chunks[i]);
 
         if (response.success && typeof response.audioUrl === 'string') {
-          console.log(`[VoiceService] streamAudio: Successfully generated audio for chunk ${i}`);
+          //CD::console.log(`[VoiceService] streamAudio: Successfully generated audio for chunk ${i}`);
 
           // Store audio URL
           results[i] = {
@@ -684,7 +703,7 @@ export class VoiceService {
       }
     }
 
-    console.log(`[VoiceService] streamAudio: Completed processing all ${chunks.length} chunks`);
+    //console.log(`[VoiceService] streamAudio: Completed processing all ${chunks.length} chunks`);
     return results;
   }
 

@@ -60,7 +60,7 @@ export class MetisIntegration implements APIIntegration {
     
     //Below is the legacy code to connect to metis api: now only one call is needed so there is no need to init.
 
-    console.log('[Metis API] Successfully initialized');
+    ('[Metis API] Successfully initialized');
 
     // try {
     //   // Initialization payload matching the provided structure
@@ -112,7 +112,7 @@ export class MetisIntegration implements APIIntegration {
       const metis_input = params.message || params.input || params.query;
       const domain = params.domain || 'crypto_analyst';
 
-      console.log("[Metis API] Current active iqubes", params.iqubes)
+      //console.log("[Metis API] Current active iqubes", params.iqubes)
 
       const iqubesMap = params.iqubes instanceof Map ? params.iqubes : new Map();
       const iqubesArray = Array.from(iqubesMap.values());
@@ -126,9 +126,15 @@ export class MetisIntegration implements APIIntegration {
           // ...(iqube.walletsOfInterest || [])
         ])
         .filter(key => typeof key === "string" && key.startsWith("0x"));
+        const uniqueKeys = Array.from(new Set(keys));
+        const uniqueIqubesArray = iqubesArray.filter(iqube => 
+          uniqueKeys.some(key => 
+            key === iqube.evmPublicKey
+          )
+        );
 
       const metis_data = {
-        "public_keys": keys,
+        "public_keys": uniqueKeys,
         "user_profile": {
           "Name": " ",
           "Number": " ",
@@ -219,7 +225,7 @@ export class MetisIntegration implements APIIntegration {
         return false;
       }
 
-      console.log("[METIS] Calling validate()")
+      //CD::console.log("[METIS] Calling validate()")
 
       return true
   

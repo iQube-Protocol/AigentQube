@@ -35,7 +35,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
   // Update voice service if API key changes
   useEffect(() => {
-    console.log("Voice API Key:", apiKey ? "Set (not showing for security)" : "Not set");
     voiceServiceRef.current = new VoiceService({apiKey});
   }, [apiKey]);
 

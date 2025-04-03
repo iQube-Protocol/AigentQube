@@ -17,13 +17,12 @@ export class SpecializedDomainManager {
   }
 
   public async initialize(): Promise<void> {
-    console.log('Initializing SpecializedDomainManager...');
+    
     // Perform any setup if needed
   }
 
   public async registerService(domain: string, service: DomainService): Promise<void> {
     try {
-      console.log(`Registering service for domain: ${domain}`);
 
       // Validate service status
       if (service.api.status === ServiceStatus.ERROR) {
@@ -38,9 +37,9 @@ export class SpecializedDomainManager {
 
       // Register the new service
       this.services.set(domain, service);
-      console.log(`Successfully registered service for domain: ${domain}`);
+      //console.log(`Successfully registered service for domain: ${domain}`);
     } catch (error: any) {
-      console.error(`Failed to register service for domain ${domain}:`, error);
+      //console.error(`Failed to register service for domain ${domain}:`, error);
       throw error;
     }
   }
@@ -56,7 +55,6 @@ export class SpecializedDomainManager {
   public async deactivateAllServices(): Promise<void> {
     for (const [domain, service] of this.services.entries()) {
       service.isActive = false;
-      console.log(`Deactivated service for domain: ${domain}`);
     }
   }
 
@@ -64,7 +62,6 @@ export class SpecializedDomainManager {
     const service = this.services.get(domain);
     if (service) {
       service.isActive = false;
-      console.log(`Deactivated service for domain: ${domain}`);
     }
   }
 

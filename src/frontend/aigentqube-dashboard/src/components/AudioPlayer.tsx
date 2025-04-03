@@ -53,13 +53,12 @@ messageId }) => {
         queueRef.current.sort((a, b) => a.index - b.index);
       }
 
-      console.log(`[AudioPlayer] Chunk ${index} decoded and added to queue`);
+      //console.log(`[AudioPlayer] Chunk ${index} decoded and added to queue`);
 
       if (!isReady) setIsReady(true);
 
       // If we were waiting for this chunk, resume playback
       if (waitingForNextChunk && index === currentChunkIndex + 1) {
-        console.log(`[AudioPlayer] New chunk arrived. Resuming playback.`);
         setWaitingForNextChunk(false);
         playChunk(index);
       }
@@ -85,7 +84,6 @@ messageId }) => {
       return;
     }
 
-    console.log(`[AudioPlayer] Playing chunk ${index}`);
     setCurrentChunkIndex(index);
     isPlayingRef.current = true;
     setIsPlaying(true); // Ensure play button remains pause
@@ -96,16 +94,14 @@ messageId }) => {
     sourceNodeRef.current = source;
 
     source.onended = () => {
-      console.log(`[AudioPlayer] Finished playing chunk ${index}`);
 
       if (!isPlayingRef.current) return; // Stop if user has paused
 
       const nextChunk = queueRef.current.find((c) => c.index === index + 1);
       if (nextChunk) {
-        console.log(`[AudioPlayer] Moving to next chunk ${index + 1}`);
         playChunk(index + 1);
       } else {
-        console.log(`[AudioPlayer] No more chunks available, waiting for next...`);
+        //No next chunk available, wait for more
         setWaitingForNextChunk(true);
       }
     };
@@ -117,7 +113,7 @@ messageId }) => {
     if (!audioContextRef.current) return;
 
     if (isPlaying) {
-      console.log(`[AudioPlayer] Pausing at chunk ${currentChunkIndex}`);
+      //CD::console.log(`[AudioPlayer] Pausing at chunk ${currentChunkIndex}`);
       isPlayingRef.current = false;
       if (sourceNodeRef.current) {
         sourceNodeRef.current.stop();
@@ -127,7 +123,7 @@ messageId }) => {
       setIsPlaying(false);
       onPlayStateChange(messageId, false);
     } else {
-      console.log(`[AudioPlayer] Resuming from chunk ${currentChunkIndex}`);
+      //log(`[AudioPlayer] Resuming from chunk ${currentChunkIndex}`);
       isPlayingRef.current = true;
       setIsPlaying(true);
       onPlayStateChange(messageId, true);

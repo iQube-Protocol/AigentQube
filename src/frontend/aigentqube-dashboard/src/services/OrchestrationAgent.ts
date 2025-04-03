@@ -29,7 +29,7 @@ class Logger {
     const timestamp = new Date().toISOString();
     const logEntry = `[${level.toUpperCase()}] ${timestamp}: ${message}`;
     
-    console.log(logEntry);
+    //console.log(logEntry);
     
     // Store log entry
     this.logHistory.push(logEntry);
@@ -133,7 +133,7 @@ export class OrchestrationAgent {
     
     // Ensure APIIntegrationManager is properly set up
     try {
-      console.log("THIS IS BEFORE INIT in orchestration agent")
+      //CD::console.log("THIS IS BEFORE INIT in orchestration agent")
       // Register NLP Processor if available
       if (this.nlpProcessor) {
         this.apiManager.registerAPI(this.nlpProcessor);
@@ -150,11 +150,8 @@ export class OrchestrationAgent {
         
       }
       //Register Venice
-      console.log("Check here")
-      console.log(this.veniceService)
       if(this.veniceService){
         this.apiManager.registerAPI(this.veniceService)
-        console.log("VENICE")
       }
       
 
@@ -198,19 +195,16 @@ export class OrchestrationAgent {
       // Reset initialization state
       this.initialized = false;
       this.logger.log('Starting OrchestrationAgent initialization', 'info');
-      console.log('[OrchestrationAgent] Initialization started');
       
       // Validate APIIntegrationManager
       if (!this.apiManager) {
         this.apiManager = new APIIntegrationManager();
         this.logger.log('Created new APIIntegrationManager', 'warn');
-        console.warn('[OrchestrationAgent] Created new APIIntegrationManager');
       }
       
       // Initialize NLP Processor Venice and Open AI
       try {
         const veniceAPIKey = process.env.REACT_APP_VENICE_API_KEY;
-        console.log('[OrchestrationAgent] Initializing Venice Integration');
         if(!veniceAPIKey){
           throw new Error('No Venice API Key found in environment');
         }
@@ -218,29 +212,10 @@ export class OrchestrationAgent {
           apiKey: veniceAPIKey
 
         });
-        
-        // const openAIKey = process.env.REACT_APP_OPENAI_API_KEY;
-        // console.log('[OrchestrationAgent] Initializing OpenAI Integration');
-        
-        // if (!openAIKey) {
-        //   throw new Error('No OpenAI API Key found in environment');
-        // }
-
-        // // Directly create and initialize OpenAI Integration
-        // this.nlpProcessor = new OpenAIIntegration({
-        //   apiKey: openAIKey
-        // });
-
-        // console.log('[OrchestrationAgent] Created OpenAI Integration');
-
-        // Initialize the NLP Processor
         await this.nlpProcessor.initialize('default');
-        console.log('[OrchestrationAgent] OpenAI Integration initialized');
-
         // Explicitly register the OpenAI integration
         try {
           await this.apiManager.registerAPI(this.nlpProcessor);
-          console.log('[OrchestrationAgent] OpenAI Integration registered with APIIntegrationManager');
         } catch (registerError) {
           console.error('[OrchestrationAgent] Failed to register OpenAI Integration:', registerError);
           throw new Error(`Failed to register OpenAI Integration: ${registerError}`);
@@ -248,7 +223,7 @@ export class OrchestrationAgent {
 
         // Mark as initialized ONLY if NLP Processor is ready
         this.initialized = this.nlpProcessor.status === ServiceStatus.READY;
-        console.log(`[OrchestrationAgent] Initialization complete. Fully initialized: ${this.initialized}`);
+        //console.log(`[OrchestrationAgent] Initialization complete. Fully initialized: ${this.initialized}`);
       } catch (error) {
         console.error('[OrchestrationAgent] OpenAI Integration Initialization Error:', error);
         this.initialized = false;
@@ -258,8 +233,8 @@ export class OrchestrationAgent {
 
       // Validate registered services
       const serviceValidations = await this.apiManager.validateAllIntegrations();
-      console.log('[OrchestrationAgent] Service Validations:', 
-        Object.fromEntries(serviceValidations));
+      // console.log('[OrchestrationAgent] Service Validations:', 
+      //   Object.fromEntries(serviceValidations));
       
       serviceValidations.forEach((isValid, serviceId) => {
         this.logger.log(`Service ${serviceId} validation: ${isValid ? 'PASSED' : 'FAILED'}`, 
@@ -320,7 +295,6 @@ export class OrchestrationAgent {
   }
 
   public isInitialized(): boolean {
-    console.log(`[OrchestrationAgent] Checking initialization. Current state: ${this.initialized}`);
     return this.initialized;
   }
 
@@ -608,7 +582,7 @@ export class OrchestrationAgent {
     }
   
     this.currentDomain = domain;
-    console.log('[Metis] Current domain updated to:', this.currentDomain);
+    //console.log('[Metis] Current domain updated to:', this.currentDomain);
   }
 
   public getIQubeData(): IQubeData | null {
@@ -620,7 +594,6 @@ export class OrchestrationAgent {
     if (!id || !iQubeData) {
       throw new Error('Invalid input: both id and iQube data must be provided');
     }
-    console.log(this.iQubes.size)
 
     if (this.iQubes.has(id)){
       return
@@ -633,7 +606,7 @@ export class OrchestrationAgent {
     const iQube = { id, ...iQubeData };
   
     this.iQubes.set(id, iQube);
-    console.log(`Added iQube with ID: ${id}`);
+   
   }
 
   public getIQubeById(id: string) {
@@ -648,12 +621,12 @@ export class OrchestrationAgent {
       throw new Error(`No iQube found with ID: ${id}`);
     }
     this.iQubes.delete(id);
-    console.log(`Removed iQube with ID: ${id}`);
+    
   }
 
   clearAllIQubes() {
     this.iQubes.clear();
-    console.log('All iQubes have been cleared');
+   
   }
 
     // Getter function to access the iQubes map
@@ -681,7 +654,7 @@ export class OrchestrationAgent {
       throw new Error('OrchestrationAgent not initialized');
     }
 
-    console.log(`Initializing specialized domain: ${domain}`);
+  
 
     try {
       // Create and register the Metis service for the domain
@@ -705,8 +678,6 @@ export class OrchestrationAgent {
 
       // Set as current domain
       this.currentDomain = domain;
-      console.log(`Successfully initialized domain: ${domain}`);
-
     } catch (error: any) {
       console.error(`Failed to initialize domain ${domain}:`, error);
       throw new Error(`Failed to initialize domain ${domain}: ${error.message}`);
@@ -718,7 +689,7 @@ export class OrchestrationAgent {
       throw new Error('OrchestrationAgent not initialized');
     }
 
-    console.log(`Activating domain: ${domain}`);
+    
 
     try {
       // For specialized domains, initialize Metis service
@@ -750,11 +721,10 @@ export class OrchestrationAgent {
           isActive: true
         });
 
-        console.log(`Successfully activated specialized domain: ${domain}`);
+        
       } else {
         // For non-specialized domains, deactivate any specialized services
         await this.domainManager?.deactivateAllServices();
-        console.log(`Activated default domain: ${domain}`);
       }
 
       // Update current domain
@@ -789,15 +759,15 @@ export class OrchestrationAgent {
         throw new Error('OrchestrationAgent not initialized');
       }
       const service = await this.domainManager.getActiveService(this.currentDomain);
-      console.log("Service", service)
+      //console.log("Service", service)
       // Determine domain-specific context
       const domainContext = this.getDomainContext(this.currentDomain);
-      console.log("Current Domain", this.currentDomain)
-      console.log("Domain Context", domainContext)
+      //console.log("Current Domain", this.currentDomain)
+      //console.log("Domain Context", domainContext)
 
       const domainID = this.domainToAPI(domainContext)
 
-      console.log("Active API", domainID)
+      //console.log("Active API", domainID)
       // // Use domain manager if available and domain is specialized
       // if (this.domainManager && 
       //     (this.currentDomain === SpecializedDomain.CRYPTO_ANALYST || 

@@ -8,11 +8,11 @@ import IQubeNFTMinter from './iQube/NFTMinter';
 
 
 // Debug environment variables
-console.log('Environment variables loaded:', {
-  NODE_ENV: process.env.NODE_ENV,
-  OPENAI_KEY_PRESENT: !!process.env.REACT_APP_OPENAI_API_KEY,
-  OPENAI_KEY_TYPE: process.env.REACT_APP_OPENAI_API_KEY?.startsWith('sk-proj-') ? 'Project' : 'Standard'
-});
+// console.log('Environment variables loaded:', {
+//   NODE_ENV: process.env.NODE_ENV,
+//   OPENAI_KEY_PRESENT: !!process.env.REACT_APP_OPENAI_API_KEY,
+//   OPENAI_KEY_TYPE: process.env.REACT_APP_OPENAI_API_KEY?.startsWith('sk-proj-') ? 'Project' : 'Standard'
+// });
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
