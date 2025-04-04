@@ -62,7 +62,7 @@ interface PromptRecommendation {
 
 // Mapping of domain-specific prompt recommendations
 const DOMAIN_PROMPT_RECOMMENDATIONS: Record<SpecializedDomain, PromptRecommendation[]> = {
-  'AigentQube': [
+  'Aigent Z': [
     {
       heading: 'iQube Overview',
       subHeading: 'iQube Utilization',
@@ -266,7 +266,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentDomain, setCurrentDomain] = useState<string>(orchestrationAgent?.getCurrentDomain() || 'AigentQube');
+  const [currentDomain, setCurrentDomain] = useState<string>(orchestrationAgent?.getCurrentDomain() || 'Aigent Z');
   const [isApiInitialized, setIsApiInitialized] = useState(false);
   const voiceApiKey = process.env.REACT_APP_CHIRP_TTS_API_KEY
   const [voiceService, setVoiceService] = useState<VoiceService | null>(null);
@@ -376,7 +376,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         }
 
         // Only initialize if it's a specialized domain
-        if (currentDomain !== 'AigentQube' && currentDomain !== 'Generic AI') {
+        if (currentDomain !== 'Aigent Z' && currentDomain !== 'Generic AI') {
           // Initialize Metis API for the current domain
           await orchestrationAgent.initializeSpecializedDomain(currentDomain as SpecializedDomain, {
             apiKey,
@@ -530,7 +530,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           }
   
           // Initialize specialized domain if needed
-          if (currentDomain !== 'AigentQube' && currentDomain !== 'Generic AI') {
+          if (currentDomain !== 'Aigent Z' && currentDomain !== 'Generic AI') {
             await orchestrationAgent.initializeSpecializedDomain(currentDomain as SpecializedDomain, {
               apiKey,
               instructions: DOMAIN_METADATA[currentDomain as SpecializedDomain]?.defaultInstructions || ''

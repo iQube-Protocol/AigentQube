@@ -17,7 +17,7 @@ jest.mock('web3', () => ({
 
 const mock = new MockAdapter(axios);
 
-describe('AigentQube Dashboard', () => {
+describe('Aigent Z Dashboard', () => {
   beforeEach(() => {
     // Reset mocks before each test
     mock.reset();
@@ -32,7 +32,7 @@ describe('AigentQube Dashboard', () => {
 
   test('renders dashboard header', () => {
     render(<App />);
-    const headerElement = screen.getByText(/AigentQube Staging Dashboard/i);
+    const headerElement = screen.getByText(/Aigent Z Staging Dashboard/i);
     expect(headerElement).toBeInTheDocument();
   });
 

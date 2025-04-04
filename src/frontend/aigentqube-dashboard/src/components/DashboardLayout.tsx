@@ -97,7 +97,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     try {
       console.log('Attempting to register agent...');
       const response = await axios.post('http://localhost:8000/agent/register', {
-        name: `AigentQube Agent ${Date.now()}`,
+        name: `Aigent Z Agent ${Date.now()}`,
         version: '0.1.0',
         blockchain_networks: ['ethereum']
       }, {

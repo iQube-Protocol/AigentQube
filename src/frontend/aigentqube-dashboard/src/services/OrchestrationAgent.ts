@@ -475,6 +475,17 @@ export class OrchestrationAgent {
     return true;
   }
 
+  public async processCommand(command: string): Promise<string> {
+    try {
+      // Process the command through the current API integration
+      const response = await this.apiManager.getCurrentIntegration().processCommand(command);
+      return response;
+    } catch (error) {
+      this.logger.log(`Error processing command: ${error}`, 'error');
+      throw new OrchestrationError('Failed to process command', 'COMMAND_PROCESSING_ERROR', { command, error });
+    }
+  }
+
   public async validateLayerAlignment(): Promise<boolean> {
     try {
       // Validate all layers
@@ -1197,7 +1208,7 @@ export class OrchestrationAgent {
           },
           {
             action: "Integration Assistance",
-            prompt: "Guide me through integrating AigentQube features into my existing workflow for maximum efficiency.",
+            prompt: "Guide me through integrating Aigent Z features into my existing workflow for maximum efficiency.",
             domain,
             priority: 0.85,
             contextRelevance: []
@@ -1211,7 +1222,7 @@ export class OrchestrationAgent {
           },
           {
             action: "Feature Optimization",
-            prompt: "Help me optimize my use of AigentQube's features for my specific needs and use cases.",
+            prompt: "Help me optimize my use of Aigent Z's features for my specific needs and use cases.",
             domain,
             priority: 0.75,
             contextRelevance: []

@@ -101,7 +101,7 @@ export const NaturalLanguageInterface: React.FC<Props> = ({ orchestrationAgent }
     >
       <Flex justifyContent="space-between" alignItems="center" mb={4}>
         <Text fontSize="xl" fontWeight="bold">
-          AigentQube Assistant
+          Aigent Z Assistant
         </Text>
         <IconButton
           aria-label="Clear chat"
