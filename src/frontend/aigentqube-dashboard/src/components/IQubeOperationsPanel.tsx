@@ -14,6 +14,7 @@ import { OrchestrationAgent } from '../services/OrchestrationAgent';
 interface IQubeOperationsPanelProps {
   orchestrationAgent: OrchestrationAgent | null;
   onContextUpdate?: (context: any) => void;
+  isAgentReady: boolean;
 }
 
 export const IQubeOperationsPanel: React.FC<IQubeOperationsPanelProps> = ({

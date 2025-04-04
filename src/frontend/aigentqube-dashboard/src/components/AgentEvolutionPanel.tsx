@@ -7,6 +7,7 @@ interface AgentEvolutionPanelProps {
   onContextChange: (context: any) => void;
   agentId?: string;
   orchestrationAgent: OrchestrationAgent | null;
+  isAgentReady: boolean;
 }
 
 const AgentEvolutionPanel: React.FC<AgentEvolutionPanelProps> = ({ 
