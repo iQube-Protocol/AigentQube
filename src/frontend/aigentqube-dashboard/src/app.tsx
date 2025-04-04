@@ -97,7 +97,7 @@ const theme = chakraExtendTheme({
 
 // Debugging function to log all initialization steps
 const initializationLogger = (step: string, details?: any) => {
-  // console.group('🚀 AigentQube Initialization');
+  // console.group('🚀 Aigent Z Initialization');
   // console.log(`Step: ${step}`);
   // if (details) console.log('Details:', details);
   // console.groupEnd();
@@ -838,7 +838,7 @@ const App: React.FC = () => {
                   <ContextTransformationPanel 
                     orchestrationAgent={isAgentReady ? orchestrationAgent : undefined}
                     context={{
-                      specializedState: 'AigentQube',
+                      specializedState: 'Aigent Z',
                       web3,
                       account,
                       isSignedIn,

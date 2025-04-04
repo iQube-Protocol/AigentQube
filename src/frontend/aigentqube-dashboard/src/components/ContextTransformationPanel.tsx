@@ -8,6 +8,7 @@ interface ContextTransformationPanelProps {
   context?: any;
   onPromptInsert?: (prompt: string) => void;
   orchestrationAgent?: OrchestrationAgent;
+  isAgentReady: boolean;
 }
 
 interface DomainRecommendation {
@@ -36,26 +37,26 @@ const domainRecommendedActions: Record<string, DomainRecommendation[]> = {
       prompt: 'I want to stay ahead of technological innovations. Can you provide a comprehensive analysis of the latest emerging AI technologies, their potential impact, adoption strategies, and how they could give me a competitive advantage.'
     }
   ],
-  'AigentQube': [
+  'Aigent Z': [
     {
-      action: 'Explore AigentQube Features',
-      prompt: 'Tell me about the key features and capabilities of AigentQube. How can I leverage its functionality for my blockchain and AI needs?'
+      action: 'Explore Aigent Z Features',
+      prompt: 'Tell me about the key features and capabilities of Aigent Z. How can I leverage its functionality for my blockchain and AI needs?'
     },
     {
-      action: 'Get Started with AigentQube',
-      prompt: 'I\'m new to AigentQube. Can you guide me through the initial setup and basic operations? What are the first steps I should take?'
+      action: 'Get Started with Aigent Z',
+      prompt: 'I\'m new to Aigent Z. Can you guide me through the initial setup and basic operations? What are the first steps I should take?'
     }
   ]
 };
 
 const defaultRecommendedActions: DomainRecommendation[] = [
   {
-    action: 'Explore AigentQube',
-    prompt: 'What is AigentQube and how can it help me with blockchain and AI integration?'
+    action: 'Explore Aigent Z',
+    prompt: 'What is Aigent Z and how can it help me with blockchain and AI integration?'
   },
   {
     action: 'Get Started',
-    prompt: 'How do I get started with AigentQube? What are the basic features and capabilities?'
+    prompt: 'How do I get started with Aigent Z? What are the basic features and capabilities?'
   }
 ];
 
@@ -100,7 +101,7 @@ const ContextTransformationPanel: React.FC<ContextTransformationPanelProps> = ({
 
   useEffect(() => {
     if (orchestrationAgent) {
-      const prompts = orchestrationAgent.getContextAwarePrompts(context?.specializedState || 'AigentQube');
+      const prompts = orchestrationAgent.getContextAwarePrompts(context?.specializedState || 'Aigent Z');
       setRecommendedPrompts(prompts);
     }
   }, [orchestrationAgent, context?.specializedState]);
@@ -167,7 +168,7 @@ const ContextTransformationPanel: React.FC<ContextTransformationPanelProps> = ({
           <ChatInterface 
             orchestrationAgent={orchestrationAgent}
             context={{
-              specializedState: context?.specializedState || 'AigentQube',
+              specializedState: context?.specializedState || 'Aigent Z',
               web3: context?.web3,
               account: context?.account,
               isSignedIn: context?.isSignedIn,
