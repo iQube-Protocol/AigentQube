@@ -56,7 +56,6 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
   orchestrationAgent,
   signer
 }) => {
-  const [showData, setShowData] = useState<boolean>(false);
   const [iQubeTokenId, setIQubeTokenId] = useState<string>('');
   const [iQubeDetails, setIQubeDetails] = useState<IQubeDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -71,15 +70,15 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
   const [iQubes, setIQubes] = useState([]);
   const [metaQubeData, setMetaQubeData] = useState<any>(null)
   const [blakQubeData, setBlakQubeData] = useState<any>({
-    profession: '',
-    web3Interests: '',
-    localCity: '',
-    publicEmail: 'info@.com',
-    evmPublicKey: '',
-    bitcoinPublicKey: '',
-    tokensOfInterest: [],
-    chainIDs: [],
-    walletsOfInterest: [],
+    profession: 'Consultant',
+    web3Interests: 'Builder',
+    localCity: 'New York',
+    publicEmail: 'info@metame.com',
+    evmPublicKey: '0x14b02B70a9740503ef4294FB4CAAf08e2759deA0',
+    bitcoinPublicKey: '0x34355464656465',
+    tokensOfInterest: ['AVA', 'POL', 'BTC', 'MOR'],
+    chainIDs: ['1', '80002'],
+    walletsOfInterest: ['0x0417409BEFbbE9474a7623b2e704389'],
   });
   const [metadata, setMetadata] = useState<string>('')
   const [decryptedLink, setDecryptedLink] = useState<string>('')
@@ -321,17 +320,6 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       setIQubeDetails(null);
       setMetaQubeData(null);
       setBlakQubeDecrypted(null);
-      setIsDecrypted(true);
-      setShowFormMint(false);
-    }}, [iQubeTokenId]
-  )
-
-  useEffect(() => {
-    if (!iQubeTokenId) {
-      setIQubeActivated(null);
-      setIQubeDetails(null);
-      setMetaQubeData(null);
-      setBlakQubeDecrypted(null);
     }
     const initNFTInterface = async () => {
       try {
@@ -373,17 +361,6 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     {  
       if (iQubeTokenId.localeCompare("data", undefined, { sensitivity: "base" }) === 0){
         // console.log('DATA FORM')
-        setBlakQubeData({
-          profession: '',
-          web3Interests: '',
-          localCity: '',
-          publicEmail: '',
-          evmPublicKey: '',
-          bitcoinPublicKey: '',
-          tokensOfInterest: [],
-          chainIDs: [],
-          walletsOfInterest: []
-        })
         setShowFormMint(true);
         setIsDecrypted(false);
         setIQubeActivated(null);
@@ -403,19 +380,19 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         <div className="grid grid-cols-4 gap-2 text-white">
           <div>
             <span className="text-gray-400 block text-xs">iQube ID</span>
-            {"DataQube"}
+            {"I dont"}
           </div>
           <div>
             <span className="text-gray-400 block text-xs">Creator</span>
-            {"Aigent Z"}
+            {"MEOW"}
           </div>
           <div>
             <span className="text-gray-400 block text-xs">iQube Type</span>
-            {"DataQube"}
+            {"Slay"}
           </div>
           <div>
             <span className="text-gray-400 block text-xs">Owner Type</span>
-            {"Individual"}
+            {"MEOW"}
           </div>
         </div>
 
@@ -423,19 +400,19 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         <div className="grid grid-cols-4 gap-2 text-white">
           <div>
             <span className="text-gray-400 block text-xs">Sensitivity</span>
-            <ScoreBar score={0.4} inv={true} />
+            <ScoreBar score={0.1} />
           </div>
           <div>
             <span className="text-gray-400 block text-xs">Verifiability</span>
-            <ScoreBar score={0.5} inv={false} />
+            <ScoreBar score={0.3} />
           </div>
           <div>
             <span className="text-gray-400 block text-xs">Accuracy</span>
-            <ScoreBar score={0.5} inv={false}/>
+            <ScoreBar score={0.2} />
           </div>
           <div>
             <span className="text-gray-400 block text-xs">Risk</span>
-            <ScoreBar score={0.4} inv={true} />
+            <ScoreBar score={0.5} />
           </div>
         </div>
         <div className="mt-2 bg-gray-700 rounded space-y-2">
@@ -448,8 +425,8 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
                       type="text"
                       defaultValue ={Array.isArray(value) ? (value as string[]).join(', ') : (value as string)}
                       onBlur={(e) => handleBlakQubeChange(key, e.target.value)}
-                      //placeholder="Enter text..."
-                      className="w-[95%] border rounded p-2 bg-[#F18585]/50  text-white"
+                      placeholder="Enter text..."
+                      className="w-[95%] border rounded p-2 bg-red-500/50 text-white"
                     />
                   </div>
                 ))}
@@ -464,7 +441,6 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     setDecryptedLink('')
     setMetadata('')
     setMetaQubeData(null)
-    setIsDecrypted(false);
     // setBlakQubeData(null)
 
     if (!iQubeTokenId || !nftInterface) {
@@ -522,7 +498,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       setMetaQubeData(formattedMetaQubeData)
       setEncryptedBlakQubeData(formattedBlakQubeData)// Store encrypted data separately
       // setBlakQubeData(null) // Clear any previous decrypted data
-      //setIsDecrypted(true);
+      setIsDecrypted(true);
       setMetadata(fullPath)
 
       console.log(formattedMetaQubeData)
@@ -539,7 +515,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         name: formattedMetaQubeData['iQubeCreator'],
         userProfile: 'User Profile'
       });
-      setShowData(true);
+
       console.log(iQubeTokenId)
 
       // Update context if onContextChange is provided
@@ -674,14 +650,14 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       }
 
       // Format BlakQube values
-      // const formattedBlakQubeData = Object.entries(blakQubeAttribute).reduce(
-      //   (acc, [key, value]) => ({
-      //     ...acc,
-      //     [key]: formatDisplayValue(value, true)
-      //   }),
-      //   {}
-      // )
-      // setEncryptedBlakQubeData(formattedBlakQubeData)
+      const formattedBlakQubeData = Object.entries(blakQubeAttribute).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [key]: formatDisplayValue(value, true)
+        }),
+        {}
+      )
+      setEncryptedBlakQubeData(formattedBlakQubeData)
 
       try {
         console.log('Attempting to decrypt with tokenId:', iQubeTokenId)
@@ -734,14 +710,12 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           // For checking the state after it has been updated
           console.log("variable data", blakQubeAttrs)  // Note: This is the immediate value, `blakQubeData` will be updated later
           setIsDecrypted(true);
-          setShowData(true);
         
         } else {
           throw new Error('Server response missing decrypted data')
         }
       } catch (decryptError: any) {
-          setIsDecrypted(false);
-          console.error('Full decryption error:', decryptError)
+        console.error('Full decryption error:', decryptError)
         // If it's our custom error message, throw it as is
         if (decryptError.message?.includes('You cannot decrypt this blakQube')) {  
           throw decryptError
@@ -783,6 +757,63 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       });
     }
   }, [iQubeTokenId, showError, mockBlakQubeData, onContextChange]);
+
+  const handleMintToken = useCallback(async () => {
+    if (!signer) {
+      showError('Please connect your wallet first');
+      return;
+    }
+
+    try {
+      // Create sample data for minting
+      const qubeType = "DataQube";  // or other types like "AgentQube"
+      const qubeAddress = await signer.getAddress();
+      const qubeHash = ethers.utils.id(Date.now().toString()); // Generate a unique hash
+
+      // Register the Qube using the smart contract
+      const receipt = await registerQube(
+        qubeType,
+        qubeAddress,
+        qubeHash,
+        signer,
+        {
+          name: 'Sample iQube',
+          description: 'A test iQube',
+          creator: qubeAddress,
+          encryptionLevel: 'High',
+          ownerType: 'Person',
+          ownerIdentifiability: 'Semi-Anon',
+          customAddress: '',
+          customHash: '',
+          transactionDate: Date.now()
+        }
+      );
+
+      if (receipt) {
+        const newTokenId = receipt.events?.[0]?.args?.tokenId?.toString() || '';
+        setIQubeTokenId(newTokenId);
+        
+        // Update UI with the new token details
+        setIQubeDetails({
+          tokenId: newTokenId,
+          name: 'Sample iQube',
+          domain: 'Test Domain'
+        });
+
+        // Update context
+        onContextChange?.({
+          iQubeDetails: {
+            tokenId: newTokenId,
+            name: 'Sample iQube',
+            domain: 'Test Domain'
+          }
+        });
+      }
+    } catch (err: any) {
+      showError(err.message || 'Failed to mint iQube token');
+      console.error('Minting error:', err);
+    }
+  }, [signer, showError, onContextChange]);
 
   const getEncryptionData = async (uri: string) => {
     try {
@@ -844,28 +875,34 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
       let _memberProfile = {
         metaQube:{ 
-          iQubeIdentifier: 'DataQube',
-          iQubeCreator: 'Aigent Z',
+          iQubeIdentifier: 'TEST',
+          iQubeCreator: 'Ken and Isabella',
           ownerType: 'Individual',
           iQubeContentType: 'Data',
           ownerIdentifiability: 'Identifiable',
           transactionDate: new Date().toISOString(),
-          sensitivityScore: 4,
-          verifiabilityScore: 5,
-          accuracyScore: 5,
+          sensitivityScore: 5,
+          verifiabilityScore: 7,
+          accuracyScore: 6,
           riskScore: 4,
           blakQubeKey: ''
         },
-        blakQube:{}
+        blakQube:{
+          profession: 'Consultant',
+          web3Interests: 'Builder',
+          localCity: 'New York',
+          publicEmail: 'info@metame.com',
+          evmPublicKey: '0x14b02B70a9740503ef4294FB4CAAf08e2759deA0',
+          bitcoinPublicKey: '0x34355464656465',
+          tokensOfInterest: ['AVA', 'POL', 'BTC','MOR'],
+          chainIDs: ['1', '80002'],
+          walletsOfInterest: ['0x0417409BEFbbE9474a7623b2e704389', '0x0417409BEFb7623b2e7043896566313', '0x041723b2e704389653138b']
+        }
       };
-
-      blakQubeData['tokensOfInterest'] = blakQubeData['tokensOfInterest'].split(",").map((token: string) => token.trim())
-      blakQubeData.chainIDs = blakQubeData.chainIDs.split(",").map((token: string) => token.trim())
-      blakQubeData.walletsOfInterest = blakQubeData.walletsOfInterest.split(",").map((token: string) => token.trim())
       _memberProfile.blakQube = blakQubeData;
-      console.log(_memberProfile.blakQube)
+
       let _blakQube = _memberProfile.blakQube;
-      
+
       let { data } = await axios.post(
         `https://iqubes-server.onrender.com/encrypt-member-qube`,
         _blakQube,
@@ -1020,38 +1057,12 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     );
   };
 
-  const renderEncryptedBlakQubeData = () => {
-    if (!encryptedBlakQubeData) return null;
-
-    const dataToRender = Object.entries(encryptedBlakQubeData).map(([key, value]) => ({
-      label: key.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase()), // Format camelCase to readable text
-      value: value,
-      editable: false
-    }));
-
-    return (
-      <div className="grid gap-2 text-white">
-        {dataToRender.map((item, index) => (
-          <div key={index} className="bg-gray-700 p-2 rounded truncate w-full">
-            <span className="text-gray-400 text-xs">{item.label}</span>
-            <div className="truncate w-full">{item.value}</div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   // Render score bar with color gradient
-  const ScoreBar = ({ score, inv }: { score: number, inv: boolean }) => {
+  const ScoreBar = ({ score }: { score: number }) => {
     // Determine color based on score
-    const getColor = (value: number, inv: boolean) => {
-      if (inv){
-        if (value > 0.6) return 'bg-yellow-600';
-        if (value > 0.3) return 'bg-red-600';
-      }
-      else{
-        if (value < 0.3) return 'bg-red-600';
-        if (value < 0.6) return 'bg-yellow-600';}
+    const getColor = (value: number) => {
+      if (value < 0.3) return 'bg-red-600';
+      if (value < 0.6) return 'bg-yellow-600';
       // Use the darker green from Agent Evolution panel
       return 'bg-[#047857]';
     };
@@ -1060,7 +1071,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       <div className="flex items-center space-x-2">
         <div className="w-full bg-gray-700 rounded-full h-2.5">
           <div 
-            className={`${getColor(score, inv)} h-2.5 rounded-full`} 
+            className={`${getColor(score)} h-2.5 rounded-full`} 
             style={{ width: `${score * 100}%` }}
           ></div>
         </div>
@@ -1072,7 +1083,6 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
   const activateiQube = async () => {
     setIsLoading(true)
     setError('')
-    setShowFormMint(false)
     try {
       if (!nftInterface || !account) {
         throw new Error('NFT interface not initialized or wallet not connected')
@@ -1230,6 +1240,9 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
               throw new Error(errorMessage);
             }
           }
+
+
+
         } else {
           throw new Error('Server response missing decrypted data')
         }
@@ -1415,14 +1428,12 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
             onChange={(e) => {
               const newValue = e.target.value;
               setIQubeTokenId(newValue);
-              if (error)
-                setError(null);
-              // if (!newValue) {
-              //   setMetaQubeData(null);
-              //   // setBlakQubeData(null);
-              // }
+              if (!newValue) {
+                setMetaQubeData(null);
+                // setBlakQubeData(null);
+              }
             }}
-            placeholder="Enter iQube Type or ID"
+            placeholder="Enter Token ID"
             className="w-full py-2 px-3 bg-gray-700 text-white rounded transition-all duration-300 ease-in-out hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
@@ -1443,10 +1454,10 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           {/* Decrypt iQube Button */}
           <button 
             onClick={handleMemberDataDecryption}
-            disabled={!iQubeTokenId || iQubeTokenId.toLowerCase() === "data"}
+            disabled={!iQubeTokenId}
             className={`
               w-full py-2 rounded transition-all duration-300 ease-in-out
-              ${iQubeTokenId && iQubeTokenId.toLowerCase() !== "data"
+              ${iQubeTokenId
                 ? 'bg-gray-700 text-white hover:bg-green-600' 
                 : 'bg-gray-700 text-gray-400 cursor-not-allowed'}
             `}
@@ -1457,43 +1468,37 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           {/* Mint (Encrypt) Button */}
           <button 
             //simple function written below the handleMintToken that takes you to path + / + minter
+            onClick={() => handleMemberProfileMint()}
             // {goToMintDashboard} 
 
-            onClick={() => handleMemberProfileMint()}        
-            disabled={iQubeTokenId.toLowerCase() !== "data" 
-              //function to check if any of the fields are empty
-              || Object.values(blakQubeData).some(v => v === "" || (Array.isArray(v) && v.length === 0))
-            }
+            // onClick={handleMintToken}            
+            //disabled={!iQubeTokenId}
             className={`
-              w-full py-2 rounded transition-all duration-300 ease-in-out
-              ${
-                iQubeTokenId.toLowerCase() === "data" 
-                && !Object.values(blakQubeData).some(v => v === "" || (Array.isArray(v) && v.length === 0))
-                  ? "bg-gray-700 text-white hover:bg-purple-600" 
-                  : "bg-gray-700 text-gray-400 cursor-not-allowed s"
-              }
-            `}
+              w-full py-2 rounded transition-all duration-300 ease-in-out bg-gray-700 text-white hover:bg-purple-600 `}
+            //   ${iQubeTokenId
+            //     ? 'bg-gray-700 text-white hover:bg-purple-600' 
+            //     : 'bg-gray-700 text-gray-400 cursor-not-allowed'}
           >
             Mint
           </button>
         </div>
 
         {/* Activated iQube Bar */}
-        {iQubeTokenId && iQubeActivated && (
+        {iQubeActivated && (
           <div className="bg-[#047857] text-white p-2 rounded mt-2 text-center">
             #{iQubeActivated.tokenId} [{iQubeActivated.name}] User Profile Activated
           </div>
         )}
 
         {/* Error Display */}
-        {iQubeTokenId && error && (
+        {error && (
           <div className="text-red-500 mt-2 bg-red-900 p-2 rounded">
             {error}
           </div>
         )}
         {showFormMint && <FormMint />}
         {/* MetaQube Visualization */}
-        {iQubeTokenId && iQubeActivated && (
+        {iQubeActivated && (
           <div className="mt-4 bg-gray-700 rounded p-4 space-y-2">
             {/* First Row: iQube ID, Creator, Type, Owner Type */}
             <div className="grid grid-cols-4 gap-2 text-white">
@@ -1519,34 +1524,26 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
             <div className="grid grid-cols-4 gap-2 text-white">
               <div>
                 <span className="text-gray-400 block text-xs">Sensitivity</span>
-                <ScoreBar score={metaQubeData ? metaQubeData.sensitivityScore/10: 0} inv={true} />
+                <ScoreBar score={metaQubeData ? metaQubeData.sensitivityScore/10: 0} />
               </div>
               <div>
                 <span className="text-gray-400 block text-xs">Verifiability</span>
-                <ScoreBar score={metaQubeData ? metaQubeData.verifiabilityScore/10: 0} inv={false}/>
+                <ScoreBar score={metaQubeData ? metaQubeData.verifiabilityScore/10: 0} />
               </div>
               <div>
                 <span className="text-gray-400 block text-xs">Accuracy</span>
-                <ScoreBar score={metaQubeData ? metaQubeData.accuracyScore/10: 0} inv={false} />
+                <ScoreBar score={metaQubeData ? metaQubeData.accuracyScore/10: 0} />
               </div>
               <div>
                 <span className="text-gray-400 block text-xs">Risk</span>
-                <ScoreBar score={metaQubeData ? metaQubeData.riskScore/10: 0} inv={true}/>
+                <ScoreBar score={metaQubeData ? metaQubeData.riskScore/10: 0} />
               </div>
             </div>
           </div>
         )}
 
-        {/* BlackQube Encrypted Data Display (View iQube) */}
-        {iQubeTokenId && encryptedBlakQubeData && !isDecrypted && iQubeActivated && showData &&(
-          <div className="mt-4 bg-gray-700 rounded p-4 space-y-2">
-            <h3 className="text-white text-lg mb-2">Encrypted Payload</h3>
-            {renderEncryptedBlakQubeData()}
-          </div>
-        )}
-
         {/* BlackQube Decrypted Data Display (Decrypt iQube) */}
-        {iQubeTokenId && blakQubeData && isDecrypted && iQubeActivated && showData && (
+        {blakQubeData && isDecrypted && (
           <div className="mt-4 bg-gray-700 rounded p-4 space-y-2">
             <h3 className="text-white text-lg mb-2">Decrypted Payload</h3>
             {renderBlakQubeData()}
