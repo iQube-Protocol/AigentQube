@@ -673,16 +673,6 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         throw new Error('No blakQube data found in metadata')
       }
 
-      // Format BlakQube values
-      // const formattedBlakQubeData = Object.entries(blakQubeAttribute).reduce(
-      //   (acc, [key, value]) => ({
-      //     ...acc,
-      //     [key]: formatDisplayValue(value, true)
-      //   }),
-      //   {}
-      // )
-      // setEncryptedBlakQubeData(formattedBlakQubeData)
-
       try {
         console.log('Attempting to decrypt with tokenId:', iQubeTokenId)
         console.log('BlakQube value:', blakQubeAttribute.value)
@@ -723,7 +713,17 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
         if (response.data && response.data.decryptedData) {
           console.log('Decryption successful:', response.data.decryptedData)
-          const blakQubeAttrs = response.data.decryptedData
+          let blakQubeAttrs = response.data.decryptedData
+
+          if(formattedMetaQubeData.iQubeContentType !== "Data" || formattedMetaQubeData.iQubeContentType !== "Agent"){
+            const fullUrl = `${process.env.REACT_APP_GATEWAY_URL}/ipfs/${
+              //decrypted.response
+              response.data.decryptedData.encryptedFileHash
+            }`
+            blakQubeAttrs={
+              'decryptedContentQubeLink': fullUrl
+            }
+          }
         
           // Update the state with the decrypted data
           setBlakQubeData(blakQubeAttrs)
@@ -925,6 +925,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       setIsLoading(false)
     }
   }
+  
 
     const handleError = (error: any) => {
       if (error.code === 4001 || error.message?.includes('user rejected')) {
@@ -1008,6 +1009,26 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       editable: false
     }));
 
+    console.log("Data to render:" , blakQubeData)
+
+    if(blakQubeData.decryptedContentQubeLink){
+      console.log("here's smth");
+      return(
+        <div className="grid gap-2 text-white">
+          <div key={blakQubeData.decryptedContentQubeLink} className="bg-gray-700 p-2 rounded truncate w-full">
+            <span className="text-gray-400 text-xs">Decyrypted contentQube Link</span>
+            <a
+              href={blakQubeData.decryptedContentQubeLink}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="truncate w-full block text-blue-400 hover:underline"
+            >
+              {blakQubeData.decryptedContentQubeLink}
+            </a>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="grid gap-2 text-white">
         {dataToRender.map((item, index) => (
