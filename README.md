@@ -1,8 +1,8 @@
-# AigentQube: Contextual Intelligence Agent Framework
+# Aigent Z: Contextual Intelligence Agent Framework
 
 ## Technical Foundation: iQube Protocol
 
-AigentQube introduces a new class of context and risk intelligent agents underpinned by the iQube protocol.
+Aigent Z introduces a new class of context and risk intelligent agents underpinned by the iQube protocol.
 
 ### Core Vision
 
