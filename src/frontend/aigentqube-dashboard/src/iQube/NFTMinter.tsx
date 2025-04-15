@@ -219,7 +219,7 @@ const IQubeNFTMinter: React.FC = () => {
           throw new Error('Failed to request MetaMask accounts: ' + requestError)
         }
 
-        const accounts = await _interface.connectToMetaMask()
+        const accounts = await _interface.connectWallet()
         
         if (!accounts || accounts.length === 0) {
           throw new Error('No MetaMask accounts found')
@@ -280,8 +280,8 @@ const IQubeNFTMinter: React.FC = () => {
 
     try {
 
-      const pinataJWT = process.env.REACT_APP_PINATA_JWT;
-      validatePinataJWT(pinataJWT || '');
+      //const pinataJWT = process.env.REACT_APP_PINATA_JWT;
+      //validatePinataJWT(pinataJWT || '');
 
       let _memberProfile = { ...memberProfile }
 
@@ -326,12 +326,20 @@ const IQubeNFTMinter: React.FC = () => {
           key,
         )
 
-        const newTokenId = await nftInterface?.getTokenIdFromReceipt(receipt)
-        if (newTokenId) {
-          setTokenId(newTokenId)
-          console.log('NFT minted successfully with token ID:', newTokenId)
+        if (nftInterface && receipt) {
+          try {
+            const newTokenId = await nftInterface.getTokenIdFromReceipt(receipt);
+            if (newTokenId) {
+              setTokenId(newTokenId);
+              console.log('NFT minted successfully with token ID:', newTokenId);
+            } else {
+              console.log("NFT minted, but couldn't retrieve token ID");
+            }
+          } catch (err) {
+            console.error('Error parsing token ID from receipt:', err);
+          }
         } else {
-          console.log("NFT minted successfully, but couldn't retrieve token ID")
+          console.warn("NFT interface or receipt is missing.");
         }
       }
 

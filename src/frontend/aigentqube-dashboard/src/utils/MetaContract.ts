@@ -1,3 +1,4 @@
+/*
 import Web3 from "web3";
 
 declare global {
@@ -190,6 +191,125 @@ class PolygonNFTInterface {
    throw error;
   }
  }
+}
+
+export default PolygonNFTInterface;
+*/
+import Onboard from '@web3-onboard/core';
+import injectedModule from '@web3-onboard/injected-wallets';
+import { ethers } from 'ethers';
+
+const POLYGON_AMOY_CHAIN_ID = 80002;
+const POLYGON_AMOY_RPC_URL = 'https://rpc-amoy.polygon.technology';
+
+const injected = injectedModule();
+
+const onboard = Onboard({
+  wallets: [injected],
+  chains: [
+    {
+      id: `0x${POLYGON_AMOY_CHAIN_ID.toString(16)}`,
+      token: 'MATIC',
+      label: 'Polygon Amoy Testnet',
+      rpcUrl: POLYGON_AMOY_RPC_URL,
+    },
+  ],
+  accountCenter: { desktop: { enabled: false }, mobile: { enabled: false } },
+  notify: { enabled: false }
+});
+
+class PolygonNFTInterface {
+  private contract: ethers.Contract;
+  private provider: ethers.providers.Web3Provider | null = null;
+  private signer: ethers.Signer | null = null;
+
+  constructor(contractAddress: string, abi: any) {
+    this.contract = new ethers.Contract(contractAddress, abi);
+  }
+
+  async connectWallet(): Promise<string> {
+    const wallets = await onboard.connectWallet();
+    if (!wallets[0]) throw new Error("Wallet connection failed");
+
+    this.provider = new ethers.providers.Web3Provider(wallets[0].provider, "any");
+    this.signer = this.provider.getSigner();
+    this.contract = this.contract.connect(this.signer);
+    return await this.signer.getAddress();
+  }
+
+  async mintQube(uri: string, encryptionKey: string): Promise<any> {
+    await this.ensureConnected();
+    const tx = await this.contract.mintQube(uri, encryptionKey);
+    return await tx.wait();
+  }
+
+  async getBlakQube(tokenId: string): Promise<string> {
+    return await this.contract.getMetaQubeLocation(tokenId);
+  }
+
+  async getEncryptionKey(tokenId: string): Promise<string> {
+    await this.ensureConnected();
+    return await this.contract.getEncryptionKey(tokenId);
+  }
+
+  async transferQube(to: string, tokenId: string): Promise<any> {
+    await this.ensureConnected();
+    const tx = await this.contract.transferQube(to, tokenId);
+    return await tx.wait();
+  }
+
+  async tokenURI(tokenId: number): Promise<string> {
+    return await this.contract.tokenURI(tokenId);
+  }
+
+  async owner(): Promise<string> {
+    return await this.contract.owner();
+  }
+
+  async contractName(): Promise<string> {
+    return await this.contract.name();
+  }
+
+  async transferOwnership(newOwner: string): Promise<any> {
+    await this.ensureConnected();
+    const tx = await this.contract.transferOwnership(newOwner);
+    return await tx.wait();
+  }
+
+  async getTokenIdFromReceipt(receipt: ethers.ContractReceipt): Promise<string | null> {
+    const transferEvent = receipt.events?.find(e => e.event === "Transfer");
+    return transferEvent?.args?.tokenId?.toString() || null;
+  }
+
+  async getTotalSupply(): Promise<number> {
+    const totalSupply = await this.contract.totalSupply();
+    return totalSupply.toNumber();
+  }
+
+  async ownerOf(tokenId: string): Promise<string> {
+    return await this.contract.ownerOf(tokenId);
+  }
+
+  async balanceOf(address: string): Promise<number> {
+    const balance = await this.contract.balanceOf(address);
+    return balance.toNumber();
+  }
+
+  async approve(to: string, tokenId: string): Promise<any> {
+    await this.ensureConnected();
+    const tx = await this.contract.approve(to, tokenId);
+    return await tx.wait();
+  }
+
+  async supportsInterface(interfaceId: string): Promise<boolean> {
+    return await this.contract.supportsInterface(interfaceId);
+  }
+
+  private async ensureConnected() {
+    if (!this.signer || !this.provider) {
+      await this.connectWallet();
+    }
+  }
 }
 
 export default PolygonNFTInterface;

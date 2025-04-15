@@ -16,6 +16,8 @@
     "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.68",
+    "@web3-onboard/core": "^2.24.1",
+    "@web3-onboard/injected-wallets": "^2.11.3",
     "@web3-react/core": "^6.1.9",
     "@web3-react/injected-connector": "^6.0.7",
     "axios": "1.6.3",
