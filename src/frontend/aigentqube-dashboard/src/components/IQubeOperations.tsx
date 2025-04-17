@@ -367,6 +367,21 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
   }, []);
 
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file !== null){
+      setSelectedFile(file);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFilePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
   const handleViewQube = useCallback(async () => {
     if (iQubeTokenId !== null)
     {  
@@ -390,6 +405,13 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           baseUrl: '',
           apiKey: '',
           agentWalletAddress: ''
+        })
+        setShowFormMint(true);
+        setIsDecrypted(false);
+        setIQubeActivated(null);
+      }else if (iQubeTokenId.localeCompare("content", undefined, { sensitivity: "base" }) === 0){
+        setBlakQubeData({
+          encryptedFileHash: ""
         })
         setShowFormMint(true);
         setIsDecrypted(false);
@@ -521,6 +543,77 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
                     </div>
                   ))}
                 </div>
+            </div>
+        </div>  
+      );
+    }
+    else if (iQubeTokenId.localeCompare("content", undefined, { sensitivity: "base" }) === 0){
+      return(
+        <div className="mt-4 bg-gray-700 rounded p-4 space-y-2">
+          {/* First Row: iQube ID, Creator, Type, Owner Type */}
+          <div className="grid grid-cols-4 gap-2 text-white">
+            <div>
+              <span className="text-gray-400 block text-xs">iQube ID</span>
+              {"ContentQube"}
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Creator</span>
+              {"Aigent Z"}
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">iQube Type</span>
+              {"ContentQube"}
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Owner Type</span>
+              {"Individual"}
+            </div>
+          </div>
+  
+          {/* Second Row: iQube Scores */}
+          <div className="grid grid-cols-4 gap-2 text-white">
+            <div>
+              <span className="text-gray-400 block text-xs">Sensitivity</span>
+              <ScoreBar score={0.4} inv={true} />
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Verifiability</span>
+              <ScoreBar score={0.5} inv={false} />
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Accuracy</span>
+              <ScoreBar score={0.5} inv={false}/>
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Risk</span>
+              <ScoreBar score={0.4} inv={true} />
+            </div>
+          </div>
+          <div className="mt-2 bg-gray-700 rounded space-y-2">
+              <h3 className="text-white text-lg mb-2 whitespace-nowrap">BlackQube Data</h3>
+                {/* <div className="grid gap-2">
+                  <div className="w-full  block"> */}
+                    <label className="text-gray-400 text-sm font-medium" htmlFor='fileUpload'>File Upload</label>
+                    
+                    <input
+                      type="file"
+                      id='fileUpload'
+                      title = {`${selectedFile ? selectedFile.name : "" }`}
+                      onChange={handleFile}
+                      // className="mt-1 block w-full bg-red-50 rounded-lg"
+                      className="w-[95%] border rounded p-2 bg-[#F18585]/50  text-white"
+                    />
+                  {/* </div> */}
+                {/* </div> */}
+                {filePreview && (
+                  <div className="mt-2">
+                    <img 
+                      src={filePreview} 
+                      alt="File Preview" 
+                      className="max-h-96 w-full object-contain "
+                    />
+                  </div>
+                )}
             </div>
         </div>  
       );
@@ -1085,12 +1178,115 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       }
     }
 
+    const handleContentProfileMint = async () => {
+      setIsLoading(true)
+      setError('')
+  
+      try {
+        if (!nftInterface) {
+          throw new Error('NFT interface not initialized')
+        }
+  
+        // Validate JWT before using it
+        const pinataJWT = process.env.REACT_APP_PINATA_JWT;
+        validatePinataJWT(pinataJWT || '');
+  
+        // encrypt blakQube information
+        // let _contentProfile = { ...contentProfile }
+        //let _blakQube = _contentProfile.blakQube
+        //console.log('Encrypting Content data:', _blakQube)
+  
+        // Upload file to IPFS
+        const fileUpload = await pinata.upload.file(selectedFile);
+  
+        const encrypted = await getEncryptionData(fileUpload.IpfsHash)
+  
+        const { data } = await axios.post(
+          'https://iqubes-server.onrender.com/encrypt-member-qube',
+          {
+            // blobFile: null,
+            // blobPreview: null,
+            encryptedFileHash: fileUpload.IpfsHash,
+            //encryptedFileKey: encrypted.key
+          }
+        )
+  
+        console.log("This is the returned data", data)
+  
+        if (!data.success) {throw new Error('Failed to encrypt BlakQube data')}
+        if (data.success) {
+          const { encryptedBlakQube: blakQube, key } = data?.encryptedData
+          // _contentProfile.metaQube.blakQubeKey = key
+          const updatedMetaData = {
+            metaQube: { 
+              iQubeIdentifier: 'ContentQube',
+              iQubeCreator: 'Aigent Z',
+              ownerType: 'Individual',
+              iQubeContentType: selectedFile.type.substring(selectedFile.type.indexOf('/') + 1),
+              ownerIdentifiability: 'Identifiable',
+              transactionDate: new Date().toISOString(),
+              sensitivityScore: 4,
+              verifiabilityScore: 5,
+              accuracyScore: 5,
+              riskScore: 4,
+              blakQubeKey: ''
+            },
+            blakQube: blakQube
+          }
+  
+          const metadata = JSON.stringify({
+            name: "ContentQube",
+            image: encrypted.data,
+            attributes: [
+              ...Object.entries(updatedMetaData).map(([key, value]) => ({
+                trait_type: key,
+                value: value,
+              })),
+            ],
+          })
+  
+          // Upload JSON to IPFS
+          const metadataUpload = await pinata.upload.json(JSON.parse(metadata))
+          console.log(metadataUpload.IpfsHash)
+          console.log(key)
+          console.log(account)
+  
+          // mint the member data qube
+          const receipt = await nftInterface?.mintQube(
+            `ipfs://${metadataUpload.IpfsHash}`,
+            key,
+          )
+  
+          const newTokenId = await nftInterface?.getTokenIdFromReceipt(receipt)
+          if (newTokenId) {
+            setTokenId(newTokenId)
+            setIQubeTokenId(newTokenId)
+            console.log('NFT minted successfully with token ID:', newTokenId)
+          } else {
+            console.log("NFT minted successfully, but couldn't retrieve token ID")
+          }
+        }
+        return 
+      } catch (error: any) {
+        console.error('Error minting AgentQube NFT:', error)
+        setError(error.response?.data?.message || error.message || 'Failed to mint AgentQube NFT')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
   const handleMint = async() => {
     if (iQubeTokenId.localeCompare("data", undefined, { sensitivity: "base" }) === 0){
       handleMemberProfileMint();
     }
     else if (iQubeTokenId.localeCompare("agent", undefined, { sensitivity: "base" }) === 0){
       handleAgentProfileMint();
+    }
+    else if (iQubeTokenId.localeCompare("content", undefined, { sensitivity: "base" }) === 0){
+      handleContentProfileMint();
+      // console.log('content')
+      // let type = selectedFile.type
+      // console.log(type.substring(type.indexOf('/') + 1))
     }
   }
 
@@ -1648,15 +1844,15 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
             // {goToMintDashboard} 
 
             onClick={() => handleMint()}        
-            disabled={(iQubeTokenId.toLowerCase() !== "data" && iQubeTokenId.toLowerCase() !== "agent")
+            disabled={(iQubeTokenId.toLowerCase() !== "data" && iQubeTokenId.toLowerCase() !== "agent" && iQubeTokenId.toLowerCase() !== "content")
               //function to check if any of the fields are empty
-              || Object.values(blakQubeData).some(v => v === "" || (Array.isArray(v) && v.length === 0))
+              || (Object.values(blakQubeData).some(v => v === "" || (Array.isArray(v) && v.length === 0)) && selectedFile == null)
             }
             className={`
               w-full py-2 rounded transition-all duration-300 ease-in-out
               ${
-                (iQubeTokenId.toLowerCase() === "data" || iQubeTokenId.toLowerCase() === "agent")
-                && !Object.values(blakQubeData).some(v => v === "" || (Array.isArray(v) && v.length === 0))
+                (iQubeTokenId.toLowerCase() === "data" || iQubeTokenId.toLowerCase() === "agent" || iQubeTokenId.toLowerCase() === "content")
+                && (!Object.values(blakQubeData).some(v => v === "" || (Array.isArray(v) && v.length === 0)) || selectedFile != null)
                   ? "bg-gray-700 text-white hover:bg-purple-600" 
                   : "bg-gray-700 text-gray-400 cursor-not-allowed s"
               }
