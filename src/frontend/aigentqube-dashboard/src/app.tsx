@@ -1,12 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import Web3 from 'web3';
-import { Web3ReactProvider } from '@web3-react/core';
-import { Web3Provider } from '@ethersproject/providers';
+import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from './components/DashboardLayout';
 import { ContextManager } from './components/ContextManager';
 import ContextTransformationPanel from './components/ContextTransformationPanel';
 import IQubeCreatingPanel from './components/iQubeCreatingPanel';
-import { BlockchainWalletStatus } from './components/BlockchainComponents';
 import { OrchestrationAgent } from './services/OrchestrationAgent';
 import { 
   ChakraProvider, 
@@ -52,14 +48,6 @@ const initializeDependencies = () => {
     // Initialize Specialized Domain Manager
     const domainManager = new SpecializedDomainManager();
 
-    // Attempt to register services with API Manager
-    // try {
-    //   apiManager.registerAPI(openAIIntegration);
-    //   apiManager.registerAPI(metisIntegration);
-    // } catch (error) {
-    //   console.warn('Failed to register services with API Manager:', error);
-    // }
-
     return {
       apiManager, 
       openAIIntegration, 
@@ -80,17 +68,6 @@ const initializeDependencies = () => {
   }
 };
 
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
-
-// Web3 Library Configuration
-function getLibrary(provider: any): Web3Provider {
-  return new Web3Provider(provider);
-}
-
 const theme = chakraExtendTheme({
   // Add any custom theme configurations here
 });
@@ -104,12 +81,6 @@ const initializationLogger = (step: string, details?: any) => {
 };
 
 const App: React.FC = () => {
-  // Debug environment variables in component
-  // CD::console.log('App component mounted. Environment check:', {
-  //   OPENAI_KEY: process.env.REACT_APP_OPENAI_API_KEY?.substring(0, 10) + '...',
-  //   NODE_ENV: process.env.NODE_ENV
-  // });
-
   const toast = useToast();
   
   // Initialize Orchestration Agent
@@ -126,18 +97,6 @@ const App: React.FC = () => {
   });
   const [initializationError, setInitializationError] = useState<string | null>(null);
   const [agentError, setAgentError] = useState<string | null>(null);
-  
-  // Web3 and Wallet State
-  const [web3, setWeb3] = useState<Web3 | null>(null);
-  const [account, setAccount] = useState<string | null>(null);
-  const [chainId, setChainId] = useState<string | null>(null);
-  const [walletError, setWalletError] = useState<string | null>(null);
-  const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
-  const [isConnecting, setIsConnecting] = useState<boolean>(false);
-  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastConnectionAttemptRef = useRef<number>(0);
-  const DEBOUNCE_DELAY = 1000; // 1 second debounce
-  const CONNECTION_TIMEOUT = 30000; // 30 second timeout
 
   // Context and Agent ID State
   const [context, setContext] = useState<Record<string, any>>({});
@@ -148,231 +107,6 @@ const App: React.FC = () => {
   const [selectedDomain, setSelectedDomain] = useState<string>('');
   const [domainContext, setDomainContext] = useState<Record<string, any>>({});
   const [isMetisReady, setIsMetisReady] = useState<boolean>(false);
-
-  // Switch to Amoy Network
-  const switchToAmoyNetwork = async () => {
-    if (!window.ethereum) {
-      toast({
-        title: 'MetaMask Not Found',
-        description: 'Please install MetaMask to use this application',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    try {
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x13882' }], // 80002 in hex
-      });
-    } catch (switchError: any) {
-      if (switchError.code === 4902) {
-        try {
-          await window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: '0x13882',
-              chainName: 'Amoy',
-              nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
-              rpcUrls: ['https://rpc-amoy.polygon.technology'],
-              blockExplorerUrls: ['https://www.oklink.com/amoy']
-            }]
-          });
-        } catch (addError) {
-          console.error('Error adding Amoy network:', addError);
-          toast({
-            title: 'Network Error',
-            description: 'Failed to add Amoy network to MetaMask',
-            status: 'error',
-            duration: 5000,
-            isClosable: true,
-          });
-        }
-      } else {
-        console.error('Error switching to Amoy network:', switchError);
-        toast({
-          title: 'Network Error',
-          description: 'Failed to switch to Amoy network',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
-    }
-  };
-
-  // Initialize Web3 and connect wallet
-  const initializeWeb3 = useCallback(async () => {
-    // If already connected or connecting, or no ethereum provider, don't try again
-    if (account || !window.ethereum) {
-      return;
-    }
-
-    // Debounce check
-    const now = Date.now();
-    if (now - lastConnectionAttemptRef.current < DEBOUNCE_DELAY) {
-      return;
-    }
-    lastConnectionAttemptRef.current = now;
-
-    // If already connecting, show a message and return
-    if (isConnecting) {
-      toast({
-        title: 'Connection in Progress',
-        description: 'Please check MetaMask to approve the connection request',
-        status: 'info',
-        duration: 30000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    // Set connecting state and clear any existing errors
-    setIsConnecting(true);
-    setWalletError(null);
-
-    let connectingToastId: string | number | undefined;
-
-    // Clear any existing timeout
-    if (connectionTimeoutRef.current) {
-      clearTimeout(connectionTimeoutRef.current);
-    }
-
-    // Set new timeout
-    connectionTimeoutRef.current = setTimeout(() => {
-      if (isConnecting) {
-        setIsConnecting(false);
-        if (connectingToastId) {
-          toast.close(connectingToastId);
-        }
-        toast({
-          title: 'Connection Timeout',
-          description: 'The connection attempt timed out. Please try again.',
-          status: 'error',
-          duration: 50000,
-          isClosable: true,
-        });
-      }
-    }, CONNECTION_TIMEOUT);
-
-    try {
-      const web3Instance = new Web3(window.ethereum);
-      
-      // First check if we're already connected
-      const accounts = await web3Instance.eth.getAccounts();
-      
-      if (accounts && accounts.length > 0) {
-        // Already connected, just use existing connection
-        setWeb3(web3Instance);
-        setAccount(accounts[0]);
-        setIsSignedIn(true);
-        
-        // Get chain ID
-        const chainId = await web3Instance.eth.getChainId();
-        setChainId(chainId.toString());
-        
-        // Check if we need to switch to Amoy network
-        if (Number(chainId) !== 80002) {
-          await switchToAmoyNetwork();
-        }
-        
-        setIsConnecting(false);
-        if (connectionTimeoutRef.current) {
-          clearTimeout(connectionTimeoutRef.current);
-        }
-        return;
-      }
-
-      // Show connecting toast
-      connectingToastId = toast({
-        title: 'Connecting to MetaMask',
-        description: 'Please check MetaMask to approve the connection',
-        status: 'info',
-        duration: null,
-        isClosable: false,
-      });
-
-      try {
-        // Request accounts
-        const requestedAccounts = await window.ethereum.request({ 
-          method: 'eth_requestAccounts',
-          params: []
-        });
-
-        if (connectingToastId) {
-          toast.close(connectingToastId);
-        }
-
-        if (requestedAccounts && requestedAccounts[0]) {
-          setWeb3(web3Instance);
-          setAccount(requestedAccounts[0]);
-          setIsSignedIn(true);
-
-          // Get chain ID
-          const chainId = await web3Instance.eth.getChainId();
-          setChainId(chainId.toString());
-
-          // Check if we need to switch to Amoy network
-          if (Number(chainId) !== 80002) {
-            await switchToAmoyNetwork();
-          }
-
-          toast({
-            title: 'Wallet Connected',
-            description: `Connected to account ${requestedAccounts[0].slice(0, 6)}...${requestedAccounts[0].slice(-4)}`,
-            status: 'success',
-            duration: 3000,
-            isClosable: true,
-          });
-        }
-      } catch (error: any) {
-        if (connectingToastId) {
-          toast.close(connectingToastId);
-        }
-        // Handle the "already processing" error specifically
-        if (error.code === -32002) {
-          if (!toast.isActive('connection-request-pending')) {
-            toast({
-              id: 'connection-request-pending',
-              title: 'Connection Request Pending',
-              description: 'Please open MetaMask and approve the connection request',
-              status: 'warning',
-              duration: 5000,
-              isClosable: true,
-            });
-          }
-          return;
-        }
-
-        console.error('Error connecting wallet:', error);
-        setWalletError(error.message);
-        toast({
-          title: 'Connection Error',
-          description: error.message,
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
-    } catch (error: any) {
-      console.error('Error in web3 initialization:', error);
-      setWalletError(error.message);
-      toast({
-        title: 'Initialization Error',
-        description: error.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsConnecting(false);
-      if (connectionTimeoutRef.current) {
-        clearTimeout(connectionTimeoutRef.current);
-      }
-    }
-  }, [account, isConnecting, toast, switchToAmoyNetwork]);
 
   // Handle Context Updates with domain coordination
   const handleContextChange = useCallback((newContext: Record<string, any>) => {
@@ -393,62 +127,6 @@ const App: React.FC = () => {
     setIQubeData(data);
   };
 
-  // Setup Web3 event listeners
-  useEffect(() => {
-    if (!window.ethereum) {
-      return;
-    }
-
-    const handleAccountsChanged = (accounts: string[]) => {
-      if (accounts.length === 0) {
-        setAccount(null);
-        setIsSignedIn(false);
-      } else {
-        setAccount(accounts[0]);
-        setIsSignedIn(true);
-      }
-    };
-
-    const handleChainChanged = (chainId: string) => {
-      setChainId(chainId);
-      window.location.reload();
-    };
-
-    const handleDisconnect = () => {
-      setAccount(null);
-      setIsSignedIn(false);
-    };
-
-    window.ethereum.on('accountsChanged', handleAccountsChanged);
-    window.ethereum.on('chainChanged', handleChainChanged);
-    window.ethereum.on('disconnect', handleDisconnect);
-
-    // Only initialize if not connected and not currently connecting
-    if (!account && !isConnecting) {
-      // Add a small delay to prevent rapid re-initialization
-      const timer = setTimeout(() => {
-        initializeWeb3();
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-
-    return () => {
-      window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-      window.ethereum.removeListener('chainChanged', handleChainChanged);
-      window.ethereum.removeListener('disconnect', handleDisconnect);
-    };
-  }, [account, initializeWeb3, isConnecting]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (connectionTimeoutRef.current) {
-        clearTimeout(connectionTimeoutRef.current);
-      }
-    };
-  }, []);
-
   const initializeApplication = useCallback(async () => {
     try {
       initializationLogger('Starting Application Initialization');
@@ -457,7 +135,6 @@ const App: React.FC = () => {
       const requiredEnvVars = [
         'REACT_APP_OPENAI_API_KEY',
         'REACT_APP_METIS_API_KEY',
-
       ];
 
       const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
@@ -494,9 +171,6 @@ const App: React.FC = () => {
       });
 
       try {
-        //('[App] Starting OrchestrationAgent initialization');
-        
-        // Initialize with timeout
         const initializationTimeout = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Initialization timeout')), 30000)
         );
@@ -506,12 +180,9 @@ const App: React.FC = () => {
           initializationTimeout
         ]);
 
-        //CD::console.log('[App] OrchestrationAgent initialized successfully');
-        
         setOrchestrationAgent(agent);
         
         const serviceStatus = agent.getServiceStatus();
-        //CD::console.log('[App] Service Status:', serviceStatus);
 
         setAgentStatus({
           context: serviceStatus.context.isActive,
@@ -522,8 +193,7 @@ const App: React.FC = () => {
         const isReady = serviceStatus.context.isActive && 
                        serviceStatus.service.isActive && 
                        serviceStatus.state.isActive;
-        
-        //CD::console.log(`[App] Agent Readiness: ${isReady}`);
+
         setIsAgentReady(isReady);
 
         // Only show warning if services are completely unavailable
@@ -547,7 +217,6 @@ const App: React.FC = () => {
           state: false
         });
 
-        // Check if error should be suppressed
         const errorMessage = initError instanceof Error ? initError.message : String(initError);
         const shouldSuppress = /layer.*validation|initialization.*failed|configuration.*issue/i.test(errorMessage);
 
@@ -568,7 +237,6 @@ const App: React.FC = () => {
       console.error('🔥 Initialization Encountered Issues:', errorMessage);
       setInitializationError(errorMessage);
 
-      // Only show toast for critical errors
       if (!/layer.*validation|initialization.*failed|configuration.*issue/i.test(errorMessage)) {
         toast({
           title: 'Critical Error',
@@ -586,7 +254,6 @@ const App: React.FC = () => {
     initializeApplication();
   }, [initializeApplication]);
 
-  // Add useEffect to track agent status changes
   useEffect(() => {
     if (orchestrationAgent) {
       const checkAgentStatus = () => {
@@ -598,23 +265,17 @@ const App: React.FC = () => {
         });
       };
 
-      // Initial check
       checkAgentStatus();
 
-      // Optional: Set up periodic status checks
-      const statusInterval = setInterval(checkAgentStatus, 30000); // Every 30 seconds
+      const statusInterval = setInterval(checkAgentStatus, 30000);
 
       return () => clearInterval(statusInterval);
     }
   }, [orchestrationAgent]);
 
-
-
-  // Monitor Layer Alignment
   const checkAlignment = useCallback(async () => {
     try {
       if (orchestrationAgent) {
-        // Check if validateLayerAlignment method exists and is a function
         if (typeof orchestrationAgent.validateLayerAlignment === 'function') {
           const isAligned = await orchestrationAgent.validateLayerAlignment();
           if (!isAligned) {
@@ -631,21 +292,15 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (orchestrationAgent) {
-      // Initial check
       checkAlignment();
       
-      // Periodic checks without toasts
-      const interval = setInterval(checkAlignment, 60000); // Every minute
+      const interval = setInterval(checkAlignment, 60000);
       return () => clearInterval(interval);
     }
   }, [checkAlignment, orchestrationAgent]);
 
-  // Subscribe to Orchestration Updates
   const handleOrchestrationUpdate = useCallback((state: OrchestrationAgent) => {
     try {
-      //console.log('Orchestration State Updated:', state);
-      
-      // Only show critical errors
       if (state?.context?.error || state?.service?.error || state?.state?.error) {
         const errors = [
           state?.context?.error,
@@ -653,7 +308,6 @@ const App: React.FC = () => {
           state?.state?.error
         ].filter(Boolean);
 
-        // Check if errors should be suppressed
         const shouldSuppressError = (error: string): boolean => {
           const suppressPatterns = [
             /Layer alignment validation/i,
@@ -667,7 +321,6 @@ const App: React.FC = () => {
           return suppressPatterns.some(pattern => pattern.test(error));
         };
 
-        // Only show toast if errors are not suppressed
         if (errors.some(error => error && !shouldSuppressError(error))) {
           toast({
             title: 'Service Error',
@@ -684,9 +337,7 @@ const App: React.FC = () => {
   }, [toast]);
 
   useEffect(() => {
-    // Robust check for subscribe method
     if (orchestrationAgent) {
-      // Check if subscribe method exists and is a function
       if (typeof orchestrationAgent.subscribe === 'function') {
         try {
           const unsubscribe = orchestrationAgent.subscribe(handleOrchestrationUpdate);
@@ -718,7 +369,6 @@ const App: React.FC = () => {
     }
   }, [orchestrationAgent, handleOrchestrationUpdate, toast]);
 
-  // Render initialization error if present
   if (initializationError) {
     return (
       <Box 
@@ -762,7 +412,6 @@ const App: React.FC = () => {
       }
     >
       <ChakraProvider theme={theme}>
-        <Web3ReactProvider getLibrary={getLibrary}>
           <div className="App min-h-screen bg-gray-900 text-white">
             <DashboardLayout
               context={context}
@@ -778,26 +427,12 @@ const App: React.FC = () => {
               >
                 {/* Left Column */}
                 <ChakraVStack spacing={6} align="stretch">
-                  <Box className="wallet-status-container">
-                    <BlockchainWalletStatus
-                      account={account}
-                      chainId={chainId}
-                      isConnecting={isConnecting}
-                      error={walletError}
-                      onConnect={initializeWeb3}
-                      onDisconnect={() => {}}
-                      onSwitchNetwork={switchToAmoyNetwork}
-                    />
-                  </Box>
-
                   {isAgentReady && orchestrationAgent && (
                     <Box className="agent-evolution-container">
                       <AgentEvolutionPanel
                         context={{
                           specializedState: selectedDomain,
-                          web3,
-                          account,
-                          isSignedIn,
+                          isSignedIn: true,
                           error: agentError,
                           isMetisReady
                         }}
@@ -808,14 +443,12 @@ const App: React.FC = () => {
                     </Box>
                   )}
 
-                  {/* Show error if agent initialization failed */}
                   {agentError && (
                     <Box p={4} bg="red.600" color="white" borderRadius="md">
                       <Text>Failed to initialize AI agent: {agentError}</Text>
                     </Box>
                   )}
 
-                  {/* Show loading state while agent is initializing */}
                   {!isAgentReady && !agentError && (
                     <Box p={4} bg="gray.700" borderRadius="md">
                       <Text>Initializing AI agent...</Text>
@@ -831,30 +464,22 @@ const App: React.FC = () => {
                 {/* Right Column */}
                 <ChakraVStack spacing={6} align="stretch">
                   <ContextManager 
-                    web3={web3}
-                    account={account}
                     onContextChange={handleContextChange}
                   />
                   <ContextTransformationPanel 
                     orchestrationAgent={isAgentReady ? orchestrationAgent : undefined}
                     context={{
                       specializedState: 'Aigent Z',
-                      web3,
-                      account,
-                      isSignedIn,
+                      isSignedIn: true,
                       error: agentError,
                       iQubeData: iQubeData
                     }}
                   />
-                  <IQubeCreatingPanel 
-                    web3={web3}
-                    account={account}
-                  />
+                  <IQubeCreatingPanel />
                 </ChakraVStack>
               </Grid>
             </DashboardLayout>
           </div>
-        </Web3ReactProvider>
       </ChakraProvider>
     </ErrorBoundary>
   );
