@@ -291,7 +291,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     // Set decrypted BlakQube data
     setBlakQubeDecrypted(mockBlakQubeData);
 
-    console.log()
+    // console.log()
     // Update context if onContextChange is provided
     onContextChange?.({
       
@@ -355,7 +355,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
         setNftInterface(_interface)
         setAccount(accounts[0])
-        console.log('NFT Interface initialized successfully')
+        // console.log('NFT Interface initialized successfully')
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error initializing NFT interface'
         setError(errorMessage)
@@ -367,12 +367,25 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
   }, []);
 
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file !== null){
+      setSelectedFile(file);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFilePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
   const handleViewQube = useCallback(async () => {
-    console.log(iQubeTokenId)
     if (iQubeTokenId !== null)
     {  
       if (iQubeTokenId.localeCompare("data", undefined, { sensitivity: "base" }) === 0){
-        // console.log('DATA FORM')
         setBlakQubeData({
           profession: '',
           web3Interests: '',
@@ -387,8 +400,22 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         setShowFormMint(true);
         setIsDecrypted(false);
         setIQubeActivated(null);
+      }else if (iQubeTokenId.localeCompare("agent", undefined, { sensitivity: "base" }) === 0){
+        setBlakQubeData({
+          baseUrl: '',
+          apiKey: '',
+          agentWalletAddress: ''
+        })
+        setShowFormMint(true);
+        setIsDecrypted(false);
+        setIQubeActivated(null);
       }else if (iQubeTokenId.localeCompare("content", undefined, { sensitivity: "base" }) === 0){
-        // console.log('content')
+        setBlakQubeData({
+          encryptedFileHash: ""
+        })
+        setShowFormMint(true);
+        setIsDecrypted(false);
+        setIQubeActivated(null);
       }else{
         setShowFormMint(false);
         viewMetaQube();
@@ -397,6 +424,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
   } ,[iQubeTokenId, onContextChange]);
 
   const FormMint = () => {
+    if (iQubeTokenId.localeCompare("data", undefined, { sensitivity: "base" }) === 0){
     return(
       <div className="mt-4 bg-gray-700 rounded p-4 space-y-2">
         {/* First Row: iQube ID, Creator, Type, Owner Type */}
@@ -456,11 +484,144 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
               </div>
           </div>
       </div>  
-    );
+    );}
+    else if (iQubeTokenId.localeCompare("agent", undefined, { sensitivity: "base" }) === 0){
+      return(
+        <div className="mt-4 bg-gray-700 rounded p-4 space-y-2">
+          {/* First Row: iQube ID, Creator, Type, Owner Type */}
+          <div className="grid grid-cols-4 gap-2 text-white">
+            <div>
+              <span className="text-gray-400 block text-xs">iQube ID</span>
+              {"AgentQube"}
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Creator</span>
+              {"Aigent Z"}
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">iQube Type</span>
+              {"AgentQube"}
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Owner Type</span>
+              {"Individual"}
+            </div>
+          </div>
+  
+          {/* Second Row: iQube Scores */}
+          <div className="grid grid-cols-4 gap-2 text-white">
+            <div>
+              <span className="text-gray-400 block text-xs">Sensitivity</span>
+              <ScoreBar score={0.4} inv={true} />
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Verifiability</span>
+              <ScoreBar score={0.5} inv={false} />
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Accuracy</span>
+              <ScoreBar score={0.5} inv={false}/>
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Risk</span>
+              <ScoreBar score={0.4} inv={true} />
+            </div>
+          </div>
+          <div className="mt-2 bg-gray-700 rounded space-y-2">
+              <h3 className="text-white text-lg mb-2 whitespace-nowrap">BlackQube Data</h3>
+                <div className="grid gap-2">
+                  {Object.entries(blakQubeData).map(([key, value]) => (
+                    <div key={key} className="w-full  block">
+                      <label className="text-gray-400 text-sm font-medium">{key}</label>
+                      <input
+                        type="text"
+                        defaultValue ={Array.isArray(value) ? (value as string[]).join(', ') : (value as string)}
+                        onBlur={(e) => handleBlakQubeChange(key, e.target.value)}
+                        //placeholder="Enter text..."
+                        className="w-[95%] border rounded p-2 bg-[#F18585]/50  text-white"
+                      />
+                    </div>
+                  ))}
+                </div>
+            </div>
+        </div>  
+      );
+    }
+    else if (iQubeTokenId.localeCompare("content", undefined, { sensitivity: "base" }) === 0){
+      return(
+        <div className="mt-4 bg-gray-700 rounded p-4 space-y-2">
+          {/* First Row: iQube ID, Creator, Type, Owner Type */}
+          <div className="grid grid-cols-4 gap-2 text-white">
+            <div>
+              <span className="text-gray-400 block text-xs">iQube ID</span>
+              {"ContentQube"}
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Creator</span>
+              {"Aigent Z"}
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">iQube Type</span>
+              {"ContentQube"}
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Owner Type</span>
+              {"Individual"}
+            </div>
+          </div>
+  
+          {/* Second Row: iQube Scores */}
+          <div className="grid grid-cols-4 gap-2 text-white">
+            <div>
+              <span className="text-gray-400 block text-xs">Sensitivity</span>
+              <ScoreBar score={0.4} inv={true} />
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Verifiability</span>
+              <ScoreBar score={0.5} inv={false} />
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Accuracy</span>
+              <ScoreBar score={0.5} inv={false}/>
+            </div>
+            <div>
+              <span className="text-gray-400 block text-xs">Risk</span>
+              <ScoreBar score={0.4} inv={true} />
+            </div>
+          </div>
+          <div className="mt-2 bg-gray-700 rounded space-y-2">
+              <h3 className="text-white text-lg mb-2 whitespace-nowrap">BlackQube Data</h3>
+                {/* <div className="grid gap-2">
+                  <div className="w-full  block"> */}
+                    <label className="text-gray-400 text-sm font-medium" htmlFor='fileUpload'>File Upload</label>
+                    
+                    <input
+                      type="file"
+                      id='fileUpload'
+                      title = {`${selectedFile ? selectedFile.name : "" }`}
+                      onChange={handleFile}
+                      // className="mt-1 block w-full bg-red-50 rounded-lg"
+                      className="w-[95%] border rounded p-2 bg-[#F18585]/50  text-white"
+                    />
+                  {/* </div> */}
+                {/* </div> */}
+                {filePreview && (
+                  <div className="mt-2">
+                    <img 
+                      src={filePreview} 
+                      alt="File Preview" 
+                      className="max-h-96 w-full object-contain "
+                    />
+                  </div>
+                )}
+            </div>
+        </div>  
+      );
+    }
     
   };
   const viewMetaQube =  useCallback(async () => {
-    console.log('retrieving meta data')
+    // console.log('retrieving meta data')
     setDecryptedLink('')
     setMetadata('')
     setMetaQubeData(null)
@@ -481,7 +642,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         'ipfs://',
         `${process.env.REACT_APP_GATEWAY_URL}/ipfs/`,
       )
-      console.log('Fetching metadata from:', fullPath)
+      // console.log('Fetching metadata from:', fullPath)
       
       // Fetch and parse metadata
       const response = await fetch(fullPath)
@@ -492,7 +653,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       const metaQubeAttrs = data.attributes.find((attr: any) => attr.trait_type === 'metaQube')?.value || {}
       const blakQubeAttrs = data.attributes.find((attr: any) => attr.trait_type === 'blakQube')?.value || {}
 
-      console.log("Black Qube data", blakQubeAttrs)
+      // console.log("Black Qube data", blakQubeAttrs)
       
       const {
         blakQubeKey,
@@ -525,13 +686,13 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       //setIsDecrypted(true);
       setMetadata(fullPath)
 
-      console.log(formattedMetaQubeData)
-      console.log(formattedBlakQubeData)
+      // console.log(formattedMetaQubeData)
+      // console.log(formattedBlakQubeData)
 
-      console.log(encryptedBlakQubeData)
+      // console.log(encryptedBlakQubeData)
 
-      console.log(iQubeTokenId)
-      console.log(formattedMetaQubeData['iQubeCreator'])
+      // console.log(iQubeTokenId)
+      // console.log(formattedMetaQubeData['iQubeCreator'])
     
       // Activate the iQube with data
       setIQubeActivated({
@@ -540,7 +701,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         userProfile: 'User Profile'
       });
       setShowData(true);
-      console.log(iQubeTokenId)
+      // console.log(iQubeTokenId)
 
       // Update context if onContextChange is provided
       onContextChange?.({
@@ -601,7 +762,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
       // Get the metadata URI using getBlakQube
       const metadataURI = await nftInterface.getBlakQube(iQubeTokenId)
-      console.log('Fetching metadata from:', metadataURI)
+      // console.log('Fetching metadata from:', metadataURI)
 
       const metadataResponse = await fetch(
         metadataURI.replace(
@@ -615,7 +776,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       }
 
       const metadata = await metadataResponse.json()
-      console.log('Metadata retrieved:', metadata)
+      // console.log('Metadata retrieved:', metadata)
 
       const metaQubeAttrs = metadata.attributes.find((attr: any) => attr.trait_type === 'metaQube')?.value || {}
       const {
@@ -635,7 +796,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       )
 
       setMetaQubeData(formattedMetaQubeData)
-      console.log(formattedMetaQubeData)
+      // console.log(formattedMetaQubeData)
 
 
       // Activate the iQube with data
@@ -645,7 +806,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         userProfile: 'User Profile'
       });
 
-      console.log(iQubeTokenId)
+      // console.log(iQubeTokenId)
 
       // Update context if onContextChange is provided
       onContextChange?.({
@@ -674,8 +835,8 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       }
 
       try {
-        console.log('Attempting to decrypt with tokenId:', iQubeTokenId)
-        console.log('BlakQube value:', blakQubeAttribute.value)
+        // console.log('Attempting to decrypt with tokenId:', iQubeTokenId)
+        // console.log('BlakQube value:', blakQubeAttribute.value)
         
         // Get the encryption key first
         let encryptionKey
@@ -689,7 +850,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           throw keyError
         }
 
-        console.log('Encryption key retrieved:', encryptionKey)
+        // console.log('Encryption key retrieved:', encryptionKey)
 
         if (!encryptionKey) {
           throw new Error('Failed to retrieve encryption key')
@@ -709,13 +870,13 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           }
         )
 
-        console.log('Server response:', response.data)
+        // console.log('Server response:', response.data)
 
         if (response.data && response.data.decryptedData) {
-          console.log('Decryption successful:', response.data.decryptedData)
+          // console.log('Decryption successful:', response.data.decryptedData)
           let blakQubeAttrs = response.data.decryptedData
 
-          if(formattedMetaQubeData.iQubeContentType !== "Data" || formattedMetaQubeData.iQubeContentType !== "Agent"){
+          if(formattedMetaQubeData.iQubeContentType !== "Data" && formattedMetaQubeData.iQubeContentType !== "Agent"){
             const fullUrl = `${process.env.REACT_APP_GATEWAY_URL}/ipfs/${
               //decrypted.response
               response.data.decryptedData.encryptedFileHash
@@ -729,10 +890,10 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           setBlakQubeData(blakQubeAttrs)
         
           // Log the updated state data (this will be null during the initial render and then show the data after update)
-          console.log("Updated blackqube data", blakQubeAttrs)
+          // console.log("Updated blackqube data", blakQubeAttrs)
         
           // For checking the state after it has been updated
-          console.log("variable data", blakQubeAttrs)  // Note: This is the immediate value, `blakQubeData` will be updated later
+          // console.log("variable data", blakQubeAttrs)  // Note: This is the immediate value, `blakQubeData` will be updated later
           setIsDecrypted(true);
           setShowData(true);
         
@@ -799,7 +960,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
   }
 
   const validatePinataJWT = (token: string) => {
-    console.log('[JWT Validation] Starting validation');
+    // console.log('[JWT Validation] Starting validation');
     
     if (!token) {
         console.error('[JWT Validation] Token is empty or undefined');
@@ -818,21 +979,21 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     try {
         // Attempt to decode the payload
         const payload = JSON.parse(atob(parts[1]));
-        console.log('[JWT Validation] Payload decoded successfully', {
-            exp: payload.exp,
-            iat: payload.iat
-        });
+        // console.log('[JWT Validation] Payload decoded successfully', {
+        //     exp: payload.exp,
+        //     iat: payload.iat
+        // });
     } catch (error) {
         console.error('[JWT Validation] Payload decoding failed', error);
         throw new Error('Invalid JWT token: Cannot decode payload');
     }
 
-    console.log('[JWT Validation] Token is valid');
+    // console.log('[JWT Validation] Token is valid');
     return true;
   };
 
   const handleMemberProfileMint = async () => {
-    console.log("RUNNING : handleMemberProfileMint")
+    // console.log("RUNNING : handleMemberProfileMint")
 
     setIsLoading(true)
     setError('')
@@ -863,7 +1024,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       blakQubeData.chainIDs = blakQubeData.chainIDs.split(",").map((token: string) => token.trim())
       blakQubeData.walletsOfInterest = blakQubeData.walletsOfInterest.split(",").map((token: string) => token.trim())
       _memberProfile.blakQube = blakQubeData;
-      console.log(_memberProfile.blakQube)
+      // console.log(_memberProfile.blakQube)
       let _blakQube = _memberProfile.blakQube;
       
       let { data } = await axios.post(
@@ -871,7 +1032,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         _blakQube,
       )
 
-      console.log(data)
+      // console.log(data)
 
       if (data.success) {
         const { encryptedBlakQube: blakQube, key } = data?.encryptedData
@@ -895,9 +1056,9 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
         // Upload JSON to IPFS
         const metadataUpload = await pinata.upload.json(JSON.parse(metadata))
-        console.log(metadataUpload.IpfsHash)
-        console.log(key)
-        console.log(account)
+        // console.log(metadataUpload.IpfsHash)
+        // console.log(key)
+        // console.log(account)
 
         // mint the member data qube
         const receipt = await nftInterface?.mintQube(
@@ -909,7 +1070,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         if (newTokenId) {
           setTokenId(newTokenId)
           setIQubeTokenId(newTokenId)
-          console.log('NFT minted successfully with token ID:', newTokenId)
+          // console.log('NFT minted successfully with token ID:', newTokenId)
         } else {
           console.log("NFT minted successfully, but couldn't retrieve token ID")
         }
@@ -926,6 +1087,208 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
     }
   }
   
+  const handleAgentProfileMint = async () => {
+      setIsLoading(true)
+      setError('')
+  
+      try {
+        if (!nftInterface) {
+          throw new Error('NFT interface not initialized')
+        }
+  
+        // Validate JWT before using it
+        const pinataJWT = process.env.REACT_APP_PINATA_JWT;
+        validatePinataJWT(pinataJWT || '');
+  
+        // encrypt blakQube information
+        let _agentProfile = {
+          metaQube:{ 
+            iQubeIdentifier: 'AgentQube',
+            iQubeCreator: 'Aigent Z',
+            ownerType: 'Individual',
+            iQubeContentType: 'Agent',
+            ownerIdentifiability: 'Identifiable',
+            transactionDate: new Date().toISOString(),
+            sensitivityScore: 4,
+            verifiabilityScore: 5,
+            accuracyScore: 5,
+            riskScore: 4,
+            blakQubeKey: ''
+          },
+          blakQube:{}
+        };
+        _agentProfile.blakQube = blakQubeData;
+  
+        // console.log('Encrypting agent data:', blakQubeData)
+  
+        let { data } = await axios.post(
+          `https://iqubes-server.onrender.com/encrypt-member-qube`,
+          blakQubeData,
+        )
+  
+        // console.log("Encrypted data: ",data)
+  
+        if (data.success) {
+          const { encryptedBlakQube: blakQube, key } = data?.encryptedData
+          _agentProfile.metaQube.blakQubeKey = key
+          const updatedMetaData = {
+            metaQube: _agentProfile.metaQube,
+            blakQube,
+          }
+  
+          const metadata = JSON.stringify({
+            name: `iQube NFT #${Date.now()}`,
+            description: 'An encrypted iQube NFT',
+            image: '',
+            attributes: [
+              ...Object.entries(updatedMetaData).map(([key, value]) => ({
+                trait_type: key,
+                value: value,
+              })),
+            ],
+          })
+  
+          // Upload JSON to IPFS
+          const metadataUpload = await pinata.upload.json(JSON.parse(metadata))
+          // console.log(metadataUpload.IpfsHash)
+          // console.log(key)
+          // console.log(account)
+  
+          // mint the member data qube
+          const receipt = await nftInterface?.mintQube(
+            `ipfs://${metadataUpload.IpfsHash}`,
+            key,
+          )
+  
+          const newTokenId = await nftInterface?.getTokenIdFromReceipt(receipt)
+          if (newTokenId) {
+            setTokenId(newTokenId)
+            setIQubeTokenId(newTokenId)
+            console.log('NFT minted successfully with token ID:', newTokenId)
+          } else {
+            console.log("NFT minted successfully, but couldn't retrieve token ID")
+          }
+        }
+        return 
+      } catch (error: any) {
+        console.error('Error minting AgentQube NFT:', error)
+        setError(error.response?.data?.message || error.message || 'Failed to mint AgentQube NFT')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    const handleContentProfileMint = async () => {
+      setIsLoading(true)
+      setError('')
+  
+      try {
+        if (!nftInterface) {
+          throw new Error('NFT interface not initialized')
+        }
+  
+        // Validate JWT before using it
+        const pinataJWT = process.env.REACT_APP_PINATA_JWT;
+        validatePinataJWT(pinataJWT || '');
+  
+        // encrypt blakQube information
+        // let _contentProfile = { ...contentProfile }
+        //let _blakQube = _contentProfile.blakQube
+        //console.log('Encrypting Content data:', _blakQube)
+  
+        // Upload file to IPFS
+        const fileUpload = await pinata.upload.file(selectedFile);
+  
+        const encrypted = await getEncryptionData(fileUpload.IpfsHash)
+  
+        const { data } = await axios.post(
+          'https://iqubes-server.onrender.com/encrypt-member-qube',
+          {
+            // blobFile: null,
+            // blobPreview: null,
+            encryptedFileHash: fileUpload.IpfsHash,
+            //encryptedFileKey: encrypted.key
+          }
+        )
+  
+        console.log("This is the returned data", data)
+  
+        if (!data.success) {throw new Error('Failed to encrypt BlakQube data')}
+        if (data.success) {
+          const { encryptedBlakQube: blakQube, key } = data?.encryptedData
+          // _contentProfile.metaQube.blakQubeKey = key
+          const updatedMetaData = {
+            metaQube: { 
+              iQubeIdentifier: 'ContentQube',
+              iQubeCreator: 'Aigent Z',
+              ownerType: 'Individual',
+              iQubeContentType: selectedFile.type.substring(selectedFile.type.indexOf('/') + 1),
+              ownerIdentifiability: 'Identifiable',
+              transactionDate: new Date().toISOString(),
+              sensitivityScore: 4,
+              verifiabilityScore: 5,
+              accuracyScore: 5,
+              riskScore: 4,
+              blakQubeKey: ''
+            },
+            blakQube: blakQube
+          }
+  
+          const metadata = JSON.stringify({
+            name: "ContentQube",
+            image: encrypted.data,
+            attributes: [
+              ...Object.entries(updatedMetaData).map(([key, value]) => ({
+                trait_type: key,
+                value: value,
+              })),
+            ],
+          })
+  
+          // Upload JSON to IPFS
+          const metadataUpload = await pinata.upload.json(JSON.parse(metadata))
+          console.log(metadataUpload.IpfsHash)
+          console.log(key)
+          console.log(account)
+  
+          // mint the member data qube
+          const receipt = await nftInterface?.mintQube(
+            `ipfs://${metadataUpload.IpfsHash}`,
+            key,
+          )
+  
+          const newTokenId = await nftInterface?.getTokenIdFromReceipt(receipt)
+          if (newTokenId) {
+            setTokenId(newTokenId)
+            setIQubeTokenId(newTokenId)
+            console.log('NFT minted successfully with token ID:', newTokenId)
+          } else {
+            console.log("NFT minted successfully, but couldn't retrieve token ID")
+          }
+        }
+        return 
+      } catch (error: any) {
+        console.error('Error minting AgentQube NFT:', error)
+        setError(error.response?.data?.message || error.message || 'Failed to mint AgentQube NFT')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+  const handleMint = async() => {
+    if (iQubeTokenId.localeCompare("data", undefined, { sensitivity: "base" }) === 0){
+      handleMemberProfileMint();
+    }
+    else if (iQubeTokenId.localeCompare("agent", undefined, { sensitivity: "base" }) === 0){
+      handleAgentProfileMint();
+    }
+    else if (iQubeTokenId.localeCompare("content", undefined, { sensitivity: "base" }) === 0){
+      handleContentProfileMint();
+      // console.log('content')
+      // let type = selectedFile.type
+      // console.log(type.substring(type.indexOf('/') + 1))
+    }
+  }
 
     const handleError = (error: any) => {
       if (error.code === 4001 || error.message?.includes('user rejected')) {
@@ -991,7 +1354,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
 
   useEffect(() => {
     if (blakQubeData !== null) {
-      renderBlakQubeData(); // Call render function after data has been updated
+      // renderBlakQubeData(); // Call render function after data has been updated
     } else if (encryptedBlakQubeData !== null) {
       //renderEncryptedBlakQubeData(); // Render encrypted data if blakQubeData is null
     } else {
@@ -1009,10 +1372,10 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       editable: false
     }));
 
-    console.log("Data to render:" , blakQubeData)
+    // console.log("Data to render:" , blakQubeData)
 
     if(blakQubeData.decryptedContentQubeLink){
-      console.log("here's smth");
+      // console.log("here's smth");
       return(
         <div className="grid gap-2 text-white">
           <div key={blakQubeData.decryptedContentQubeLink} className="bg-gray-700 p-2 rounded truncate w-full">
@@ -1103,12 +1466,12 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         setError('OrchestrationAgent not initialized');
         return;
       }
-      console.log("Current domain", orchestrationAgent.getCurrentDomain());
+      // console.log("Current domain", orchestrationAgent.getCurrentDomain());
 
 
       // Get the metadata URI using getBlakQube
       const metadataURI = await nftInterface.getBlakQube(iQubeTokenId)
-      console.log('Fetching metadata from:', metadataURI)
+      // console.log('Fetching metadata from:', metadataURI)
 
       const metadataResponse = await fetch(
         metadataURI.replace(
@@ -1122,7 +1485,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       }
 
       const metadata = await metadataResponse.json()
-      console.log('Metadata retrieved:', metadata)
+      // console.log('Metadata retrieved:', metadata)
 
       const metaQubeAttrs = metadata.attributes.find((attr: any) => attr.trait_type === 'metaQube')?.value || {}
       const {
@@ -1144,7 +1507,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       setMetaQubeData(formattedMetaQubeData)
       // setBlakQubeData(null) // Clear any previous decrypted data
 
-      console.log(formattedMetaQubeData)
+      // console.log(formattedMetaQubeData)
 
 
       // Activate the iQube with data
@@ -1154,7 +1517,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
         userProfile: 'User Profile'
       });
 
-      console.log(iQubeTokenId)
+      // console.log(iQubeTokenId)
 
       // Update context if onContextChange is provided
       onContextChange?.({
@@ -1180,8 +1543,8 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       }
 
       try {
-        console.log('Attempting to decrypt with tokenId:', iQubeTokenId)
-        console.log('BlakQube value:', blakQubeAttribute.value)
+        // console.log('Attempting to decrypt with tokenId:', iQubeTokenId)
+        // console.log('BlakQube value:', blakQubeAttribute.value)
         
         // Get the encryption key first
         let encryptionKey
@@ -1196,7 +1559,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           throw keyError
         }
 
-        console.log('Encryption key retrieved:', encryptionKey)
+        // console.log('Encryption key retrieved:', encryptionKey)
 
         if (!encryptionKey) {
           throw new Error('Failed to retrieve encryption key')
@@ -1216,17 +1579,17 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           }
         )
 
-        console.log('Server response:', response.data)
+        // console.log('Server response:', response.data)
 
         if (response.data && response.data.decryptedData) {
-          console.log('Decryption successful:', response.data.decryptedData)
+          // console.log('Decryption successful:', response.data.decryptedData)
           const blakQubeAttrs = response.data.decryptedData
           setBlakQubeData(blakQubeAttrs)
           setIsDecrypted(true);
 
-          console.log('Checking OrchestrationAgent initialization status');
+          // console.log('Checking OrchestrationAgent initialization status');
           const isInitialized = orchestrationAgent.isInitialized();
-          console.log('OrchestrationAgent initialization status:', isInitialized);
+          // console.log('OrchestrationAgent initialization status:', isInitialized);
 
           const iQube = {
             ...formattedMetaQubeData,
@@ -1237,14 +1600,14 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
           
 
           orchestrationAgent.addIQube(iQubeTokenId, iQube)
-          console.log("from agent:", orchestrationAgent.getIQubeById(iQubeTokenId))
+          // console.log("from agent:", orchestrationAgent.getIQubeById(iQubeTokenId))
 
           // If not initialized, attempt to initialize
           if (!isInitialized) {
-            console.log('Attempting to initialize OrchestrationAgent');
+            // console.log('Attempting to initialize OrchestrationAgent');
             try {
               await orchestrationAgent.initialize();
-              console.log('OrchestrationAgent initialized successfully');
+              // console.log('OrchestrationAgent initialized successfully');
             } catch (initError) {
               console.error('Failed to initialize OrchestrationAgent:', initError);
               const errorMessage = `Initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`;
@@ -1282,7 +1645,7 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
       setIQubes(Array.from(orchestrationAgent.getIQubes().values()));
 
   
-      console.log(`iQube with ID ${iQubeId} removed successfully.`);
+      // console.log(`iQube with ID ${iQubeId} removed successfully.`);
     } catch (error) {
       console.error(`Error removing iQube: ${error}`);
     }
@@ -1480,16 +1843,16 @@ const IQubeOperations: React.FC<IQubeOperationsProps> = ({
             //simple function written below the handleMintToken that takes you to path + / + minter
             // {goToMintDashboard} 
 
-            onClick={() => handleMemberProfileMint()}        
-            disabled={iQubeTokenId.toLowerCase() !== "data" 
+            onClick={() => handleMint()}        
+            disabled={(iQubeTokenId.toLowerCase() !== "data" && iQubeTokenId.toLowerCase() !== "agent" && iQubeTokenId.toLowerCase() !== "content")
               //function to check if any of the fields are empty
-              || Object.values(blakQubeData).some(v => v === "" || (Array.isArray(v) && v.length === 0))
+              || (Object.values(blakQubeData).some(v => v === "" || (Array.isArray(v) && v.length === 0)) && selectedFile == null)
             }
             className={`
               w-full py-2 rounded transition-all duration-300 ease-in-out
               ${
-                iQubeTokenId.toLowerCase() === "data" 
-                && !Object.values(blakQubeData).some(v => v === "" || (Array.isArray(v) && v.length === 0))
+                (iQubeTokenId.toLowerCase() === "data" || iQubeTokenId.toLowerCase() === "agent" || iQubeTokenId.toLowerCase() === "content")
+                && (!Object.values(blakQubeData).some(v => v === "" || (Array.isArray(v) && v.length === 0)) || selectedFile != null)
                   ? "bg-gray-700 text-white hover:bg-purple-600" 
                   : "bg-gray-700 text-gray-400 cursor-not-allowed s"
               }

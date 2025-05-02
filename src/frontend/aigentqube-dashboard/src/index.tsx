@@ -5,14 +5,12 @@ import './index.css';
 import App from './app';
 import { ChakraProvider } from '@chakra-ui/react';
 import IQubeNFTMinter from './iQube/NFTMinter';
+import { ThirdwebProvider } from '@thirdweb-dev/react';
+import { Polygon } from '@thirdweb-dev/chains';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-
-// Debug environment variables
-// console.log('Environment variables loaded:', {
-//   NODE_ENV: process.env.NODE_ENV,
-//   OPENAI_KEY_PRESENT: !!process.env.REACT_APP_OPENAI_API_KEY,
-//   OPENAI_KEY_TYPE: process.env.REACT_APP_OPENAI_API_KEY?.startsWith('sk-proj-') ? 'Project' : 'Standard'
-// });
+// Initialize QueryClient
+const queryClient = new QueryClient();
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -46,7 +44,11 @@ const router = createBrowserRouter([
 
 // Mount the app
 root.render(
+  <QueryClientProvider client={queryClient}>
     <ChakraProvider>
-      <RouterProvider router={router} />
+      <ThirdwebProvider activeChain={Polygon}>
+        <RouterProvider router={router} />
+      </ThirdwebProvider>
     </ChakraProvider>
+  </QueryClientProvider>
 );
