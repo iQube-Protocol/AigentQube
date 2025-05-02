@@ -39,6 +39,7 @@ interface UserProfileMetaDataFields {
     tokensOfInterest: string[]
     chainIDs: string[]
     walletsOfInterest: string[]
+    //customFields?: CustomField[]; 
   }
 }
 
@@ -48,6 +49,7 @@ interface AgentQubeMetaDataFields {
     baseUrl: string
     apiKey: string
     agentWalletAddress: string
+    customFields?: CustomField[]; 
   }
 }
 
@@ -58,7 +60,13 @@ interface ContentQubeMetaDataFields {
     blobPreview: string;
     encryptedFileHash: string;
     encryptedFileKey: string;
+    //customFields?: CustomField[]; 
   }
+}
+
+type CustomField = {
+  key: string;
+  value: string;
 }
 
 const IQubeNFTMinter: React.FC = () => {
@@ -160,7 +168,9 @@ const IQubeNFTMinter: React.FC = () => {
   const [blakQubeData, setBlakQubeData] = useState<any>(null)
   const [encryptedBlakQubeData, setEncryptedBlakQubeData] = useState<any>(null)
   const [filePreview, setFilePreview] = useState<string | null>(null);
-  
+  const [customKey, setCustomKey] = useState('');
+  const [customValue, setCustomValue] = useState('');
+ 
 
   const handleMemberProfileChange = (
     section: 'metaQube' | 'blakQube',
@@ -227,6 +237,7 @@ const IQubeNFTMinter: React.FC = () => {
 
         setNftInterface(_interface)
         setAccount(accounts[0])
+        console.log(accounts[0])
         console.log('NFT Interface initialized successfully')
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error initializing NFT interface'
@@ -271,6 +282,16 @@ const IQubeNFTMinter: React.FC = () => {
     return true;
   };
 
+  const addCustomField = (key: string, value: string) => {
+    setMemberProfile((prev) => ({
+      ...prev,
+      blakQube: {
+        ...prev.blakQube,
+        [key]: value, // directly add the new key and value into blakQube
+      }
+    }));
+  };
+
   const handleMemberProfileMint = async (e: FormEvent) => {
     console.log("RUNNING : handleMemberProfileMint")
 
@@ -313,7 +334,6 @@ const IQubeNFTMinter: React.FC = () => {
             })),
           ],
         })
-
         // Upload JSON to IPFS
         const metadataUpload = await pinata.upload.json(JSON.parse(metadata))
         console.log(metadataUpload.IpfsHash)
@@ -561,20 +581,7 @@ const IQubeNFTMinter: React.FC = () => {
 
       return response.data
       
-      
-      // let http = await axios.post(
-      //   'https://iqubes-server.onrender.com/decrypt',
-      //   {
-      //     key,
-      //     encryptedText,
-      //   },
-      //   {
-      //     headers: {
-      //       'Content-Type': 'application/json'
-      //     }
-      //   }
-      // )
-      // return http.data
+  
     } catch (error) {
       console.log(error)
     }
@@ -730,7 +737,6 @@ const IQubeNFTMinter: React.FC = () => {
       const response = await fetch(fullPath)
       const data = await response.json()
       
-      // Extract MetaQube and BlakQube data from attributes
       const metaQubeAttrs = data.attributes.find((attr: any) => attr.trait_type === 'metaQube')?.value || {}
       const blakQubeAttrs = data.attributes.find((attr: any) => attr.trait_type === 'blakQube')?.value || {}
       
@@ -1169,6 +1175,15 @@ const IQubeNFTMinter: React.FC = () => {
                 <FileLock2 color="white" className="mr-[10px]" />
                 <h5 className={`text-white text-[12px]`}>Content Qube</h5>
               </div>
+              <div
+                className={`${
+                  uploadType === 'custom' ? 'border-b border-b-[white]' : ''
+                } mr-[10px] cursor-pointer flex items-center pb-[10px]`}
+                onClick={() => handleToggle('customMemberProfile')}
+              >
+                <FileLock2 color="white" className="mr-[10px]" />
+                <h5 className={`text-[white] text-[12px]`}>Custom Qube</h5>
+              </div>
               
             </div>
             {uploadType === 'mediaBlob' ? (
@@ -1596,7 +1611,7 @@ const IQubeNFTMinter: React.FC = () => {
                       >
                         <option value="Individual">Individual</option>
                         <option value="Organization">Organization</option>
-=                      </select>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-[12px] font-medium text-white mb-2">
@@ -1788,29 +1803,24 @@ const IQubeNFTMinter: React.FC = () => {
                     </svg>
                     <h3 className="font-bold text-[18px] text-white">BlakQube</h3>
                   </div>
-
+                  {/* 1. Show Default and Custom Fields Together */}
                   <div className="grid grid-cols-3 gap-4 items-end">
                     {Object.entries(memberProfile.blakQube).map(([key, value]) => (
                       <div key={key} className="mb-[10px]">
                         <label className="block text-[10px] font-[500] text-white">
-                          {labelMapping[key] || key}:{' '}
+                          {labelMapping[key] || key}:
                         </label>
                         <input
                           type={typeof value === 'number' ? 'number' : 'text'}
-                          value={
-                            Array.isArray(value)
-                              ? value.join(', ')
-                              : typeof value === 'string' ||
-                                typeof value === 'number'
-                              ? value
-                              : ''
-                          }
+                          value={value}
                           onChange={(e) =>
-                            handleMemberProfileChange(
-                              'blakQube',
-                              key,
-                              e.target.value,
-                            )
+                            setMemberProfile((prev) => ({
+                              ...prev,
+                              blakQube: {
+                                ...prev.blakQube,
+                                [key]: e.target.value,
+                              },
+                            }))
                           }
                           disabled={isLoading}
                           required
@@ -1819,17 +1829,56 @@ const IQubeNFTMinter: React.FC = () => {
                       </div>
                     ))}
                   </div>
+
+                    {/* 2. Add Custom Field Input Section */}
+                    <div className="mt-6">
+                      <h4 className="font-bold text-white mb-2">Add a New Custom Field</h4>
+                      <div className="grid grid-cols-3 gap-4 items-end mb-4">
+                        <input
+                          type="text"
+                          placeholder="Custom Key"
+                          value={customKey}
+                          onChange={(e) => setCustomKey(e.target.value)}
+                          className="p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Custom Value"
+                          value={customValue}
+                          onChange={(e) => setCustomValue(e.target.value)}
+                          className="p-[10px] border rounded-[5px] bg-[#e8f5e9]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (customKey && customValue) {
+                              setMemberProfile((prev) => ({
+                                ...prev,
+                                blakQube: {
+                                  ...prev.blakQube,
+                                  [customKey]: customValue, // 🛠️ Directly adding key-value here
+                                },
+                              }));
+                              setCustomKey('');
+                              setCustomValue('');
+                            }
+                          }}
+                          className="p-[10px] bg-blue-600 text-white rounded-[5px]"
+                        >
+                          Add
+                        </button>
                 </div>
-                
-                <div className="mt-6">
-                  <button
-                    disabled={isLoading}
-                    className={`w-full p-[10px] rounded-[5px] ${
-                      isLoading ? 'bg-[grey]' : 'bg-[blue]'
-                    } text-[#fff]`}
-                  >
-                    {isLoading ? 'Encrypting...' : 'Encrypt BlakQube'}
-                  </button>
+                    <div className="mt-6">
+                      <button
+                        disabled={isLoading}
+                         className={`w-full p-[10px] rounded-[5px] ${
+                          isLoading ? 'bg-[grey]' : 'bg-[blue]'
+                        } text-[#fff]`}
+                      >
+                        {isLoading ? 'Encrypting...' : 'Encrypt BlakQube'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </form>
             ) : null}
@@ -2362,15 +2411,15 @@ const IQubeNFTMinter: React.FC = () => {
                   <div className="bg-gray-700 border border-gray-600 p-6 rounded-lg">
                   <h3 className="font-bold text-[18px] text-white mb-4">BlakQube Data</h3>
                   <div className="grid grid-cols-2 gap-4">
-                    {Object.entries(blakQubeData).map(([key, value]) => (
+                    {Object.entries(blakQubeData).filter(([key, _]: [string, unknown]) => key !== "customFields").map(([key, value]) => (
                       <div key={key} className="flex flex-col">
                         <label className="text-[14px] font-medium text-white mb-2">
-                          {labelMapping[key] || key}
+                        {(labelMapping as Record<string, string>)[key] || key}
                         </label>
                         <div className="relative group">
                           <div className="bg-[#e8f5e9] p-4 rounded-[5px] shadow-sm min-h-[45px] flex items-center">
                             <span className="text-[14px] text-gray-600 truncate">
-                              {value}
+                              {String(value)}
                             </span>
                           </div>
                           {typeof value === 'string' && value.length > 40 && (
