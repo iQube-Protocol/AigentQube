@@ -5,9 +5,11 @@ import './index.css';
 import App from './app';
 import { ChakraProvider } from '@chakra-ui/react';
 import IQubeNFTMinter from './iQube/NFTMinter';
-import { ThirdwebProvider } from '@thirdweb-dev/react';
+import { coinbaseWallet, embeddedWallet, metamaskWallet, phantomWallet, rainbowWallet, ThirdwebProvider, trustWallet, walletConnect, zerionWallet } from '@thirdweb-dev/react';
+// import {getAllWalletsList } from 'thirdweb/wallets';
 import { Polygon } from '@thirdweb-dev/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { thirdWebClient } from './utils/3rdWebClient';
 
 // Initialize QueryClient
 const queryClient = new QueryClient();
@@ -46,7 +48,26 @@ const router = createBrowserRouter([
 root.render(
   <QueryClientProvider client={queryClient}>
     <ChakraProvider>
-      <ThirdwebProvider activeChain={Polygon}>
+      <ThirdwebProvider activeChain={Polygon}
+      supportedWallets={
+        [
+        embeddedWallet({
+          auth:{
+            options:['email','phone','google','apple','facebook'], //add 'google','apple','facebook' 
+            redirectUrl: window.location.origin,
+          }
+        }),
+        metamaskWallet(),
+        coinbaseWallet(),
+        walletConnect(),
+        trustWallet(),
+        rainbowWallet(),
+        zerionWallet(),
+        phantomWallet(),
+      ]
+      }
+      clientId={thirdWebClient.clientId}>
+      
         <RouterProvider router={router} />
       </ThirdwebProvider>
     </ChakraProvider>
