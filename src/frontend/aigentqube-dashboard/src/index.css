@@ -19,9 +19,9 @@ code {
 
 @media (max-width: 768px) {
 
-  * {/*needed for no more overlap of header of page*/
-    position: static !important; /*important to override any presets*/
-   }
+  #dashboard-Header > * {
+    position: static !important;
+  }
   
    /*creates single column layout when hamburger is open */
   .grid-cols-12 { /*only main grid */
