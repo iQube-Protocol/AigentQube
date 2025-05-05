@@ -56,8 +56,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <h1 id="Aigentz" className="text-2xl font-bold text-center flex-grow whitespace-normal break-words">
             Aigent Z: Dynamic Contextual Intelligence
           </h1>
-
-          <div id="wallet-connection" className="absolute flex top-4 right-4 items-center space-x-2">
+          <div id="wallet-connection" className="absolute flex inset-y-2 right-4 items-center space-x-2">
             <ConnectWallet client={thirdWebClient} 
             className="group inline-flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
             // showThirdwebBranding={false}
