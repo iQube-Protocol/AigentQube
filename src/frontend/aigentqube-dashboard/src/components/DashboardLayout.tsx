@@ -7,6 +7,7 @@ import { ThirdwebProvider, ConnectWallet, ConnectEmbed } from "@thirdweb-dev/rea
 // import { ConnectButton } from "@thirdweb/react";
 import { OrchestrationAgent } from "../services/OrchestrationAgent";
 import { thirdWebClient } from '../utils/3rdWebClient';
+import { useAddress } from '@thirdweb-dev/react';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -26,7 +27,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   isAgentReady
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
+  const address = useAddress(); //for mobile wallet connection
+  const isMobile = isMobileDevice(); //for mobile wallet connection
   const goToMintDashboard = (): void => {
     window.location.href = window.location.href + "minter";
   };
@@ -56,13 +58,29 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <h1 id="Aigentz" className="text-2xl font-bold text-center flex-grow whitespace-normal break-words">
             Aigent Z: Dynamic Contextual Intelligence
           </h1>
+
           <div id="wallet-connection" className="absolute flex inset-y-2 right-4 items-center space-x-2">
-            <ConnectWallet client={thirdWebClient} 
-            className="group inline-flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-            // showThirdwebBranding={false}
-            showAllWallets={true}
-            modalSize="wide"
-            />
+            {!address && isMobile ? ( 
+              <ConnectWallet client={thirdWebClient} 
+              className="group inline-flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              // showThirdwebBranding={false}
+              showAllWallets={true}
+              modalSize="wide"
+             />
+            ) 
+            // : address && isMobile ?(
+            //   <span className="text-sm font-medium text-green-300">
+            //     Connected: {address.slice(0, 6)}...{address.slice(-4)}
+            //     </span>
+            // )
+            :(
+              <ConnectWallet client={thirdWebClient} 
+                className="group inline-flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                // showThirdwebBranding={false}
+                showAllWallets={true}
+                modalSize="wide"
+                />
+            )}
             <NotificationCenter />
           </div>
         </header>
@@ -112,5 +130,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       </div>
   );
 };
+
+function isMobileDevice() {
+  return typeof window !== "undefined" && /Mobi|Android/i.test(navigator.userAgent);
+}
 
 export default DashboardLayout;
