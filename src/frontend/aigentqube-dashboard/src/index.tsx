@@ -53,7 +53,7 @@ root.render(
         [
         embeddedWallet({
           auth:{
-            options:['email','phone'], //add 'google','apple','facebook' 
+            options:['email','phone','google','apple','facebook'], //add 'google','apple','facebook' 
             redirectUrl: window.location.origin,
           }
         }),
