@@ -53,8 +53,8 @@ root.render(
         [
         embeddedWallet({
           auth:{
-            options:['email','phone','google','apple','facebook'],
-            redirectUrl: window.location.origin, // Removed as it is not a valid property
+            options:['email','phone'], //add 'google','apple','facebook' 
+            redirectUrl: window.location.origin,
           }
         }),
         metamaskWallet(),
