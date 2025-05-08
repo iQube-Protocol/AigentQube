@@ -1,0 +1,22 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # go into your dashboard folder
+        - cd src/frontend/aigentqube-dashboard
+        # install all deps (including craco & react-scripts)
+        - npm ci
+    build:
+      commands:
+        # this will run `craco build`
+        - npm run start
+  artifacts:
+    # point to the folder with index.html after build
+    baseDirectory: src/frontend/aigentqube-dashboard/build
+    files:
+      - '**/*'
+  cache:
+    # cache your node_modules for faster rebuilds
+    paths:
+      - src/frontend/aigentqube-dashboard/node_modules/**/*
